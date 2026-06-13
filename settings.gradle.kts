@@ -30,3 +30,8 @@ dependencyResolutionManagement {
 
 include(":androidApp")
 include(":shared")
+include(":lamityLogger")
+include(":lamityCrashReporter")
+include(":lamityDownloader")
+include(":lamityDb")
+include(":lamityLlm")

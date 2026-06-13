@@ -1,49 +1,165 @@
 package com.phamtunglam.lamity
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import lamity.shared.generated.resources.Res
-import lamity.shared.generated.resources.compose_multiplatform
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import com.phamtunglam.lamity.core.designsystem.theme.AppTheme
+import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.i18n.stringsFor
+import com.phamtunglam.lamity.feature.chat.presentation.ChatScreen
+import com.phamtunglam.lamity.feature.history.presentation.HistoryScreen
+import com.phamtunglam.lamity.feature.models.presentation.ModelConfigScreen
+import com.phamtunglam.lamity.feature.models.presentation.ModelsScreen
+import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
+import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
+import com.phamtunglam.lamity.feature.studio.presentation.AgentEditScreen
+import com.phamtunglam.lamity.feature.studio.presentation.SkillEditScreen
+import com.phamtunglam.lamity.feature.studio.presentation.StudioScreen
+import com.phamtunglam.lamity.navigation.AgentEditKey
+import com.phamtunglam.lamity.navigation.ChatKey
+import com.phamtunglam.lamity.navigation.HistoryKey
+import com.phamtunglam.lamity.navigation.ModelConfigKey
+import com.phamtunglam.lamity.navigation.ModelsKey
+import com.phamtunglam.lamity.navigation.SettingsKey
+import com.phamtunglam.lamity.navigation.SkillEditKey
+import com.phamtunglam.lamity.navigation.StudioKey
+import com.phamtunglam.lamity.navigation.TabKey
+import com.phamtunglam.lamity.navigation.navSavedStateConfiguration
+import org.koin.compose.koinInject
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    val settingsRepository = koinInject<SettingsRepository>()
+    val settings by settingsRepository.settings.collectAsState()
+    val strings = remember(settings.language) { stringsFor(settings.language) }
+
+    CompositionLocalProvider(LocalStrings provides strings) {
+        AppTheme(settings.themeMode) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                val backStack = rememberNavBackStack(navSavedStateConfiguration, ChatKey)
+
+                fun switchTab(tab: TabKey) {
+                    backStack.clear()
+                    backStack.add(tab)
+                }
+
+                Scaffold(
+                    bottomBar = {
+                        if (backStack.size == 1) {
+                            NavigationBar {
+                                val current = backStack.firstOrNull()
+                                TabItem(current, ChatKey, strings.tabChat, Icons.AutoMirrored.Filled.Send, ::switchTab)
+                                TabItem(current, ModelsKey, strings.tabModels, Icons.Default.Home, ::switchTab)
+                                TabItem(current, HistoryKey, strings.tabHistory, Icons.Default.DateRange, ::switchTab)
+                                TabItem(current, StudioKey, strings.tabStudio, Icons.Default.Build, ::switchTab)
+                                TabItem(current, SettingsKey, strings.tabSettings, Icons.Default.Settings, ::switchTab)
+                            }
+                        }
+                    },
+                ) { padding ->
+                    Box(Modifier.fillMaxSize().padding(padding)) {
+                        AppNavDisplay(
+                            backStack = backStack,
+                            onSwitchTab = ::switchTab,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun AppNavDisplay(
+    backStack: NavBackStack<NavKey>,
+    onSwitchTab: (TabKey) -> Unit,
+) {
+    fun pop() {
+        if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { pop() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        entryProvider = entryProvider {
+            entry<ChatKey> {
+                ChatScreen(onGoToModels = { onSwitchTab(ModelsKey) })
+            }
+            entry<ModelsKey> {
+                ModelsScreen(
+                    onOpenChat = { onSwitchTab(ChatKey) },
+                    onConfigureModel = { modelId -> backStack.add(ModelConfigKey(modelId)) },
+                )
+            }
+            entry<HistoryKey> {
+                HistoryScreen(onOpenChat = { onSwitchTab(ChatKey) })
+            }
+            entry<StudioKey> {
+                StudioScreen(
+                    onEditAgent = { agentId -> backStack.add(AgentEditKey(agentId)) },
+                    onEditSkill = { skillId -> backStack.add(SkillEditKey(skillId)) },
+                )
+            }
+            entry<SettingsKey> {
+                SettingsScreen()
+            }
+            entry<AgentEditKey> { key ->
+                AgentEditScreen(agentId = key.agentId, onBack = ::pop)
+            }
+            entry<SkillEditKey> { key ->
+                SkillEditScreen(skillId = key.skillId, onBack = ::pop)
+            }
+            entry<ModelConfigKey> { key ->
+                ModelConfigScreen(modelId = key.modelId, onBack = ::pop)
+            }
+        },
+    )
+}
+
+@Composable
+private fun RowScope.TabItem(
+    current: NavKey?,
+    tab: TabKey,
+    label: String,
+    icon: ImageVector,
+    onSelect: (TabKey) -> Unit,
+) {
+    NavigationBarItem(
+        selected = current == tab,
+        onClick = { onSelect(tab) },
+        icon = { Icon(icon, contentDescription = label) },
+        label = { Text(label) },
+    )
 }

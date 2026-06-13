@@ -1,0 +1,32 @@
+package com.phamtunglam.lamity.feature.settings.data
+
+import com.phamtunglam.lamity.feature.settings.domain.AppSettings
+import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import kotlinx.coroutines.flow.StateFlow
+
+interface SettingsRepository {
+    val settings: StateFlow<AppSettings>
+    val value: AppSettings get() = settings.value
+
+    /** Completes once persisted settings have been loaded into [settings]. */
+    suspend fun awaitLoaded()
+
+    suspend fun update(transform: (AppSettings) -> AppSettings)
+
+    suspend fun setThemeMode(mode: ThemeMode) = update { it.copy(themeMode = mode) }
+
+    suspend fun setLanguage(language: String) = update { it.copy(language = language) }
+
+    suspend fun setHfToken(token: String) = update { it.copy(hfToken = token.trim()) }
+
+    suspend fun setWifiOnlyDownloads(enabled: Boolean) =
+        update { it.copy(wifiOnlyDownloads = enabled) }
+
+    fun isToolEnabled(toolId: String): Boolean = value.toolEnabled[toolId] ?: true
+
+    suspend fun setToolEnabled(toolId: String, enabled: Boolean) =
+        update { it.copy(toolEnabled = it.toolEnabled + (toolId to enabled)) }
+
+    suspend fun setLastSelection(modelId: String?, agentId: String?) =
+        update { it.copy(lastModelId = modelId, lastAgentId = agentId) }
+}
