@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.mokkery)
 }
 
 kotlin {
@@ -17,11 +18,21 @@ kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
         }
+        withHostTest { }
     }
 
     sourceSets {
         commonMain.dependencies {
             api(libs.kermit)
+            implementation(libs.androidx.annotation)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotest.assertions.core)
+            implementation(libs.kotest.framework.engine)
+            implementation(libs.kotest.property)
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.kotest.runner.junit5)
         }
     }
 }

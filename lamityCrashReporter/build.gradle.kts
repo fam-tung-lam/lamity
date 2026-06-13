@@ -23,7 +23,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.lamityLogger)
             implementation(libs.sentry.kmp)
         }
         commonTest.dependencies {

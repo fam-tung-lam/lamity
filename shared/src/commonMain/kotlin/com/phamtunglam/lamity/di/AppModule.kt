@@ -1,11 +1,11 @@
 package com.phamtunglam.lamity.di
 
 import com.phamtunglam.lamity.LamityConfig
+import com.phamtunglam.lamity.core.logging.CrashReportingLogWriter
 import com.phamtunglam.lamity.core.tools.ToolContext
 import com.phamtunglam.lamity.core.tools.ToolDispatcher
 import com.phamtunglam.lamity.core.tools.ToolRegistry
 import com.phamtunglam.lamity.crashreporter.CrashReporter
-import com.phamtunglam.lamity.crashreporter.attachToLogger
 import com.phamtunglam.lamity.crashreporter.sentryCrashReporter
 import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.buildLamityDatabase
@@ -39,6 +39,7 @@ import com.phamtunglam.lamity.feature.studio.presentation.AgentEditViewModel
 import com.phamtunglam.lamity.feature.studio.presentation.SkillEditViewModel
 import com.phamtunglam.lamity.feature.studio.presentation.StudioViewModel
 import com.phamtunglam.lamity.llm.ModelRuntime
+import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -56,8 +57,14 @@ expect fun platformModule(): Module
 
 val appModule: Module = module {
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+
+    // ------------------------------------------------------------- logging
     single<CrashReporter>(createdAtStart = true) {
-        sentryCrashReporter(LamityConfig.crashReporterConfig()).also { it.attachToLogger() }
+        sentryCrashReporter(LamityConfig.crashReporterConfig()).also { reporter ->
+            // Route app logs into the reporter as breadcrumbs/captures by
+            // registering the bridge writer with the logging facade.
+            if (reporter.isEnabled) LamityLogger.addWriter(CrashReportingLogWriter(reporter))
+        }
     }
 
     // ------------------------------------------------------------ database

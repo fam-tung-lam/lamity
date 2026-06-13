@@ -1,8 +1,5 @@
 package com.phamtunglam.lamity.crashreporter
 
-import co.touchlab.kermit.LogWriter
-import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Severity
 import io.sentry.kotlin.multiplatform.Sentry
 import io.sentry.kotlin.multiplatform.protocol.Breadcrumb
 
@@ -27,22 +24,11 @@ data class CrashReporterConfig(
     val debug: Boolean = false,
 )
 
-object NoopCrashReporter : CrashReporter {
-    override val isEnabled: Boolean = false
-    override fun captureException(throwable: Throwable, tags: Map<String, String>) = Unit
-    override fun captureMessage(message: String, tags: Map<String, String>) = Unit
-    override fun addBreadcrumb(category: String, message: String) = Unit
-    override fun setTag(key: String, value: String) = Unit
-}
-
 /**
  * Initializes the Sentry KMP SDK and returns a [CrashReporter] backed by it.
- * On iOS the Sentry Cocoa framework must be available at link time — the
- * `io.sentry.kotlin.multiplatform.gradle` plugin wires that up from the
- * sentry-cocoa Swift package added to the Xcode project.
  */
 fun sentryCrashReporter(config: CrashReporterConfig): CrashReporter {
-    if (config.dsn.isBlank()) return NoopCrashReporter
+    if (config.dsn.isBlank()) throw IllegalArgumentException("")
     Sentry.init { options ->
         options.dsn = config.dsn
         options.environment = config.environment
@@ -85,29 +71,4 @@ private object SentryCrashReporter : CrashReporter {
     override fun setTag(key: String, value: String) {
         Sentry.configureScope { scope -> scope.setTag(key, value) }
     }
-}
-
-/**
- * Kermit [LogWriter] that turns log records into crash-reporter breadcrumbs,
- * so the tail of the app log arrives attached to every crash event. Errors
- * carrying a throwable are captured as events.
- */
-class CrashBreadcrumbWriter(
-    private val reporter: CrashReporter,
-    private val minSeverity: Severity = Severity.Info,
-) : LogWriter() {
-    override fun isLoggable(tag: String, severity: Severity): Boolean =
-        reporter.isEnabled && severity >= minSeverity
-
-    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-        reporter.addBreadcrumb(category = tag, message = message)
-        if (severity >= Severity.Error && throwable != null) {
-            reporter.captureException(throwable, mapOf("log.tag" to tag))
-        }
-    }
-}
-
-/** Installs [CrashBreadcrumbWriter] into the global Kermit [Logger] when the reporter is active. */
-fun CrashReporter.attachToLogger(minSeverity: Severity = Severity.Info) {
-    if (isEnabled) Logger.addLogWriter(CrashBreadcrumbWriter(this, minSeverity))
 }
