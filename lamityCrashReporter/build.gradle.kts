@@ -28,7 +28,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotest.assertions.core)
             implementation(libs.kotest.framework.engine)
-            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kotest.property)
         }
         getByName("androidHostTest").dependencies {
             implementation(libs.kotest.runner.junit5)

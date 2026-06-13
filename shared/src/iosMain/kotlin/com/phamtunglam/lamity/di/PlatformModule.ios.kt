@@ -19,9 +19,9 @@ import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIDevice
 
 /**
- * iOS platform graph. NativeLlmBridge and CrashReporter are NOT defined here:
- * the Swift side owns those SDKs and hands its implementations to
- * [com.phamtunglam.lamity.MainViewController], which registers them in Koin.
+ * iOS platform graph. NativeLlmBridge is NOT defined here: the Swift side owns
+ * that SDK and hands its implementation to
+ * [com.phamtunglam.lamity.MainViewController], which registers it in Koin.
  */
 actual fun platformModule(): Module = module {
     single<FileIo> { IosFileIo() }

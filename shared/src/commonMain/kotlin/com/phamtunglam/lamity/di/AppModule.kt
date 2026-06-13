@@ -5,8 +5,7 @@ import com.phamtunglam.lamity.core.logging.CrashReportingLogWriter
 import com.phamtunglam.lamity.core.tools.ToolContext
 import com.phamtunglam.lamity.core.tools.ToolDispatcher
 import com.phamtunglam.lamity.core.tools.ToolRegistry
-import com.phamtunglam.lamity.crashreporter.CrashReporter
-import com.phamtunglam.lamity.crashreporter.sentryCrashReporter
+import com.phamtunglam.lamity.crashreporter.LamityCrashReporter
 import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.buildLamityDatabase
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
@@ -59,12 +58,11 @@ val appModule: Module = module {
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     // ------------------------------------------------------------- logging
-    single<CrashReporter>(createdAtStart = true) {
-        sentryCrashReporter(LamityConfig.crashReporterConfig()).also { reporter ->
-            // Route app logs into the reporter as breadcrumbs/captures by
-            // registering the bridge writer with the logging facade.
-            if (reporter.isEnabled) LamityLogger.addWriter(CrashReportingLogWriter(reporter))
-        }
+    single(createdAtStart = true) {
+        // Initializes crash reporting and routes app error logs into it as captures by
+        // registering the bridge writer with the logging facade.
+        LamityCrashReporter.init(LamityConfig.lamityCrashReporterConfig())
+        LamityLogger.addWriter(CrashReportingLogWriter(reporter = LamityCrashReporter))
     }
 
     // ------------------------------------------------------------ database

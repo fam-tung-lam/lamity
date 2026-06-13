@@ -1,7 +1,7 @@
 package com.phamtunglam.lamity
 
 import com.phamtunglam.lamity.core.platform.currentBuildInfo
-import com.phamtunglam.lamity.crashreporter.CrashReporterConfig
+import com.phamtunglam.lamity.crashreporter.models.LamityCrashReporterConfig
 
 object LamityConfig {
 
@@ -13,9 +13,9 @@ object LamityConfig {
      */
     const val SENTRY_DSN = "YOUR_SENTRY_DSN"
 
-    fun crashReporterConfig(): CrashReporterConfig {
+    fun lamityCrashReporterConfig(): LamityCrashReporterConfig {
         val build = currentBuildInfo()
-        return CrashReporterConfig(
+        return LamityCrashReporterConfig(
             dsn = SENTRY_DSN,
             environment = if (build.isDebug) "development" else "production",
             release = "${build.bundleId}@${build.versionName}+${build.versionCode}",
