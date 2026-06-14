@@ -9,7 +9,7 @@ import com.phamtunglam.lamity.logger.models.LamityLogSeverity
  * Default [LamityLogWriter] that mirrors records to the platform log (Logcat on
  * Android, NSLog/print on iOS, stdout on JVM).
  */
-internal object PlatformLamityLogWriter : LamityLogWriter {
+object PlatformLamityLogWriter : LamityLogWriter {
     private val delegate: LogWriter = platformLogWriter()
 
     override fun isLoggable(tag: String, severity: LamityLogSeverity): Boolean =
