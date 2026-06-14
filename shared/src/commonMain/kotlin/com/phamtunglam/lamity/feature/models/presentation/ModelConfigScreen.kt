@@ -24,8 +24,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.LabeledSlider
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.backend
+import com.phamtunglam.lamity.shared.resources.config_note
+import com.phamtunglam.lamity.shared.resources.max_tokens
+import com.phamtunglam.lamity.shared.resources.model_config_title
+import com.phamtunglam.lamity.shared.resources.reset_defaults
+import com.phamtunglam.lamity.shared.resources.save
+import com.phamtunglam.lamity.shared.resources.temperature
+import com.phamtunglam.lamity.shared.resources.top_k
+import com.phamtunglam.lamity.shared.resources.top_p
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -36,7 +46,6 @@ fun ModelConfigScreen(
     onBack: () -> Unit,
     viewModel: ModelConfigViewModel = koinViewModel { parametersOf(modelId) },
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     val model = ui.model
 
@@ -46,13 +55,13 @@ fun ModelConfigScreen(
     }
     if (model == null) return
 
-    SubScreenScaffold(title = "${str.modelConfigTitle} — ${model.name}", onBack = onBack) {
+    SubScreenScaffold(title = "${stringResource(Res.string.model_config_title)} — ${model.name}", onBack = onBack) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Column {
-                Text(str.backend, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(Res.string.backend), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.padding(2.dp))
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     LlmBackend.entries.forEachIndexed { index, entry ->
@@ -69,7 +78,7 @@ fun ModelConfigScreen(
             }
 
             LabeledSlider(
-                label = str.maxTokens,
+                label = stringResource(Res.string.max_tokens),
                 value = ui.maxTokens,
                 valueText = ((ui.maxTokens / 256f).roundToInt() * 256).toString(),
                 range = 256f..8192f,
@@ -77,7 +86,7 @@ fun ModelConfigScreen(
                 onChange = { viewModel.setMaxTokens(it) },
             )
             LabeledSlider(
-                label = str.topK,
+                label = stringResource(Res.string.top_k),
                 value = ui.topK,
                 valueText = ui.topK.roundToInt().toString(),
                 range = 1f..128f,
@@ -85,7 +94,7 @@ fun ModelConfigScreen(
                 onChange = { viewModel.setTopK(it) },
             )
             LabeledSlider(
-                label = str.topP,
+                label = stringResource(Res.string.top_p),
                 value = ui.topP,
                 valueText = fmt2(ui.topP),
                 range = 0.05f..1f,
@@ -93,7 +102,7 @@ fun ModelConfigScreen(
                 onChange = { viewModel.setTopP(it) },
             )
             LabeledSlider(
-                label = str.temperature,
+                label = stringResource(Res.string.temperature),
                 value = ui.temperature,
                 valueText = fmt2(ui.temperature),
                 range = 0f..2f,
@@ -102,17 +111,17 @@ fun ModelConfigScreen(
             )
 
             Text(
-                str.configNote,
+                stringResource(Res.string.config_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Row(Modifier.fillMaxWidth()) {
                 OutlinedButton(onClick = { viewModel.resetToDefaults() }) {
-                    Text(str.resetDefaults)
+                    Text(stringResource(Res.string.reset_defaults))
                 }
                 Spacer(Modifier.weight(1f))
-                Button(onClick = viewModel::save) { Text(str.save) }
+                Button(onClick = viewModel::save) { Text(stringResource(Res.string.save)) }
             }
         }
     }

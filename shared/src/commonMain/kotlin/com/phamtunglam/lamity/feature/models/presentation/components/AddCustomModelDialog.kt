@@ -16,7 +16,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.add
+import com.phamtunglam.lamity.shared.resources.add_custom_model
+import com.phamtunglam.lamity.shared.resources.cancel
+import com.phamtunglam.lamity.shared.resources.custom_model_name
+import com.phamtunglam.lamity.shared.resources.custom_model_url
+import com.phamtunglam.lamity.shared.resources.requires_auth_label
+import org.jetbrains.compose.resources.stringResource
 
 /** Adds a model by direct .litertlm URL to the catalog. */
 @Composable
@@ -24,30 +31,29 @@ internal fun AddCustomModelDialog(
     onAdd: (name: String, url: String, requiresAuth: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val str = LocalStrings.current
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     var requiresAuth by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(str.addCustomModel) },
+        title = { Text(stringResource(Res.string.add_custom_model)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(str.customModelName) },
+                    label = { Text(stringResource(Res.string.custom_model_name)) },
                     singleLine = true,
                 )
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text(str.customModelUrl) },
+                    label = { Text(stringResource(Res.string.custom_model_url)) },
                     singleLine = true,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(str.requiresAuthLabel, Modifier.weight(1f))
+                    Text(stringResource(Res.string.requires_auth_label), Modifier.weight(1f))
                     Switch(checked = requiresAuth, onCheckedChange = { requiresAuth = it })
                 }
             }
@@ -59,8 +65,8 @@ internal fun AddCustomModelDialog(
                     onAdd(name, url, requiresAuth)
                     onDismiss()
                 },
-            ) { Text(str.add) }
+            ) { Text(stringResource(Res.string.add)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(str.cancel) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
 }

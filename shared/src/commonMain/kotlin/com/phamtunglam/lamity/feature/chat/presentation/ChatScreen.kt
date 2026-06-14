@@ -15,13 +15,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatErrorBanner
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatHeader
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatInputBar
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatMessageList
 import com.phamtunglam.lamity.feature.chat.presentation.components.EngineLoadingBar
 import com.phamtunglam.lamity.llm.EngineState
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.chat_empty_body
+import com.phamtunglam.lamity.shared.resources.chat_empty_title
+import com.phamtunglam.lamity.shared.resources.go_to_models
+import com.phamtunglam.lamity.shared.resources.no_model_body
+import com.phamtunglam.lamity.shared.resources.no_model_title
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -29,7 +35,6 @@ fun ChatScreen(
     onGoToModels: () -> Unit,
     viewModel: ChatViewModel = koinViewModel(),
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     val state = ui.chat
 
@@ -55,12 +60,12 @@ fun ChatScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     if (!ui.selectedModelReady) {
-                        EmptyState(str.noModelTitle, str.noModelBody)
+                        EmptyState(stringResource(Res.string.no_model_title), stringResource(Res.string.no_model_body))
                         Button(onClick = onGoToModels) {
-                            Text(str.goToModels)
+                            Text(stringResource(Res.string.go_to_models))
                         }
                     } else {
-                        EmptyState(str.chatEmptyTitle, str.chatEmptyBody)
+                        EmptyState(stringResource(Res.string.chat_empty_title), stringResource(Res.string.chat_empty_body))
                     }
                 }
             } else {

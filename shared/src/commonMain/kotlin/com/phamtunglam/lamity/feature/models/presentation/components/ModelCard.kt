@@ -31,10 +31,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.ConfirmDialog
 import com.phamtunglam.lamity.core.presentation.designSystem.formatBytes
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.domain.ModelWithStatus
 import com.phamtunglam.lamity.feature.models.presentation.ModelsViewModel
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.chat_action
+import com.phamtunglam.lamity.shared.resources.confirm_delete_title
+import com.phamtunglam.lamity.shared.resources.configure
+import com.phamtunglam.lamity.shared.resources.delete
+import com.phamtunglam.lamity.shared.resources.delete_model_file_q
+import com.phamtunglam.lamity.shared.resources.download
+import com.phamtunglam.lamity.shared.resources.needs_token
+import com.phamtunglam.lamity.shared.resources.remove_from_catalog
+import com.phamtunglam.lamity.shared.resources.requires_auth_label
+import org.jetbrains.compose.resources.stringResource
 
 /** One catalog entry: metadata, transfer state and the actions it allows. */
 @Composable
@@ -44,7 +54,6 @@ internal fun ModelCard(
     onOpenChat: () -> Unit,
     onConfigureModel: (modelId: String) -> Unit,
 ) {
-    val str = LocalStrings.current
     val model = row.model
     var confirmDeleteFile by remember { mutableStateOf(false) }
 
@@ -58,7 +67,7 @@ internal fun ModelCard(
                             Spacer(Modifier.width(6.dp))
                             Icon(
                                 Icons.Default.Lock,
-                                contentDescription = str.requiresAuthLabel,
+                                contentDescription = stringResource(Res.string.requires_auth_label),
                                 modifier = Modifier.padding(top = 2.dp),
                                 tint = MaterialTheme.colorScheme.outline,
                             )
@@ -89,16 +98,16 @@ internal fun ModelCard(
                         Button(onClick = {
                             viewModel.selectForChat(model)
                             onOpenChat()
-                        }) { Text(str.chatAction) }
+                        }) { Text(stringResource(Res.string.chat_action)) }
                         Spacer(Modifier.width(8.dp))
                         OutlinedButton(onClick = { onConfigureModel(model.id) }) {
-                            Text(str.configure)
+                            Text(stringResource(Res.string.configure))
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = { confirmDeleteFile = true }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = str.delete,
+                                contentDescription = stringResource(Res.string.delete),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -106,11 +115,11 @@ internal fun ModelCard(
                 }
                 ModelStatus.NotDownloaded -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Button(onClick = { viewModel.download(model) }) { Text(str.download) }
+                        Button(onClick = { viewModel.download(model) }) { Text(stringResource(Res.string.download)) }
                         if (row.needsToken) {
                             Spacer(Modifier.width(10.dp))
                             Text(
-                                str.needsToken,
+                                stringResource(Res.string.needs_token),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.weight(1f),
@@ -132,9 +141,9 @@ internal fun ModelCard(
 
     if (confirmDeleteFile) {
         ConfirmDialog(
-            title = str.confirmDeleteTitle,
-            text = str.deleteModelFileQ,
-            confirmLabel = str.delete,
+            title = stringResource(Res.string.confirm_delete_title),
+            text = stringResource(Res.string.delete_model_file_q),
+            confirmLabel = stringResource(Res.string.delete),
             onConfirm = { viewModel.deleteFile(model) },
             onDismiss = { confirmDeleteFile = false },
         )
@@ -143,7 +152,6 @@ internal fun ModelCard(
 
 @Composable
 private fun CustomModelMenu(onRemove: () -> Unit) {
-    val str = LocalStrings.current
     var menuOpen by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { menuOpen = true }) {
@@ -151,7 +159,7 @@ private fun CustomModelMenu(onRemove: () -> Unit) {
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
-                text = { Text(str.removeFromCatalog) },
+                text = { Text(stringResource(Res.string.remove_from_catalog)) },
                 onClick = {
                     menuOpen = false
                     onRemove()

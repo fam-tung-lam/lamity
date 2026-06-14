@@ -15,8 +15,6 @@ interface SettingsRepository {
 
     suspend fun setThemeMode(mode: ThemeMode) = update { it.copy(themeMode = mode) }
 
-    suspend fun setLanguage(language: String) = update { it.copy(language = language) }
-
     suspend fun setWifiOnlyDownloads(enabled: Boolean) =
         update { it.copy(wifiOnlyDownloads = enabled) }
 

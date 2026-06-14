@@ -1,0 +1,94 @@
+<resources>
+    <string name="tab_chat">Trò chuyện</string>
+    <string name="tab_models">Mô hình</string>
+    <string name="tab_history">Lịch sử</string>
+    <string name="tab_studio">Studio</string>
+    <string name="tab_settings">Cài đặt</string>
+
+    <string name="chat_placeholder">Nhắn tin…</string>
+    <string name="chat_empty_title">Bắt đầu trò chuyện</string>
+    <string name="chat_empty_body">Chọn một agent và một mô hình đã tải, rồi gửi lời chào. Các lệnh gọi công cụ hiển thị ngay trong hội thoại.</string>
+    <string name="no_model_title">Chưa có mô hình</string>
+    <string name="no_model_body">Hãy tải một mô hình trước — mọi thứ chạy ngay trên máy.</string>
+    <string name="go_to_models">Đến mục Mô hình</string>
+    <string name="new_chat">Cuộc trò chuyện mới</string>
+    <string name="agent_label">Agent</string>
+    <string name="no_agent">Không dùng agent</string>
+    <string name="model_label">Mô hình</string>
+    <string name="stop">Dừng</string>
+    <string name="send">Gửi</string>
+    <string name="loading_model">Đang nạp mô hình… có thể mất một lúc</string>
+    <string name="thinking_label">Đang suy nghĩ</string>
+    <string name="tool_call_label">Gọi công cụ</string>
+    <string name="dismiss">Đóng</string>
+    <string name="retry">Thử lại</string>
+
+    <string name="download">Tải về</string>
+    <string name="cancel">Hủy</string>
+    <string name="delete">Xóa</string>
+    <string name="configure">Cấu hình</string>
+    <string name="downloaded">Đã tải</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="resume">Tiếp tục</string>
+    <string name="paused">Đã tạm dừng</string>
+    <string name="verifying">Đang kiểm tra…</string>
+    <string name="download_queued">Đang chờ tải…</string>
+    <string name="add_custom_model">Thêm mô hình tùy chỉnh</string>
+    <string name="custom_model_name">Tên hiển thị</string>
+    <string name="custom_model_url">URL .litertlm trực tiếp</string>
+    <string name="requires_auth_label">Cần token HuggingFace</string>
+    <string name="add">Thêm</string>
+    <string name="delete_model_file_q">Xóa tệp mô hình đã tải khỏi thiết bị?</string>
+    <string name="remove_from_catalog">Xóa khỏi danh mục</string>
+    <string name="chat_action">Trò chuyện</string>
+    <string name="needs_token">Hãy đặt token HuggingFace trong Cài đặt trước</string>
+
+    <string name="model_config_title">Cấu hình mô hình</string>
+    <string name="backend">Backend</string>
+    <string name="max_tokens">Số token tối đa</string>
+    <string name="save">Lưu</string>
+    <string name="reset_defaults">Khôi phục mặc định</string>
+    <string name="config_note">Backend và số token tối đa áp dụng khi nạp lại mô hình; tham số lấy mẫu áp dụng cho cuộc trò chuyện mới.</string>
+
+    <string name="history_empty_title">Chưa có cuộc trò chuyện</string>
+    <string name="history_empty_body">Hội thoại được lưu trên máy và có thể tiếp tục bất cứ lúc nào.</string>
+    <string name="rename">Đổi tên</string>
+    <string name="rename_conversation">Đổi tên cuộc trò chuyện</string>
+    <string name="delete_conversation_q">Xóa cuộc trò chuyện này và toàn bộ tin nhắn?</string>
+
+    <string name="new_agent">Tạo agent</string>
+    <string name="new_skill">Tạo kỹ năng</string>
+    <string name="agent_name">Tên</string>
+    <string name="agent_description">Mô tả</string>
+    <string name="system_prompt">System prompt</string>
+    <string name="attached_tools">Công cụ</string>
+    <string name="attached_skills">Kỹ năng</string>
+    <string name="skill_name">Tên</string>
+    <string name="skill_description">Mô tả</string>
+    <string name="skill_instructions">Hướng dẫn (được nạp qua công cụ load_skill)</string>
+    <string name="enabled">Bật</string>
+    <string name="disabled_suffix">(tắt)</string>
+    <string name="delete_agent_q">Xóa agent này?</string>
+    <string name="delete_skill_q">Xóa kỹ năng này? Nó sẽ bị gỡ khỏi mọi agent.</string>
+    <string name="edit">Sửa</string>
+    <string name="tools_caption">Công tắc toàn cục. Công cụ bị tắt sẽ không bao giờ được cung cấp cho mô hình, kể cả khi đã gắn vào agent.</string>
+    <string name="skills_caption">Kỹ năng là các hướng dẫn có tên, được mô hình nạp khi cần qua công cụ load_skill.</string>
+    <string name="agents_caption">Agent gói system prompt cùng công cụ và kỹ năng.</string>
+    <string name="name_required">Bắt buộc nhập tên</string>
+    <string name="tools_count">công cụ</string>
+    <string name="skills_count">kỹ năng</string>
+
+    <string name="theme">Giao diện</string>
+    <string name="theme_light">Sáng</string>
+    <string name="theme_dark">Tối</string>
+    <string name="theme_system">Theo hệ thống</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="language_system">Theo hệ thống</string>
+    <string name="downloads_section">Tải xuống</string>
+    <string name="wifi_only">Chỉ tải qua Wi-Fi</string>
+    <string name="wifi_only_hint">Tệp mô hình rất lớn; tùy chọn này chỉ cho phép tải qua mạng không tính lưu lượng.</string>
+    <string name="about">Giới thiệu</string>
+
+    <string name="back">Quay lại</string>
+    <string name="confirm_delete_title">Bạn chắc chứ?</string>
+</resources>

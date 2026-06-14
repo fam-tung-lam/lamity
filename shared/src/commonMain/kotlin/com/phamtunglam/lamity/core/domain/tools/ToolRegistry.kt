@@ -1,6 +1,7 @@
 package com.phamtunglam.lamity.core.domain.tools
 
 import com.phamtunglam.lamity.core.domain.platform.currentTimeInfo
+import com.phamtunglam.lamity.feature.localization.domain.AppLocale
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import kotlin.math.roundToLong
 import kotlin.random.Random
@@ -126,19 +127,24 @@ class ToolRegistry(private val ctx: ToolContext) {
         id = ToolIds.SET_LANGUAGE,
         displayName = "Change language",
         description = "Change the app interface language. Supported: 'en' (English), " +
-            "'vi' (Tiếng Việt), 'es' (Español).",
+            "'vi' (Tiếng Việt), 'es' (Español), or 'system' to follow the device language.",
         parameters = objectSchema(required = listOf("language")) {
-            put("language", propSchema("string", "One of: en, vi, es.", enum = listOf("en", "vi", "es")))
+            put(
+                "language",
+                propSchema("string", "One of: en, vi, es, system.", enum = listOf("en", "vi", "es", "system")),
+            )
         },
     ) { args, ctx ->
-        val lang = args.stringOrNull("language")?.lowercase()
-        if (lang !in setOf("en", "vi", "es")) {
-            return@BuiltinTool error("language must be en, vi or es")
+        val requested = args.stringOrNull("language")?.lowercase()
+        val locale = when (requested) {
+            "system" -> null
+            else -> AppLocale.entries.firstOrNull { it.bcp47 == requested }
+                ?: return@BuiltinTool error("language must be en, vi, es or system")
         }
-        ctx.scope.launch { ctx.settings.setLanguage(lang!!) }
+        ctx.scope.launch { ctx.localeStore.setLocale(locale) }
         buildJsonObject {
             put("ok", true)
-            put("language", lang)
+            put("language", locale?.bcp47 ?: "system")
         }
     }
 

@@ -15,8 +15,17 @@ import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.formatEta
 import com.phamtunglam.lamity.core.presentation.designSystem.formatPercent
 import com.phamtunglam.lamity.core.presentation.designSystem.formatSpeed
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.cancel
+import com.phamtunglam.lamity.shared.resources.dismiss
+import com.phamtunglam.lamity.shared.resources.download_queued
+import com.phamtunglam.lamity.shared.resources.pause
+import com.phamtunglam.lamity.shared.resources.paused
+import com.phamtunglam.lamity.shared.resources.resume
+import com.phamtunglam.lamity.shared.resources.retry
+import com.phamtunglam.lamity.shared.resources.verifying
+import org.jetbrains.compose.resources.stringResource
 
 /** Transfer status block of a model card: progress, speed/ETA and controls. */
 @Composable
@@ -28,12 +37,11 @@ internal fun DownloadPanel(
     onRetry: () -> Unit,
     onDismissError: () -> Unit,
 ) {
-    val str = LocalStrings.current
     when (status) {
         is ModelStatus.Queued -> {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            StatusRow(label = str.downloadQueued) {
-                TextButton(onClick = onCancel) { Text(str.cancel) }
+            StatusRow(label = stringResource(Res.string.download_queued)) {
+                TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
         is ModelStatus.Downloading -> {
@@ -46,20 +54,20 @@ internal fun DownloadPanel(
                 label = formatPercent(status.downloadedBytes, status.totalBytes) +
                     if (rate.isNotEmpty()) "\n$rate" else "",
             ) {
-                TextButton(onClick = onPause) { Text(str.pause) }
-                TextButton(onClick = onCancel) { Text(str.cancel) }
+                TextButton(onClick = onPause) { Text(stringResource(Res.string.pause)) }
+                TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
         is ModelStatus.Paused -> {
             ProgressBar(status.downloadedBytes, status.totalBytes)
-            StatusRow(label = "${str.paused} • ${formatPercent(status.downloadedBytes, status.totalBytes)}") {
-                TextButton(onClick = onResume) { Text(str.resume) }
-                TextButton(onClick = onCancel) { Text(str.cancel) }
+            StatusRow(label = "${stringResource(Res.string.paused)} • ${formatPercent(status.downloadedBytes, status.totalBytes)}") {
+                TextButton(onClick = onResume) { Text(stringResource(Res.string.resume)) }
+                TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
         is ModelStatus.Verifying -> {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            StatusRow(label = str.verifying) {}
+            StatusRow(label = stringResource(Res.string.verifying)) {}
         }
         is ModelStatus.Failed -> {
             Text(
@@ -68,8 +76,8 @@ internal fun DownloadPanel(
                 color = MaterialTheme.colorScheme.error,
             )
             Row {
-                TextButton(onClick = onRetry) { Text(str.retry) }
-                TextButton(onClick = onDismissError) { Text(str.dismiss) }
+                TextButton(onClick = onRetry) { Text(stringResource(Res.string.retry)) }
+                TextButton(onClick = onDismissError) { Text(stringResource(Res.string.dismiss)) }
             }
         }
         ModelStatus.NotDownloaded, ModelStatus.Downloaded -> Unit // handled by the card itself

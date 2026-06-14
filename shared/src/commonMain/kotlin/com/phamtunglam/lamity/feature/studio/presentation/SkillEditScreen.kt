@@ -21,7 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.enabled
+import com.phamtunglam.lamity.shared.resources.name_required
+import com.phamtunglam.lamity.shared.resources.new_skill
+import com.phamtunglam.lamity.shared.resources.save
+import com.phamtunglam.lamity.shared.resources.skill_description
+import com.phamtunglam.lamity.shared.resources.skill_instructions
+import com.phamtunglam.lamity.shared.resources.skill_name
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -31,7 +39,6 @@ fun SkillEditScreen(
     onBack: () -> Unit,
     viewModel: SkillEditViewModel = koinViewModel { parametersOf(skillId) },
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
 
     // Navigation is driven by state: the ViewModel flags the save as done.
@@ -40,10 +47,10 @@ fun SkillEditScreen(
     }
 
     SubScreenScaffold(
-        title = ui.existingName ?: str.newSkill,
+        title = ui.existingName ?: stringResource(Res.string.new_skill),
         onBack = onBack,
         actions = {
-            TextButton(onClick = viewModel::save, enabled = ui.canSave) { Text(str.save) }
+            TextButton(onClick = viewModel::save, enabled = ui.canSave) { Text(stringResource(Res.string.save)) }
         },
     ) {
         Column(
@@ -53,9 +60,9 @@ fun SkillEditScreen(
             OutlinedTextField(
                 value = ui.name,
                 onValueChange = viewModel::setName,
-                label = { Text(str.skillName) },
+                label = { Text(stringResource(Res.string.skill_name)) },
                 supportingText = if (ui.name.isBlank()) {
-                    { Text(str.nameRequired) }
+                    { Text(stringResource(Res.string.name_required)) }
                 } else null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -63,25 +70,25 @@ fun SkillEditScreen(
             OutlinedTextField(
                 value = ui.description,
                 onValueChange = viewModel::setDescription,
-                label = { Text(str.skillDescription) },
+                label = { Text(stringResource(Res.string.skill_description)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = ui.instructions,
                 onValueChange = viewModel::setInstructions,
-                label = { Text(str.skillInstructions) },
+                label = { Text(stringResource(Res.string.skill_instructions)) },
                 minLines = 6,
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(str.enabled, Modifier.weight(1f))
+                Text(stringResource(Res.string.enabled), Modifier.weight(1f))
                 Switch(checked = ui.enabled, onCheckedChange = viewModel::setEnabled)
             }
             Button(
                 onClick = viewModel::save,
                 enabled = ui.canSave,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(str.save) }
+            ) { Text(stringResource(Res.string.save)) }
         }
     }
 }

@@ -21,9 +21,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.presentation.components.AddCustomModelDialog
 import com.phamtunglam.lamity.feature.models.presentation.components.ModelCard
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.add_custom_model
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -32,7 +34,6 @@ fun ModelsScreen(
     onConfigureModel: (modelId: String) -> Unit,
     viewModel: ModelsViewModel = koinViewModel(),
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -54,7 +55,7 @@ fun ModelsScreen(
         ExtendedFloatingActionButton(
             onClick = { showAddDialog = true },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text(str.addCustomModel) },
+            text = { Text(stringResource(Res.string.add_custom_model)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
     }

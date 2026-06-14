@@ -37,10 +37,6 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
 
-    fun setLanguage(language: String) {
-        viewModelScope.launch { settingsRepository.setLanguage(language) }
-    }
-
     fun setWifiOnlyDownloads(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setWifiOnlyDownloads(enabled) }
     }

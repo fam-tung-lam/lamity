@@ -8,7 +8,6 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 @Serializable
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val language: String = "en",
     /** Global tool toggles; a missing key means enabled. */
     val toolEnabled: Map<String, Boolean> = emptyMap(),
     val lastModelId: String? = null,

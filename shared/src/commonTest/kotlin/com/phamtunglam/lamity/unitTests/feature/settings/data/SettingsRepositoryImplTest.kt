@@ -1,82 +1,69 @@
 package com.phamtunglam.lamity.unitTests.feature.settings.data
 
-import com.phamtunglam.lamity.db.daos.SettingsDao
-import com.phamtunglam.lamity.db.entities.SettingsEntity
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepositoryImpl
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import com.phamtunglam.lamity.fixtures.advanceUntilIdle
 import com.phamtunglam.lamity.fixtures.detachedTestScope
-import dev.mokkery.answering.calls
-import dev.mokkery.answering.returns
-import dev.mokkery.every
-import dev.mokkery.everySuspend
-import dev.mokkery.matcher.any
-import dev.mokkery.mock
-import dev.mokkery.resetAnswers
-import dev.mokkery.resetCalls
-import dev.mokkery.verifySuspend
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-private fun fakeSettingsEntity(
-    themeMode: String = "SYSTEM",
-    language: String = "en",
-    toolEnabledJson: String = "{}",
+/** In-memory [DataStore] mirroring preferences DataStore read-modify-write semantics. */
+private class FakePreferencesDataStore(initial: Preferences) : DataStore<Preferences> {
+    private val state = MutableStateFlow(initial)
+    override val data: Flow<Preferences> = state
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
+        val updated = transform(state.value)
+        state.value = updated
+        return updated
+    }
+}
+
+private fun storedPreferences(
+    themeMode: String? = null,
+    toolEnabledJson: String? = null,
     lastModelId: String? = null,
-    lastAgentId: String? = null,
-) = SettingsEntity(
-    id = 0,
-    themeMode = themeMode,
-    language = language,
-    toolEnabledJson = toolEnabledJson,
-    lastModelId = lastModelId,
-    lastAgentId = lastAgentId,
-)
+): Preferences = mutablePreferencesOf().apply {
+    themeMode?.let { this[stringPreferencesKey("theme_mode")] = it }
+    toolEnabledJson?.let { this[stringPreferencesKey("tool_enabled")] = it }
+    lastModelId?.let { this[stringPreferencesKey("last_model_id")] = it }
+}
 
 class SettingsRepositoryImplTest : BehaviorSpec({
 
-    val dao = mock<SettingsDao>()
-
-    afterEach {
-        resetAnswers(dao)
-        resetCalls(dao)
-    }
-
-    // The database is the single source of truth: the mocked DAO is backed by
-    // a StateFlow that writes update and the repository observes.
-    suspend fun createRepository(initial: SettingsEntity?): SettingsRepository {
-        val backing = MutableStateFlow(initial)
-        every { dao.observe() } returns backing
-        everySuspend { dao.get() } calls { backing.value }
-        everySuspend { dao.upsert(any()) } calls { (entity: SettingsEntity) ->
-            backing.value = entity
-        }
-        val repository = SettingsRepositoryImpl(dao, detachedTestScope())
+    // The preferences DataStore is the single source of truth: the in-memory
+    // fake persists writes and the repository observes them back.
+    suspend fun createRepository(initial: Preferences = emptyPreferences()): SettingsRepository {
+        val repository = SettingsRepositoryImpl(FakePreferencesDataStore(initial), detachedTestScope())
         repository.awaitLoaded()
         return repository
     }
 
-    Given("a persisted settings row") {
+    Given("persisted settings") {
         When("the repository loads") {
             Then("it exposes the stored settings") {
                 val repository = createRepository(
-                    fakeSettingsEntity(
+                    storedPreferences(
                         themeMode = "DARK",
-                        language = "vi",
                         toolEnabledJson = """{"calculate":false}""",
                         lastModelId = "m1",
                     ),
                 )
 
                 repository.value.themeMode shouldBe ThemeMode.DARK
-                repository.value.language shouldBe "vi"
                 repository.value.toolEnabled shouldBe mapOf("calculate" to false)
+                repository.value.lastModelId shouldBe "m1"
             }
             Then("it treats tools without a stored toggle as enabled") {
                 val repository = createRepository(
-                    fakeSettingsEntity(toolEnabledJson = """{"calculate":false}"""),
+                    storedPreferences(toolEnabledJson = """{"calculate":false}"""),
                 )
 
                 repository.isToolEnabled("calculate") shouldBe false
@@ -87,31 +74,23 @@ class SettingsRepositoryImplTest : BehaviorSpec({
 
     Given("no persisted settings") {
         When("a setting is updated") {
-            Then("the change surfaces back through the database flow") {
-                val repository = createRepository(null)
+            Then("the change surfaces back through the settings flow") {
+                val repository = createRepository()
 
                 repository.setThemeMode(ThemeMode.LIGHT)
                 advanceUntilIdle()
 
                 repository.value.themeMode shouldBe ThemeMode.LIGHT
             }
-            Then("it writes the new row through to the database") {
-                val repository = createRepository(null)
-
-                repository.setLanguage("vi")
-                advanceUntilIdle()
-
-                verifySuspend { dao.upsert(any()) }
-            }
             Then("successive updates never overwrite each other") {
-                val repository = createRepository(null)
+                val repository = createRepository()
 
-                repository.setLanguage("vi")
                 repository.setThemeMode(ThemeMode.DARK)
+                repository.setWifiOnlyDownloads(true)
                 advanceUntilIdle()
 
-                repository.value.language shouldBe "vi"
                 repository.value.themeMode shouldBe ThemeMode.DARK
+                repository.value.wifiOnlyDownloads shouldBe true
             }
         }
     }

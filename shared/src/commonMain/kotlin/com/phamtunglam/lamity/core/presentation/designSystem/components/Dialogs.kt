@@ -5,7 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.cancel
+import org.jetbrains.compose.resources.stringResource
 
 /** Destructive-action confirmation; [onDismiss] also closes after confirming. */
 @Composable
@@ -26,7 +28,7 @@ fun ConfirmDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(LocalStrings.current.cancel) }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }

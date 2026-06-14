@@ -4,6 +4,7 @@ import androidx.room3.AutoMigration
 import androidx.room3.ConstructedBy
 import androidx.room3.Database
 import androidx.room3.DeleteColumn
+import androidx.room3.DeleteTable
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.room3.migration.AutoMigrationSpec
@@ -11,13 +12,11 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.phamtunglam.lamity.db.daos.AgentsDao
 import com.phamtunglam.lamity.db.daos.ConversationsDao
 import com.phamtunglam.lamity.db.daos.ModelsDao
-import com.phamtunglam.lamity.db.daos.SettingsDao
 import com.phamtunglam.lamity.db.daos.SkillsDao
 import com.phamtunglam.lamity.db.entities.AgentEntity
 import com.phamtunglam.lamity.db.entities.ConversationEntity
 import com.phamtunglam.lamity.db.entities.MessageEntity
 import com.phamtunglam.lamity.db.entities.ModelEntity
-import com.phamtunglam.lamity.db.entities.SettingsEntity
 import com.phamtunglam.lamity.db.entities.SkillEntity
 import kotlinx.coroutines.Dispatchers
 
@@ -25,18 +24,18 @@ const val LAMITY_DB_FILE_NAME = "lamity.db"
 
 @Database(
     entities = [
-        SettingsEntity::class,
         ModelEntity::class,
         AgentEntity::class,
         SkillEntity::class,
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // settings.wifiOnlyDownloads added
         AutoMigration(from = 2, to = 3, spec = LamityDatabase.DropSettingsHfToken::class), // settings.hfToken removed
+        AutoMigration(from = 3, to = 4, spec = LamityDatabase.DropSettingsTable::class), // settings moved to DataStore
     ],
 )
 @ConstructedBy(LamityDatabaseConstructor::class)
@@ -45,7 +44,10 @@ abstract class LamityDatabase : RoomDatabase() {
     @DeleteColumn(tableName = "settings", columnName = "hfToken")
     class DropSettingsHfToken : AutoMigrationSpec
 
-    abstract fun settingsDao(): SettingsDao
+    /** Drops the legacy `settings` table; app settings now live in a preferences DataStore. */
+    @DeleteTable(tableName = "settings")
+    class DropSettingsTable : AutoMigrationSpec
+
     abstract fun modelsDao(): ModelsDao
     abstract fun agentsDao(): AgentsDao
     abstract fun skillsDao(): SkillsDao

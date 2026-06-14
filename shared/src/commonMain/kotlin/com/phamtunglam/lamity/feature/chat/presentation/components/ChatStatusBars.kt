@@ -16,14 +16,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.dismiss
+import com.phamtunglam.lamity.shared.resources.loading_model
+import org.jetbrains.compose.resources.stringResource
 
 /** Indeterminate banner shown while the native engine loads a model. */
 @Composable
 internal fun EngineLoadingBar() {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
         Text(
-            LocalStrings.current.loadingModel,
+            stringResource(Res.string.loading_model),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -49,7 +52,7 @@ internal fun ChatErrorBanner(error: String, onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onDismiss) { Text(LocalStrings.current.dismiss) }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.dismiss)) }
         }
     }
 }

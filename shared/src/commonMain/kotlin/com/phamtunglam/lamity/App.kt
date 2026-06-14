@@ -18,10 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -32,8 +30,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.AppTheme
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
-import com.phamtunglam.lamity.core.presentation.i18n.stringsFor
+import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnvironment
+import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
 import com.phamtunglam.lamity.feature.chat.presentation.ChatScreen
 import com.phamtunglam.lamity.feature.history.presentation.HistoryScreen
 import com.phamtunglam.lamity.feature.models.presentation.ModelConfigScreen
@@ -53,15 +51,24 @@ import com.phamtunglam.lamity.core.presentation.navigation.SkillEditKey
 import com.phamtunglam.lamity.core.presentation.navigation.StudioKey
 import com.phamtunglam.lamity.core.presentation.navigation.TabKey
 import com.phamtunglam.lamity.core.presentation.navigation.navSavedStateConfiguration
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.tab_chat
+import com.phamtunglam.lamity.shared.resources.tab_history
+import com.phamtunglam.lamity.shared.resources.tab_models
+import com.phamtunglam.lamity.shared.resources.tab_settings
+import com.phamtunglam.lamity.shared.resources.tab_studio
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun App() {
     val settingsRepository = koinInject<SettingsRepository>()
     val settings by settingsRepository.settings.collectAsState()
-    val strings = remember(settings.language) { stringsFor(settings.language) }
+    val localeViewModel = koinViewModel<LocalizationViewModel>()
+    val localeState by localeViewModel.state.collectAsState()
 
-    CompositionLocalProvider(LocalStrings provides strings) {
+    AppLocaleEnvironment(locale = localeState.current) {
         AppTheme(settings.themeMode) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 val backStack = rememberNavBackStack(navSavedStateConfiguration, ChatKey)
@@ -76,11 +83,11 @@ fun App() {
                         if (backStack.size == 1) {
                             NavigationBar {
                                 val current = backStack.firstOrNull()
-                                TabItem(current, ChatKey, strings.tabChat, Icons.AutoMirrored.Filled.Send, ::switchTab)
-                                TabItem(current, ModelsKey, strings.tabModels, Icons.Default.Home, ::switchTab)
-                                TabItem(current, HistoryKey, strings.tabHistory, Icons.Default.DateRange, ::switchTab)
-                                TabItem(current, StudioKey, strings.tabStudio, Icons.Default.Build, ::switchTab)
-                                TabItem(current, SettingsKey, strings.tabSettings, Icons.Default.Settings, ::switchTab)
+                                TabItem(current, ChatKey, stringResource(Res.string.tab_chat), Icons.AutoMirrored.Filled.Send, ::switchTab)
+                                TabItem(current, ModelsKey, stringResource(Res.string.tab_models), Icons.Default.Home, ::switchTab)
+                                TabItem(current, HistoryKey, stringResource(Res.string.tab_history), Icons.Default.DateRange, ::switchTab)
+                                TabItem(current, StudioKey, stringResource(Res.string.tab_studio), Icons.Default.Build, ::switchTab)
+                                TabItem(current, SettingsKey, stringResource(Res.string.tab_settings), Icons.Default.Settings, ::switchTab)
                             }
                         }
                     },

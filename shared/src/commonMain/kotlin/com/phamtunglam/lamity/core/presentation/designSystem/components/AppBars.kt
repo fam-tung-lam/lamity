@@ -13,7 +13,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.back
+import org.jetbrains.compose.resources.stringResource
 
 /** Pushed-screen scaffold: top app bar with back navigation over [content]. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +33,7 @@ fun SubScreenScaffold(
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = LocalStrings.current.back,
+                        contentDescription = stringResource(Res.string.back),
                     )
                 }
             },

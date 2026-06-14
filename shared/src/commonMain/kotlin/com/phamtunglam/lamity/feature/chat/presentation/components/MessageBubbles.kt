@@ -30,8 +30,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.LamityTheme
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.bubbleShape
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.thinking_label
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 @Composable
@@ -54,10 +56,9 @@ internal fun UserBubble(text: String) {
 
 @Composable
 internal fun AssistantBubble(message: ChatMessage) {
-    val str = LocalStrings.current
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (message.thought.isNotBlank()) {
-            ThoughtBlock(message.thought, str.thinkingLabel, initiallyExpanded = false)
+            ThoughtBlock(message.thought, stringResource(Res.string.thinking_label), initiallyExpanded = false)
         }
         if (message.content.isNotBlank()) {
             AssistantText(message.content)
@@ -74,10 +75,9 @@ internal fun AssistantBubble(message: ChatMessage) {
 
 @Composable
 internal fun StreamingBubble(text: String, thought: String) {
-    val str = LocalStrings.current
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (thought.isNotBlank()) {
-            ThoughtBlock(thought, str.thinkingLabel, initiallyExpanded = true)
+            ThoughtBlock(thought, stringResource(Res.string.thinking_label), initiallyExpanded = true)
         }
         if (text.isBlank()) {
             Surface(

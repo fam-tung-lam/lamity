@@ -13,9 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDropdown
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.studio.domain.Agent
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.agent_label
+import com.phamtunglam.lamity.shared.resources.model_label
+import com.phamtunglam.lamity.shared.resources.new_chat
+import com.phamtunglam.lamity.shared.resources.no_agent
+import org.jetbrains.compose.resources.stringResource
 
 /** Agent and model pickers plus the new-chat action. */
 @Composable
@@ -28,21 +33,20 @@ internal fun ChatHeader(
     onSelectModel: (String) -> Unit,
     onNewChat: () -> Unit,
 ) {
-    val str = LocalStrings.current
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SimpleDropdown(
-            label = str.agentLabel,
-            options = listOf<Pair<String?, String>>(null to str.noAgent) +
+            label = stringResource(Res.string.agent_label),
+            options = listOf<Pair<String?, String>>(null to stringResource(Res.string.no_agent)) +
                 agents.map { it.id as String? to it.name },
             selectedId = selectedAgentId,
             onSelect = onSelectAgent,
             modifier = Modifier.weight(1f, fill = false),
         )
         SimpleDropdown(
-            label = str.modelLabel,
+            label = stringResource(Res.string.model_label),
             options = models.map { it.id as String? to it.name },
             selectedId = selectedModelId,
             onSelect = { it?.let(onSelectModel) },
@@ -50,7 +54,7 @@ internal fun ChatHeader(
         )
         Spacer(Modifier.weight(0.01f))
         IconButton(onClick = onNewChat) {
-            Icon(Icons.Default.Add, contentDescription = str.newChat)
+            Icon(Icons.Default.Add, contentDescription = stringResource(Res.string.new_chat))
         }
     }
 }

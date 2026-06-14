@@ -86,6 +86,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
+
+            implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.squareup.okio)
         }
         commonTest.dependencies {
             implementation(libs.kotest.assertions.core)
@@ -96,6 +99,11 @@ kotlin {
             implementation(libs.kotest.runner.junit5)
         }
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.phamtunglam.lamity.shared.resources"
 }
 
 dependencies {

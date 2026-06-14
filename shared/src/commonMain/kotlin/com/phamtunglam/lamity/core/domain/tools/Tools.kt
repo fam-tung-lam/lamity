@@ -1,6 +1,7 @@
 package com.phamtunglam.lamity.core.domain.tools
 
 import com.phamtunglam.lamity.core.domain.platform.PlatformInfo
+import com.phamtunglam.lamity.feature.localization.data.AppLocaleStore
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.studio.domain.Skill
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,8 @@ class ToolContext(
     /** App-level scope: tools run on a synchronous native callback, so writes
      *  that hit the data layer are launched here instead of blocking it. */
     val scope: CoroutineScope,
+    /** Persists the app locale; backs the set_language tool. */
+    val localeStore: AppLocaleStore,
     /** Skills attached to the active chat session; backs the load_skill tool. */
     var activeSkills: () -> List<Skill> = { emptyList() },
 )

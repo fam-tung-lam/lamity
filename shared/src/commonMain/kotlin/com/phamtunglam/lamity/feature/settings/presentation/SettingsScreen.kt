@@ -24,17 +24,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDropdown
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.feature.localization.domain.AppLocale
+import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.about
+import com.phamtunglam.lamity.shared.resources.downloads_section
+import com.phamtunglam.lamity.shared.resources.language
+import com.phamtunglam.lamity.shared.resources.language_system
+import com.phamtunglam.lamity.shared.resources.theme
+import com.phamtunglam.lamity.shared.resources.theme_dark
+import com.phamtunglam.lamity.shared.resources.theme_light
+import com.phamtunglam.lamity.shared.resources.theme_system
+import com.phamtunglam.lamity.shared.resources.wifi_only
+import com.phamtunglam.lamity.shared.resources.wifi_only_hint
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
+    localeViewModel: LocalizationViewModel = koinViewModel(),
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     val settings = ui.settings
+    val localeState by localeViewModel.state.collectAsState()
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -42,13 +56,13 @@ fun SettingsScreen(
     ) {
         // Theme (also switchable by the set_theme tool)
         Column {
-            Text(str.theme, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.theme), style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.padding(3.dp))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 val modes = listOf(
-                    ThemeMode.LIGHT to str.themeLight,
-                    ThemeMode.DARK to str.themeDark,
-                    ThemeMode.SYSTEM to str.themeSystem,
+                    ThemeMode.LIGHT to stringResource(Res.string.theme_light),
+                    ThemeMode.DARK to stringResource(Res.string.theme_dark),
+                    ThemeMode.SYSTEM to stringResource(Res.string.theme_system),
                 )
                 modes.forEachIndexed { index, (mode, label) ->
                     SegmentedButton(
@@ -62,27 +76,32 @@ fun SettingsScreen(
 
         // Language (also switchable by the set_language tool)
         Column {
-            Text(str.language, style = MaterialTheme.typography.titleSmall)
+            val languageLabel = stringResource(Res.string.language)
+            Text(languageLabel, style = MaterialTheme.typography.titleSmall)
+            val options = buildList {
+                add(null to stringResource(Res.string.language_system))
+                AppLocale.entries.forEach { locale -> add(locale.bcp47 to locale.displayName) }
+            }
             SimpleDropdown(
-                label = str.language,
-                options = listOf<Pair<String?, String>>(
-                    "en" to "English",
-                    "vi" to "Tiếng Việt",
-                    "es" to "Español",
-                ),
-                selectedId = settings.language,
-                onSelect = { it?.let(viewModel::setLanguage) },
+                label = languageLabel,
+                options = options,
+                selectedId = localeState.current?.bcp47,
+                onSelect = { tag ->
+                    localeViewModel.onLocaleSelected(
+                        tag?.let { bcp47 -> AppLocale.entries.firstOrNull { it.bcp47 == bcp47 } },
+                    )
+                },
             )
         }
 
         // Downloads
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(str.downloadsSection, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.downloads_section), style = MaterialTheme.typography.titleSmall)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(str.wifiOnly, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(Res.string.wifi_only), style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        str.wifiOnlyHint,
+                        stringResource(Res.string.wifi_only_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -96,7 +115,7 @@ fun SettingsScreen(
 
         // About
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(str.about, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.about), style = MaterialTheme.typography.titleSmall)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(

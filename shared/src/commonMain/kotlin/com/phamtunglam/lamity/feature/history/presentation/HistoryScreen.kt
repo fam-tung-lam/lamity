@@ -33,7 +33,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.ConfirmDialog
 import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.cancel
+import com.phamtunglam.lamity.shared.resources.confirm_delete_title
+import com.phamtunglam.lamity.shared.resources.delete
+import com.phamtunglam.lamity.shared.resources.delete_conversation_q
+import com.phamtunglam.lamity.shared.resources.history_empty_body
+import com.phamtunglam.lamity.shared.resources.history_empty_title
+import com.phamtunglam.lamity.shared.resources.new_chat
+import com.phamtunglam.lamity.shared.resources.no_agent
+import com.phamtunglam.lamity.shared.resources.rename
+import com.phamtunglam.lamity.shared.resources.rename_conversation
+import com.phamtunglam.lamity.shared.resources.save
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -41,7 +53,6 @@ fun HistoryScreen(
     onOpenChat: () -> Unit,
     viewModel: HistoryViewModel = koinViewModel(),
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
 
     if (ui.rows.isEmpty()) {
@@ -50,7 +61,7 @@ fun HistoryScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            EmptyState(str.historyEmptyTitle, str.historyEmptyBody)
+            EmptyState(stringResource(Res.string.history_empty_title), stringResource(Res.string.history_empty_body))
         }
         return
     }
@@ -81,7 +92,6 @@ private fun ConversationCard(
     onRename: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    val str = LocalStrings.current
     var menuOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var deleteOpen by remember { mutableStateOf(false) }
@@ -96,11 +106,11 @@ private fun ConversationCard(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    row.conversation.title.ifBlank { str.newChat },
+                    row.conversation.title.ifBlank { stringResource(Res.string.new_chat) },
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    "${row.agentName ?: str.noAgent} • ${row.modelName} • ${row.updatedAtText}",
+                    "${row.agentName ?: stringResource(Res.string.no_agent)} • ${row.modelName} • ${row.updatedAtText}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -111,11 +121,11 @@ private fun ConversationCard(
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
-                        text = { Text(str.rename) },
+                        text = { Text(stringResource(Res.string.rename)) },
                         onClick = { menuOpen = false; renameOpen = true },
                     )
                     DropdownMenuItem(
-                        text = { Text(str.delete, color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(Res.string.delete), color = MaterialTheme.colorScheme.error) },
                         onClick = { menuOpen = false; deleteOpen = true },
                     )
                 }
@@ -127,7 +137,7 @@ private fun ConversationCard(
         var title by remember { mutableStateOf(row.conversation.title) }
         AlertDialog(
             onDismissRequest = { renameOpen = false },
-            title = { Text(str.renameConversation) },
+            title = { Text(stringResource(Res.string.rename_conversation)) },
             text = {
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true)
             },
@@ -135,19 +145,19 @@ private fun ConversationCard(
                 TextButton(onClick = {
                     onRename(title)
                     renameOpen = false
-                }) { Text(str.save) }
+                }) { Text(stringResource(Res.string.save)) }
             },
             dismissButton = {
-                TextButton(onClick = { renameOpen = false }) { Text(str.cancel) }
+                TextButton(onClick = { renameOpen = false }) { Text(stringResource(Res.string.cancel)) }
             },
         )
     }
 
     if (deleteOpen) {
         ConfirmDialog(
-            title = str.confirmDeleteTitle,
-            text = str.deleteConversationQ,
-            confirmLabel = str.delete,
+            title = stringResource(Res.string.confirm_delete_title),
+            text = stringResource(Res.string.delete_conversation_q),
+            confirmLabel = stringResource(Res.string.delete),
             onConfirm = onDelete,
             onDismiss = { deleteOpen = false },
         )

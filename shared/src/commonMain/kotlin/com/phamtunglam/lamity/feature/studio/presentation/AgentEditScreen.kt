@@ -22,7 +22,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.agent_description
+import com.phamtunglam.lamity.shared.resources.agent_name
+import com.phamtunglam.lamity.shared.resources.attached_skills
+import com.phamtunglam.lamity.shared.resources.attached_tools
+import com.phamtunglam.lamity.shared.resources.disabled_suffix
+import com.phamtunglam.lamity.shared.resources.name_required
+import com.phamtunglam.lamity.shared.resources.new_agent
+import com.phamtunglam.lamity.shared.resources.save
+import com.phamtunglam.lamity.shared.resources.system_prompt
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -33,7 +43,6 @@ fun AgentEditScreen(
     onBack: () -> Unit,
     viewModel: AgentEditViewModel = koinViewModel { parametersOf(agentId) },
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     val skills by viewModel.availableSkills.collectAsState()
 
@@ -43,10 +52,10 @@ fun AgentEditScreen(
     }
 
     SubScreenScaffold(
-        title = ui.existingName ?: str.newAgent,
+        title = ui.existingName ?: stringResource(Res.string.new_agent),
         onBack = onBack,
         actions = {
-            TextButton(onClick = viewModel::save, enabled = ui.canSave) { Text(str.save) }
+            TextButton(onClick = viewModel::save, enabled = ui.canSave) { Text(stringResource(Res.string.save)) }
         },
     ) {
         Column(
@@ -56,9 +65,9 @@ fun AgentEditScreen(
             OutlinedTextField(
                 value = ui.name,
                 onValueChange = viewModel::setName,
-                label = { Text(str.agentName) },
+                label = { Text(stringResource(Res.string.agent_name)) },
                 supportingText = if (ui.name.isBlank()) {
-                    { Text(str.nameRequired) }
+                    { Text(stringResource(Res.string.name_required)) }
                 } else null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -66,18 +75,18 @@ fun AgentEditScreen(
             OutlinedTextField(
                 value = ui.description,
                 onValueChange = viewModel::setDescription,
-                label = { Text(str.agentDescription) },
+                label = { Text(stringResource(Res.string.agent_description)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = ui.systemPrompt,
                 onValueChange = viewModel::setSystemPrompt,
-                label = { Text(str.systemPrompt) },
+                label = { Text(stringResource(Res.string.system_prompt)) },
                 minLines = 4,
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Text(str.attachedTools, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.attached_tools), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 viewModel.availableTools.forEach { tool ->
                     FilterChip(
@@ -88,14 +97,14 @@ fun AgentEditScreen(
                 }
             }
 
-            Text(str.attachedSkills, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.attached_skills), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 skills.forEach { skill ->
                     FilterChip(
                         selected = skill.id in ui.selectedSkillIds,
                         onClick = { viewModel.toggleSkill(skill.id) },
                         label = {
-                            Text(skill.name + if (!skill.enabled) " ${str.disabledSuffix}" else "")
+                            Text(skill.name + if (!skill.enabled) " ${stringResource(Res.string.disabled_suffix)}" else "")
                         },
                     )
                 }
@@ -105,7 +114,7 @@ fun AgentEditScreen(
                 onClick = viewModel::save,
                 enabled = ui.canSave,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(str.save) }
+            ) { Text(stringResource(Res.string.save)) }
         }
     }
 }

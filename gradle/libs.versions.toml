@@ -9,6 +9,7 @@ androidx-lifecycle = "2.11.0-beta01"
 androidx-navigation3 = "1.1.1"
 androidx-work = "2.11.2"
 composeMultiplatform = "1.11.1"
+datastore = "1.2.1"
 jb-navigation3 = "1.1.1"
 kermit = "2.1.0"
 koin = "4.2.1"
@@ -22,6 +23,7 @@ litertlm = "0.13.1"
 material3 = "1.11.0-alpha07"
 materialIconsCore = "1.7.3"
 mokkery = "3.4.1"
+okio = "3.9.1"
 room3 = "3.0.0-alpha06"
 sentryKmp = "0.27.0"
 sqlite = "2.7.0-alpha06"
@@ -35,6 +37,8 @@ androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecyc
 androidx-lifecycle-viewmodelNavigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "androidx-work" }
+androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
+squareup-okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }

@@ -33,9 +33,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.ConfirmDialog
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.studio.domain.Agent
 import com.phamtunglam.lamity.feature.studio.domain.Skill
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.agents_caption
+import com.phamtunglam.lamity.shared.resources.agents_tab
+import com.phamtunglam.lamity.shared.resources.confirm_delete_title
+import com.phamtunglam.lamity.shared.resources.delete
+import com.phamtunglam.lamity.shared.resources.delete_agent_q
+import com.phamtunglam.lamity.shared.resources.delete_skill_q
+import com.phamtunglam.lamity.shared.resources.edit
+import com.phamtunglam.lamity.shared.resources.new_agent
+import com.phamtunglam.lamity.shared.resources.new_skill
+import com.phamtunglam.lamity.shared.resources.skills_caption
+import com.phamtunglam.lamity.shared.resources.skills_count
+import com.phamtunglam.lamity.shared.resources.skills_tab
+import com.phamtunglam.lamity.shared.resources.tools_caption
+import com.phamtunglam.lamity.shared.resources.tools_count
+import com.phamtunglam.lamity.shared.resources.tools_tab
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -44,7 +60,6 @@ fun StudioScreen(
     onEditSkill: (skillId: String?) -> Unit,
     viewModel: StudioViewModel = koinViewModel(),
 ) {
-    val str = LocalStrings.current
     val ui by viewModel.uiState.collectAsState()
     var tabIndex by remember { mutableStateOf(0) }
 
@@ -53,17 +68,17 @@ fun StudioScreen(
             Tab(
                 selected = tabIndex == 0,
                 onClick = { tabIndex = 0 },
-                text = { Text(str.agentsTab) },
+                text = { Text(stringResource(Res.string.agents_tab)) },
             )
             Tab(
                 selected = tabIndex == 1,
                 onClick = { tabIndex = 1 },
-                text = { Text(str.skillsTab) },
+                text = { Text(stringResource(Res.string.skills_tab)) },
             )
             Tab(
                 selected = tabIndex == 2,
                 onClick = { tabIndex = 2 },
-                text = { Text(str.toolsTab) },
+                text = { Text(stringResource(Res.string.tools_tab)) },
             )
         }
         when (tabIndex) {
@@ -92,11 +107,9 @@ private fun AgentsTab(
     viewModel: StudioViewModel,
     onEditAgent: (agentId: String?) -> Unit,
 ) {
-    val str = LocalStrings.current
-
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Caption(str.agentsCaption)
+            Caption(stringResource(Res.string.agents_caption))
             LazyColumn(
                 contentPadding = PaddingValues(12.dp, 0.dp, 12.dp, 96.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -113,7 +126,7 @@ private fun AgentsTab(
         ExtendedFloatingActionButton(
             onClick = { onEditAgent(null) },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text(str.newAgent) },
+            text = { Text(stringResource(Res.string.new_agent)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
     }
@@ -121,7 +134,6 @@ private fun AgentsTab(
 
 @Composable
 private fun AgentCard(agent: Agent, onEdit: () -> Unit, onDelete: () -> Unit) {
-    val str = LocalStrings.current
     var deleteOpen by remember { mutableStateOf(false) }
 
     Card(
@@ -142,18 +154,18 @@ private fun AgentCard(agent: Agent, onEdit: () -> Unit, onDelete: () -> Unit) {
                     )
                 }
                 Text(
-                    "${agent.toolIds.size} ${str.toolsCount} • ${agent.skillIds.size} ${str.skillsCount}",
+                    "${agent.toolIds.size} ${stringResource(Res.string.tools_count)} • ${agent.skillIds.size} ${stringResource(Res.string.skills_count)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
             IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = str.edit)
+                Icon(Icons.Default.Edit, contentDescription = stringResource(Res.string.edit))
             }
             IconButton(onClick = { deleteOpen = true }) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = str.delete,
+                    contentDescription = stringResource(Res.string.delete),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
@@ -162,9 +174,9 @@ private fun AgentCard(agent: Agent, onEdit: () -> Unit, onDelete: () -> Unit) {
 
     if (deleteOpen) {
         ConfirmDialog(
-            title = str.confirmDeleteTitle,
-            text = str.deleteAgentQ,
-            confirmLabel = str.delete,
+            title = stringResource(Res.string.confirm_delete_title),
+            text = stringResource(Res.string.delete_agent_q),
+            confirmLabel = stringResource(Res.string.delete),
             onConfirm = onDelete,
             onDismiss = { deleteOpen = false },
         )
@@ -179,11 +191,9 @@ private fun SkillsTab(
     viewModel: StudioViewModel,
     onEditSkill: (skillId: String?) -> Unit,
 ) {
-    val str = LocalStrings.current
-
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Caption(str.skillsCaption)
+            Caption(stringResource(Res.string.skills_caption))
             LazyColumn(
                 contentPadding = PaddingValues(12.dp, 0.dp, 12.dp, 96.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -201,7 +211,7 @@ private fun SkillsTab(
         ExtendedFloatingActionButton(
             onClick = { onEditSkill(null) },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text(str.newSkill) },
+            text = { Text(stringResource(Res.string.new_skill)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
     }
@@ -214,7 +224,6 @@ private fun SkillCard(
     onSetEnabled: (Boolean) -> Unit,
     onDelete: () -> Unit,
 ) {
-    val str = LocalStrings.current
     var deleteOpen by remember { mutableStateOf(false) }
 
     Card(
@@ -242,7 +251,7 @@ private fun SkillCard(
             IconButton(onClick = { deleteOpen = true }) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = str.delete,
+                    contentDescription = stringResource(Res.string.delete),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
@@ -251,9 +260,9 @@ private fun SkillCard(
 
     if (deleteOpen) {
         ConfirmDialog(
-            title = str.confirmDeleteTitle,
-            text = str.deleteSkillQ,
-            confirmLabel = str.delete,
+            title = stringResource(Res.string.confirm_delete_title),
+            text = stringResource(Res.string.delete_skill_q),
+            confirmLabel = stringResource(Res.string.delete),
             onConfirm = onDelete,
             onDismiss = { deleteOpen = false },
         )
@@ -264,10 +273,8 @@ private fun SkillCard(
 
 @Composable
 private fun ToolsTab(ui: StudioUiState, viewModel: StudioViewModel) {
-    val str = LocalStrings.current
-
     Column(Modifier.fillMaxSize()) {
-        Caption(str.toolsCaption)
+        Caption(stringResource(Res.string.tools_caption))
         LazyColumn(
             contentPadding = PaddingValues(12.dp, 0.dp, 12.dp, 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

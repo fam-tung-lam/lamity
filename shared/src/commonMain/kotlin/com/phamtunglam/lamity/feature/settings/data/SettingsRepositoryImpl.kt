@@ -1,7 +1,11 @@
 package com.phamtunglam.lamity.feature.settings.data
 
-import com.phamtunglam.lamity.db.daos.SettingsDao
-import com.phamtunglam.lamity.db.entities.SettingsEntity
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import co.touchlab.kermit.Logger
@@ -13,29 +17,27 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 
 /**
- * Settings live in one Room row (id = 0); the database is the single source
- * of truth. Reads observe the row reactively, writes go through the DAO and
- * surface back via the flow.
+ * Settings live in the app-wide preferences DataStore, the single source of
+ * truth. Reads observe the stored preferences reactively; writes go through an
+ * atomic read-modify-write ([DataStore.edit] is serialized) so rapid successive
+ * updates never overwrite each other.
  */
 class SettingsRepositoryImpl(
-    private val dao: SettingsDao,
+    private val dataStore: DataStore<Preferences>,
     scope: CoroutineScope,
 ) : SettingsRepository {
 
     private val log = Logger.withTag("SettingsRepository")
 
     private val loaded = CompletableDeferred<Unit>()
-    private val writeMutex = Mutex()
 
-    override val settings: StateFlow<AppSettings> = dao.observe()
-        .map { entity -> entity?.toDomain() ?: AppSettings() }
+    override val settings: StateFlow<AppSettings> = dataStore.data
+        .map { preferences -> preferences.toAppSettings() }
         .catch { e ->
             log.e(e) { "failed to observe settings" }
             emit(AppSettings())
@@ -46,37 +48,39 @@ class SettingsRepositoryImpl(
     override suspend fun awaitLoaded() = loaded.await()
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) {
-        // Serialized read-modify-write against the database (not the cached
-        // flow value) so rapid successive updates never overwrite each other.
-        writeMutex.withLock {
-            runCatching {
-                val current = dao.get()?.toDomain() ?: AppSettings()
-                dao.upsert(transform(current).toEntity())
-            }.onFailure { log.e(it) { "failed to persist settings" } }
-        }
+        runCatching {
+            dataStore.edit { preferences ->
+                preferences.writeAppSettings(transform(preferences.toAppSettings()))
+            }
+        }.onFailure { log.e(it) { "failed to persist settings" } }
     }
 }
+
+private val ThemeModeKey = stringPreferencesKey("theme_mode")
+private val ToolEnabledKey = stringPreferencesKey("tool_enabled")
+private val LastModelIdKey = stringPreferencesKey("last_model_id")
+private val LastAgentIdKey = stringPreferencesKey("last_agent_id")
+private val WifiOnlyDownloadsKey = booleanPreferencesKey("wifi_only_downloads")
 
 private val toolMapSerializer = MapSerializer(String.serializer(), Boolean.serializer())
 private val json = Json { ignoreUnknownKeys = true }
 
-private fun SettingsEntity.toDomain() = AppSettings(
-    themeMode = runCatching { ThemeMode.valueOf(themeMode) }.getOrDefault(ThemeMode.SYSTEM),
-    language = language,
-    toolEnabled = runCatching {
-        json.decodeFromString(toolMapSerializer, toolEnabledJson)
-    }.getOrDefault(emptyMap()),
-    lastModelId = lastModelId,
-    lastAgentId = lastAgentId,
-    wifiOnlyDownloads = wifiOnlyDownloads,
+private fun Preferences.toAppSettings() = AppSettings(
+    themeMode = this[ThemeModeKey]
+        ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
+        ?: ThemeMode.SYSTEM,
+    toolEnabled = this[ToolEnabledKey]
+        ?.let { runCatching { json.decodeFromString(toolMapSerializer, it) }.getOrNull() }
+        ?: emptyMap(),
+    lastModelId = this[LastModelIdKey],
+    lastAgentId = this[LastAgentIdKey],
+    wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
 )
 
-private fun AppSettings.toEntity() = SettingsEntity(
-    id = 0,
-    themeMode = themeMode.name,
-    language = language,
-    toolEnabledJson = json.encodeToString(toolMapSerializer, toolEnabled),
-    lastModelId = lastModelId,
-    lastAgentId = lastAgentId,
-    wifiOnlyDownloads = wifiOnlyDownloads,
-)
+private fun MutablePreferences.writeAppSettings(settings: AppSettings) {
+    this[ThemeModeKey] = settings.themeMode.name
+    this[ToolEnabledKey] = json.encodeToString(toolMapSerializer, settings.toolEnabled)
+    settings.lastModelId.let { if (it == null) remove(LastModelIdKey) else this[LastModelIdKey] = it }
+    settings.lastAgentId.let { if (it == null) remove(LastAgentIdKey) else this[LastAgentIdKey] = it }
+    this[WifiOnlyDownloadsKey] = settings.wifiOnlyDownloads
+}

@@ -1,8 +1,12 @@
 package com.phamtunglam.lamity.core.di
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.phamtunglam.lamity.core.BuildType
 import com.phamtunglam.lamity.core.LamityBuildConfig
+import com.phamtunglam.lamity.core.data.createPreferenceDataStore
 import com.phamtunglam.lamity.core.data.logging.CrashReportingLogWriter
+import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.crashreporter.LamityCrashReporter
 import com.phamtunglam.lamity.crashreporter.models.LamityCrashReporterConfig
 import com.phamtunglam.lamity.filesystem.LamityFileSystem
@@ -21,6 +25,9 @@ val coreModule: Module = module {
 
     // File system
     single<LamityFileSystem> { lamityFileSystem() }
+
+    // App-wide preferences DataStore (backs settings and localization)
+    single<DataStore<Preferences>> { createPreferenceDataStore(get<AppDirs>().dataDir) }
 
     // Logging
     single(createdAtStart = true) {

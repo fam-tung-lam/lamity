@@ -28,13 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.LamityTheme
-import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
+import com.phamtunglam.lamity.shared.resources.Res
+import com.phamtunglam.lamity.shared.resources.tool_call_label
+import org.jetbrains.compose.resources.stringResource
 
 /** Collapsed tool invocation; expands to the raw arguments and result JSON. */
 @Composable
 internal fun ToolCallCard(message: ChatMessage) {
-    val str = LocalStrings.current
     var expanded by remember { mutableStateOf(false) }
     Surface(
         color = LamityTheme.colors.toolBubble,
@@ -46,12 +47,12 @@ internal fun ToolCallCard(message: ChatMessage) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.Build,
-                    contentDescription = str.toolCallLabel,
+                    contentDescription = stringResource(Res.string.tool_call_label),
                     modifier = Modifier.size(16.dp),
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "${str.toolCallLabel}: ${message.toolName}",
+                    "${stringResource(Res.string.tool_call_label)}: ${message.toolName}",
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(Modifier.width(4.dp))

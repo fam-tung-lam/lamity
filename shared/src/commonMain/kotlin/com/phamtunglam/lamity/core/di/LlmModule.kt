@@ -8,7 +8,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val llmModule: Module = module {
-    single { ToolContext(get(), get(), get()) }
+    single { ToolContext(get(), get(), get(), get()) }
     single { ToolRegistry(get()) }
     single { ToolDispatcher(get()) }
     single { ModelRuntime(get()) }
