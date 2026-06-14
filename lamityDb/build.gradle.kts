@@ -28,6 +28,9 @@ kotlin {
             // Part of the ABI: DAO queries return kotlinx.coroutines Flow.
             api(libs.kotlinx.coroutines.core)
         }
+        iosMain.dependencies {
+            implementation(libs.squareup.okio)
+        }
     }
 }
 

@@ -8,10 +8,10 @@ import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.filesystem.LamityFileSystem
-import com.phamtunglam.lamity.filesystem.models.LamityPath
-import com.phamtunglam.lamity.filesystem.models.toLamityPath
 import co.touchlab.kermit.Logger
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class ModelDownloadManager(
     private val dirs: AppDirs,
-    private val fileSystem: LamityFileSystem,
+    private val fileSystem: FileSystem,
     private val settings: SettingsRepository,
     private val downloader: Downloader,
     models: ModelsRepository,
@@ -53,13 +53,13 @@ class ModelDownloadManager(
             .stateIn(scope, SharingStarted.Eagerly, emptyMap())
 
     init {
-        runCatching { fileSystem.createDirectories(dirs.modelsDir.toLamityPath()) }
+        runCatching { fileSystem.createDirectories(dirs.modelsDir.toPath()) }
             .onFailure { log.w(it) { "Failed to create models directory ${dirs.modelsDir}" } }
     }
 
-    private fun modelFile(model: LlmModel): LamityPath = dirs.modelsDir.toLamityPath() / model.fileName
+    private fun modelFile(model: LlmModel): Path = dirs.modelsDir.toPath() / model.fileName
 
-    fun modelPath(model: LlmModel): String = modelFile(model).value
+    fun modelPath(model: LlmModel): String = modelFile(model).toString()
 
     fun isDownloaded(model: LlmModel): Boolean = fileSystem.exists(modelFile(model))
 

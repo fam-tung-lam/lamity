@@ -1,7 +1,8 @@
 package com.phamtunglam.lamity.downloader.workmanager
 
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
-import java.io.File
+import okio.Path
+import okio.Path.Companion.toPath
 
 internal object DownloadWorkData {
 
@@ -23,5 +24,5 @@ internal object DownloadWorkData {
     }
 }
 
-internal fun DownloadRequest.partialFile(): File =
-    File("$destinationPath.${DownloadWorkData.PARTIAL_FILE_EXT}")
+internal fun DownloadRequest.partialFile(): Path =
+    "$destinationPath.${DownloadWorkData.PARTIAL_FILE_EXT}".toPath()

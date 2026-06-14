@@ -5,11 +5,12 @@ import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.downloader.models.isAuthTrustedHost
 import com.phamtunglam.lamity.downloader.utils.DownloadRate
 import com.phamtunglam.lamity.downloader.workmanager.partialFile
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import okio.FileSystem
+import okio.Path
+import okio.buffer
 
 internal class PreparedConnection(
     val connection: HttpURLConnection,
@@ -27,14 +28,16 @@ internal class PreparedConnection(
  */
 internal object HttpDownload {
 
+    private val fileSystem = FileSystem.SYSTEM
+
     suspend fun download(
         request: DownloadRequest,
         isStopped: () -> Boolean,
         onProgress: suspend (downloadedBytes: Long, totalBytes: Long, bytesPerSecond: Long, etaMillis: Long) -> Unit,
-    ): File {
+    ): Path {
         val partialFile = request.partialFile()
-        partialFile.parentFile?.mkdirs()
-        if (request.expectedSizeBytes > 0 && partialFile.length() == request.expectedSizeBytes) {
+        partialFile.parent?.let { fileSystem.createDirectories(it) }
+        if (request.expectedSizeBytes > 0 && partialFile.sizeBytes() == request.expectedSizeBytes) {
             return partialFile
         }
 
@@ -54,10 +57,10 @@ internal object HttpDownload {
 
     private fun openFollowingRedirects(
         request: DownloadRequest,
-        partialFile: File,
+        partialFile: Path,
     ): PreparedConnection {
         var currentUrl = URL(request.url)
-        val partialBytes = partialFile.length()
+        val partialBytes = partialFile.sizeBytes()
         val rangeRequested = partialBytes > 0
         repeat(MAX_REDIRECTS) {
             val connection = (currentUrl.openConnection() as HttpURLConnection).apply {
@@ -84,7 +87,7 @@ internal object HttpDownload {
                 }
                 code == HttpURLConnection.HTTP_OK || code == HttpURLConnection.HTTP_PARTIAL -> {
                     val append = code == HttpURLConnection.HTTP_PARTIAL && rangeRequested
-                    if (!append && partialBytes > 0) partialFile.delete()
+                    if (!append && partialBytes > 0) fileSystem.delete(partialFile, mustExist = false)
                     return PreparedConnection(
                         connection = connection,
                         append = append,
@@ -106,7 +109,7 @@ internal object HttpDownload {
     }
 
     private suspend fun transfer(
-        partialFile: File,
+        partialFile: Path,
         prepared: PreparedConnection,
         totalBytes: Long,
         isStopped: () -> Boolean,
@@ -118,7 +121,12 @@ internal object HttpDownload {
         var lastProgressMillis = 0L
 
         prepared.connection.inputStream.use { input ->
-            FileOutputStream(partialFile, prepared.append).use { output ->
+            val rawSink = if (prepared.append) {
+                fileSystem.appendingSink(partialFile)
+            } else {
+                fileSystem.sink(partialFile)
+            }
+            rawSink.buffer().use { output ->
                 val buffer = ByteArray(BUFFER_SIZE)
                 while (true) {
                     if (isStopped()) throw DownloadException("Download stopped.")
@@ -157,6 +165,9 @@ internal object HttpDownload {
         val contentLength = connection.contentLengthLong
         return if (contentLength > 0) retainedBytes + contentLength else 0
     }
+
+    /** On-disk size in bytes, or 0 when the file does not exist yet. */
+    private fun Path.sizeBytes(): Long = fileSystem.metadataOrNull(this)?.size ?: 0L
 
     private val REDIRECT_CODES = setOf(301, 302, 303, 307, 308)
     private const val MAX_REDIRECTS = 8

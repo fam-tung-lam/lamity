@@ -9,13 +9,12 @@ import com.phamtunglam.lamity.core.data.logging.CrashReportingLogWriter
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.crashreporter.LamityCrashReporter
 import com.phamtunglam.lamity.crashreporter.models.LamityCrashReporterConfig
-import com.phamtunglam.lamity.filesystem.LamityFileSystem
-import com.phamtunglam.lamity.filesystem.lamityFileSystem
 import com.phamtunglam.lamity.logger.LamityLogger
 import com.phamtunglam.lamity.logger.logWriters.PlatformLamityLogWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import okio.FileSystem
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -24,7 +23,7 @@ val coreModule: Module = module {
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     // File system
-    single<LamityFileSystem> { lamityFileSystem() }
+    single<FileSystem> { FileSystem.SYSTEM }
 
     // App-wide preferences DataStore (backs settings and localization)
     single<DataStore<Preferences>> { createPreferenceDataStore(get<AppDirs>().dataDir) }

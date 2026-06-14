@@ -62,7 +62,6 @@ kotlin {
             implementation(projects.lamityCrashReporter)
             implementation(projects.lamityLogger)
             implementation(projects.lamityDb)
-            implementation(projects.lamityFileSystem)
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -94,6 +93,7 @@ kotlin {
             implementation(libs.kotest.assertions.core)
             implementation(libs.kotest.framework.engine)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.squareup.okio.fakefilesystem)
         }
         getByName("androidHostTest").dependencies {
             implementation(libs.kotest.runner.junit5)

@@ -13,8 +13,6 @@ import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.filesystem.LamityFileSystem
-import com.phamtunglam.lamity.filesystem.models.LamityPath
 import com.phamtunglam.lamity.fixtures.advanceUntilIdle
 import com.phamtunglam.lamity.fixtures.detachedTestScope
 import com.phamtunglam.lamity.fixtures.fakeLlmModel
@@ -32,10 +30,12 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableStateFlow
+import okio.Path.Companion.toPath
+import okio.fakefilesystem.FakeFileSystem
 
 class ModelDownloadManagerTest : BehaviorSpec({
 
-    val fileSystem = mock<LamityFileSystem>()
+    var fileSystem = FakeFileSystem()
     val settings = mock<SettingsRepository>()
     val downloader = mock<Downloader>()
     val models = mock<ModelsRepository>()
@@ -52,9 +52,8 @@ class ModelDownloadManagerTest : BehaviorSpec({
     }
 
     beforeEach {
-        every { fileSystem.createDirectories(any()) } returns Unit
-        every { fileSystem.delete(any(), any()) } returns Unit
-        every { fileSystem.exists(any()) } returns false
+        // In-memory file system; tests seed/clear model files to drive status.
+        fileSystem = FakeFileSystem()
         every { settings.value } returns AppSettings()
         every { models.models } returns MutableStateFlow(listOf(fakeLlmModel()))
         everySuspend { downloader.start(any()) } calls { (request: DownloadRequest) ->
@@ -64,8 +63,8 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
     afterEach {
         lastRequest = null
-        resetAnswers(fileSystem, settings, downloader, models)
-        resetCalls(fileSystem, settings, downloader, models)
+        resetAnswers(settings, downloader, models)
+        resetCalls(settings, downloader, models)
     }
 
     suspend fun createManager(
@@ -151,7 +150,8 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
         When("the downloader reports success and the file landed") {
             Then("the model shows as downloaded") {
-                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns true
+                fileSystem.createDirectories("/models".toPath())
+                fileSystem.write("/models/m1.litertlm".toPath()) {}
                 val progress = MutableStateFlow<DownloadProgress?>(null)
                 val manager = createManager(progress)
                 advanceUntilIdle()
@@ -165,12 +165,12 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
         When("the file is deleted") {
             Then("the model returns to not downloaded") {
-                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns true
+                fileSystem.createDirectories("/models".toPath())
+                fileSystem.write("/models/m1.litertlm".toPath()) {}
                 val manager = createManager(MutableStateFlow(null))
                 advanceUntilIdle()
                 manager.statuses.value["model-1"] shouldBe ModelStatus.Downloaded
 
-                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns false
                 manager.deleteFile(fakeLlmModel())
                 advanceUntilIdle()
 

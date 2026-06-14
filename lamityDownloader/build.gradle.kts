@@ -30,6 +30,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.work.runtime)
+            implementation(libs.squareup.okio)
         }
         commonTest.dependencies {
             implementation(libs.kotest.assertions.core)

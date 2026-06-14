@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import okio.FileSystem
 
 /**
  * [Downloader] backed by WorkManager: one unique work chain per download id,
@@ -36,6 +37,7 @@ class AndroidDownloader(context: Context) : Downloader {
     private val appContext = context.applicationContext
     private val workManager = WorkManager.getInstance(appContext)
     private val store = RequestStore(appContext)
+    private val fileSystem = FileSystem.SYSTEM
 
     override suspend fun start(request: DownloadRequest) {
         store.save(request)
@@ -57,7 +59,7 @@ class AndroidDownloader(context: Context) : Downloader {
     override suspend fun cancel(id: String) {
         val request = store.load(id)
         workManager.cancelUniqueWork(id).await()
-        request?.partialFile()?.delete()
+        request?.partialFile()?.let { fileSystem.delete(it, mustExist = false) }
         store.delete(id)
     }
 
@@ -69,7 +71,7 @@ class AndroidDownloader(context: Context) : Downloader {
                 WorkInfoMapping.toProgress(
                     id = id,
                     workInfo = workInfos.firstOrNull(),
-                    partialBytes = request?.partialFile()?.length() ?: 0L,
+                    partialBytes = request?.partialFile()?.let { fileSystem.metadataOrNull(it)?.size } ?: 0L,
                     totalBytes = request?.expectedSizeBytes ?: 0L,
                 )
             }

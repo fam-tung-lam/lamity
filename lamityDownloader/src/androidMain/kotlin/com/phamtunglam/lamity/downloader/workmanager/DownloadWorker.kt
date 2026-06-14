@@ -13,10 +13,12 @@ import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.downloader.models.DownloadState
 import com.phamtunglam.lamity.downloader.notifications.DownloadNotification
 import com.phamtunglam.lamity.downloader.persistence.RequestStore
-import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
 
 /**
  * Downloads one file: transfer (resuming any partial bytes), optional SHA-256
@@ -30,6 +32,7 @@ internal class DownloadWorker(
 
     private val log = Logger.withTag("DownloadWorker")
     private val store = RequestStore(applicationContext)
+    private val fileSystem = FileSystem.SYSTEM
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
         val request = inputData.getString(DownloadWorkData.Keys.ID)?.let(store::load)
@@ -69,9 +72,10 @@ internal class DownloadWorker(
             verify(request, partialFile)
             moveToDestination(partialFile, request.destinationPath)
             store.delete(request.id)
-            log.i { "download ${request.id} complete (${File(request.destinationPath).length()} bytes)" }
+            val finalBytes = request.destinationPath.toPath().sizeBytes()
+            log.i { "download ${request.id} complete ($finalBytes bytes)" }
             Result.success(
-                workDataOf(DownloadWorkData.Keys.DOWNLOADED_BYTES to File(request.destinationPath).length()),
+                workDataOf(DownloadWorkData.Keys.DOWNLOADED_BYTES to finalBytes),
             )
         } catch (e: DownloadException) {
             failure(request, e)
@@ -80,35 +84,41 @@ internal class DownloadWorker(
         }
     }
 
-    private suspend fun verify(request: DownloadRequest, partialFile: File) {
-        if (request.expectedSizeBytes > 0 && partialFile.length() != request.expectedSizeBytes) {
+    private suspend fun verify(request: DownloadRequest, partialFile: Path) {
+        val actualSize = partialFile.sizeBytes()
+        if (request.expectedSizeBytes > 0 && actualSize != request.expectedSizeBytes) {
             // Catalog sizes are advisory; mismatches are logged, not fatal.
             log.w {
                 "size mismatch for ${request.id}: expected ${request.expectedSizeBytes}, " +
-                    "got ${partialFile.length()}"
+                    "got $actualSize"
             }
         }
         val expectedSha256 = request.sha256 ?: return
         publishProgress(
             request = request,
             state = DownloadState.VERIFYING,
-            downloadedBytes = partialFile.length(),
-            totalBytes = partialFile.length(),
+            downloadedBytes = actualSize,
+            totalBytes = actualSize,
         )
         val actualSha256 = Sha256.of(partialFile)
         if (!actualSha256.equals(expectedSha256, ignoreCase = true)) {
-            partialFile.delete()
+            fileSystem.delete(partialFile, mustExist = false)
             throw DownloadException("Checksum mismatch — the downloaded file is corrupt.")
         }
     }
 
-    private fun moveToDestination(partialFile: File, destinationPath: String) {
-        val destination = File(destinationPath)
-        destination.delete()
-        if (!partialFile.renameTo(destination)) {
-            throw DownloadException("Could not move downloaded file into place.")
+    private fun moveToDestination(partialFile: Path, destinationPath: String) {
+        val destination = destinationPath.toPath()
+        fileSystem.delete(destination, mustExist = false)
+        try {
+            fileSystem.atomicMove(partialFile, destination)
+        } catch (e: IOException) {
+            throw DownloadException("Could not move downloaded file into place.", e)
         }
     }
+
+    /** On-disk size in bytes, or 0 when the file does not exist. */
+    private fun Path.sizeBytes(): Long = fileSystem.metadataOrNull(this)?.size ?: 0L
 
     private suspend fun publishProgress(
         request: DownloadRequest,

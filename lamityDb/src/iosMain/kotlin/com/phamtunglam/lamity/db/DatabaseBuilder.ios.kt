@@ -5,8 +5,9 @@ package com.phamtunglam.lamity.db
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import platform.Foundation.NSApplicationSupportDirectory
-import platform.Foundation.NSFileManager
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSUserDomainMask
@@ -17,11 +18,6 @@ fun lamityDatabaseBuilder(): RoomDatabase.Builder<LamityDatabase> {
         NSApplicationSupportDirectory, NSUserDomainMask, true,
     ).firstOrNull() as? String ?: NSTemporaryDirectory()
     val dbDir = "$baseDir/databases"
-    NSFileManager.defaultManager.createDirectoryAtPath(
-        dbDir,
-        withIntermediateDirectories = true,
-        attributes = null,
-        error = null,
-    )
+    FileSystem.SYSTEM.createDirectories(dbDir.toPath())
     return Room.databaseBuilder<LamityDatabase>(name = "$dbDir/$LAMITY_DB_FILE_NAME")
 }
