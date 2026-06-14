@@ -1,5 +1,12 @@
 TEAM_ID=
 
+// Secrets default to empty here and are overridden by the (git-ignored) local
+// BuildConfig.xcconfig when present. SENTRY_DSN is wired off SENTRY_DNS to allow
+// either spelling; HF_TOKEN is supplied solely by BuildConfig.xcconfig.
+SENTRY_DNS=
+SENTRY_DSN=$(SENTRY_DNS)
+#include? "BuildConfig.xcconfig"
+
 PRODUCT_NAME=Lamity
 PRODUCT_BUNDLE_IDENTIFIER=com.phamtunglam.lamity.Lamity$(TEAM_ID)
 

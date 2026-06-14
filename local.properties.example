@@ -1,0 +1,11 @@
+# Copy this file to local.properties and fill in your values.
+# local.properties must NOT be checked into version control.
+
+# Android SDK location (required by Gradle).
+sdk.dir=/path/to/Android/sdk
+
+# Sentry DSN for crash reporting. Leave blank to disable Sentry.
+SENTRY_DSN=
+
+# Hugging Face token for gated model downloads. Leave blank to disable authenticated requests.
+HF_TOKEN=

@@ -41,10 +41,6 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setLanguage(language) }
     }
 
-    fun setHfToken(token: String) {
-        viewModelScope.launch { settingsRepository.setHfToken(token) }
-    }
-
     fun setWifiOnlyDownloads(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setWifiOnlyDownloads(enabled) }
     }

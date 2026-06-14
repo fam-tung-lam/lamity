@@ -1,5 +1,6 @@
 package com.phamtunglam.lamity.feature.models.data
 
+import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.platform.AppDirs
 import com.phamtunglam.lamity.core.platform.FileIo
 import com.phamtunglam.lamity.core.platform.pathJoin
@@ -37,6 +38,8 @@ class ModelDownloadManager(
     private val downloader: Downloader,
     models: ModelsRepository,
     private val scope: CoroutineScope,
+    /** HuggingFace token injected at build time; blank disables authenticated downloads. */
+    private val hfToken: String = LamityBuildConfig.hfToken,
 ) {
     private val log = Logger.withTag("ModelDownloadManager")
 
@@ -111,7 +114,7 @@ class ModelDownloadManager(
             url = url,
             destinationPath = modelPath(this),
             displayName = name,
-            bearerToken = appSettings.hfToken.takeIf {
+            bearerToken = hfToken.takeIf {
                 it.isNotBlank() && url.contains("huggingface.co")
             },
             trustedAuthHosts = setOf("huggingface.co"),

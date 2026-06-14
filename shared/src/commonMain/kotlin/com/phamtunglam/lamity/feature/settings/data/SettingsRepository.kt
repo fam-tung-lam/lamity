@@ -17,8 +17,6 @@ interface SettingsRepository {
 
     suspend fun setLanguage(language: String) = update { it.copy(language = language) }
 
-    suspend fun setHfToken(token: String) = update { it.copy(hfToken = token.trim()) }
-
     suspend fun setWifiOnlyDownloads(enabled: Boolean) =
         update { it.copy(wifiOnlyDownloads = enabled) }
 

@@ -1,11 +1,13 @@
 package com.phamtunglam.lamity.di
 
-import com.phamtunglam.lamity.LamityConfig
+import com.phamtunglam.lamity.core.BuildType
+import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.logging.CrashReportingLogWriter
 import com.phamtunglam.lamity.core.tools.ToolContext
 import com.phamtunglam.lamity.core.tools.ToolDispatcher
 import com.phamtunglam.lamity.core.tools.ToolRegistry
 import com.phamtunglam.lamity.crashreporter.LamityCrashReporter
+import com.phamtunglam.lamity.crashreporter.models.LamityCrashReporterConfig
 import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.buildLamityDatabase
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
@@ -59,10 +61,22 @@ val appModule: Module = module {
 
     // ------------------------------------------------------------- logging
     single(createdAtStart = true) {
-        // Initializes crash reporting and routes app error logs into it as captures by
-        // registering the bridge writer with the logging facade.
-        LamityCrashReporter.init(LamityConfig.lamityCrashReporterConfig())
-        LamityLogger.addWriter(CrashReportingLogWriter(reporter = LamityCrashReporter))
+        // Initializes crash reporting from platform build metadata and routes app error
+        // logs into it as captures by registering the bridge writer with the logging
+        // facade. Skipped entirely when no Sentry DSN is configured (e.g. local builds
+        // without a SENTRY_DSN secret), leaving crash reporting disabled.
+        val dsn = LamityBuildConfig.sentryDsn
+        if (dsn.isNotBlank()) {
+            LamityCrashReporter.init(
+                LamityCrashReporterConfig(
+                    dsn = dsn,
+                    environment = LamityBuildConfig.buildType.environmentName,
+                    release = "${LamityBuildConfig.packageName}@${LamityBuildConfig.appVersion}+${LamityBuildConfig.appVersionCode}",
+                    debug = LamityBuildConfig.buildType == BuildType.DEBUG,
+                ),
+            )
+            LamityLogger.addWriter(CrashReportingLogWriter(reporter = LamityCrashReporter))
+        }
     }
 
     // ------------------------------------------------------------ database
@@ -118,7 +132,7 @@ val appModule: Module = module {
     // -------------------------------------------------------------- domain
     factory { ObserveConversationSummariesUseCase(get(), get(), get()) }
     factory { DeleteConversationUseCase(get(), get()) }
-    factory { ObserveModelsWithStatusUseCase(get(), get(), get()) }
+    factory { ObserveModelsWithStatusUseCase(get(), get()) }
     factory { RemoveCustomModelUseCase(get(), get()) }
     factory { SaveModelConfigUseCase(get()) }
     factory { DeleteAgentUseCase(get(), get()) }

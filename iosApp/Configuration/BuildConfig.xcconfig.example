@@ -1,0 +1,11 @@
+// Copy this file to BuildConfig.xcconfig and fill in local secrets.
+// BuildConfig.xcconfig must NOT be checked into version control.
+
+// Hugging Face token for gated model downloads. Leave blank to disable authenticated requests.
+HF_TOKEN=
+
+// Sentry DSN for crash reporting. Leave blank to disable Sentry.
+// Note: $() is intentional — xcconfig treats "//" as a comment, so $() (an empty
+// expansion) is inserted between the slashes to preserve the full URL, e.g.:
+// SENTRY_DSN=https:/$()/examplePublicKey@o0.ingest.sentry.io/0
+SENTRY_DSN=

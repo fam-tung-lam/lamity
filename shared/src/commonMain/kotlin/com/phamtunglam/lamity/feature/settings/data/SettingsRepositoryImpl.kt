@@ -63,7 +63,6 @@ private val json = Json { ignoreUnknownKeys = true }
 private fun SettingsEntity.toDomain() = AppSettings(
     themeMode = runCatching { ThemeMode.valueOf(themeMode) }.getOrDefault(ThemeMode.SYSTEM),
     language = language,
-    hfToken = hfToken,
     toolEnabled = runCatching {
         json.decodeFromString(toolMapSerializer, toolEnabledJson)
     }.getOrDefault(emptyMap()),
@@ -76,7 +75,6 @@ private fun AppSettings.toEntity() = SettingsEntity(
     id = 0,
     themeMode = themeMode.name,
     language = language,
-    hfToken = hfToken,
     toolEnabledJson = json.encodeToString(toolMapSerializer, toolEnabled),
     lastModelId = lastModelId,
     lastAgentId = lastAgentId,

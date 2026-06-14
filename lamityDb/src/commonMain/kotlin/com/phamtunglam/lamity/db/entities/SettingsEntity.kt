@@ -10,7 +10,6 @@ data class SettingsEntity(
     @PrimaryKey val id: Long = 0,
     val themeMode: String,
     val language: String,
-    val hfToken: String,
     /** JSON object: tool id -> enabled. */
     val toolEnabledJson: String,
     val lastModelId: String?,

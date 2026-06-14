@@ -1,8 +1,8 @@
 package com.phamtunglam.lamity.feature.models.domain
 
+import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
-import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.combine
 data class ModelWithStatus(
     val model: LlmModel,
     val status: ModelStatus,
-    /** The model needs a HuggingFace token that the user has not configured yet. */
+    /** The model needs a HuggingFace token that the build was not configured with. */
     val needsToken: Boolean,
 )
 
@@ -18,18 +18,18 @@ data class ModelWithStatus(
 class ObserveModelsWithStatusUseCase(
     private val models: ModelsRepository,
     private val downloads: ModelDownloadManager,
-    private val settings: SettingsRepository,
+    /** HuggingFace token injected at build time; blank means gated models need one. */
+    private val hfToken: String = LamityBuildConfig.hfToken,
 ) {
     operator fun invoke(): Flow<List<ModelWithStatus>> = combine(
         models.models,
         downloads.statuses,
-        settings.settings,
-    ) { modelList, statuses, appSettings ->
+    ) { modelList, statuses ->
         modelList.map { model ->
             ModelWithStatus(
                 model = model,
                 status = statuses[model.id] ?: ModelStatus.NotDownloaded,
-                needsToken = model.requiresAuth && appSettings.hfToken.isBlank(),
+                needsToken = model.requiresAuth && hfToken.isBlank(),
             )
         }
     }

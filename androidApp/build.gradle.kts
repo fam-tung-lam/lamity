@@ -1,9 +1,35 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+}
+
+// Secrets are injected from local.properties (never checked in) into the app's
+// generated BuildConfig; LamityBuildConfig reads them back reflectively at runtime.
+private val localProperties =
+    Properties().apply {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.isFile) {
+            localPropertiesFile.inputStream().use(::load)
+        }
+    }
+
+// SENTRY_DNS is accepted as a legacy spelling fallback for SENTRY_DSN.
+private fun Properties.sentryDsnBuildConfigString(): String =
+    (getProperty("SENTRY_DSN") ?: getProperty("SENTRY_DNS")).orEmpty().toBuildConfigStringLiteral()
+
+private fun Properties.hfTokenBuildConfigString(): String =
+    getProperty("HF_TOKEN").orEmpty().toBuildConfigStringLiteral()
+
+// buildConfigField takes a raw Java literal, so the value must be a quoted,
+// escaped string. Values already wrapped in quotes are passed through as-is.
+private fun String.toBuildConfigStringLiteral(): String {
+    val trimmed = trim()
+    if (trimmed.length >= 2 && trimmed.first() == '"' && trimmed.last() == '"') return trimmed
+    return "\"" + trimmed.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 }
 
 kotlin {
@@ -32,9 +58,12 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "SENTRY_DSN", localProperties.sentryDsnBuildConfigString())
+        buildConfigField("String", "HF_TOKEN", localProperties.hfTokenBuildConfigString())
     }
     buildFeatures {
-        // shared/core/platform/BuildInfo.android.kt reads this BuildConfig reflectively.
+        // shared/core/LamityBuildConfig.android.kt reads this BuildConfig (versions +
+        // the injected SENTRY_DSN/HF_TOKEN secrets) reflectively.
         buildConfig = true
     }
     packaging {

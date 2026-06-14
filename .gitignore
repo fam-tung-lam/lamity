@@ -19,3 +19,6 @@ captures
 node_modules/
 
 .local
+
+# Secrets (local build configuration, never checked in)
+iosApp/Configuration/BuildConfig.xcconfig

@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -21,13 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.platform.currentBuildInfo
+import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.designsystem.components.SimpleDropdown
 import com.phamtunglam.lamity.core.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
@@ -99,34 +94,13 @@ fun SettingsScreen(
             }
         }
 
-        // HuggingFace token for gated models
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(str.hfToken, style = MaterialTheme.typography.titleSmall)
-            var token by remember(settings.hfToken) { mutableStateOf(settings.hfToken) }
-            OutlinedTextField(
-                value = token,
-                onValueChange = { token = it },
-                supportingText = { Text(str.hfTokenHint) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row {
-                Spacer(Modifier.weight(1f))
-                Button(
-                    onClick = { viewModel.setHfToken(token) },
-                    enabled = token.trim() != settings.hfToken,
-                ) { Text(str.save) }
-            }
-        }
-
         // About
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(str.about, style = MaterialTheme.typography.titleSmall)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val build = remember { currentBuildInfo() }
                     Text(
-                        "Lamity AI ${build.versionName} (${build.versionCode})",
+                        "Lamity AI ${LamityBuildConfig.appVersion} (${LamityBuildConfig.appVersionCode})",
                         style = MaterialTheme.typography.titleSmall,
                     )
                     Text(

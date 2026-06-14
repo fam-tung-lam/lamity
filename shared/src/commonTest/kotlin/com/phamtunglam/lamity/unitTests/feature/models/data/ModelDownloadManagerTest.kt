@@ -67,7 +67,10 @@ class ModelDownloadManagerTest : BehaviorSpec({
         resetCalls(fileIo, settings, downloader, models)
     }
 
-    suspend fun createManager(progress: MutableStateFlow<DownloadProgress?>) : ModelDownloadManager {
+    suspend fun createManager(
+        progress: MutableStateFlow<DownloadProgress?>,
+        hfToken: String = "",
+    ): ModelDownloadManager {
         every { downloader.observe(any()) } returns progress
         return ModelDownloadManager(
             dirs = AppDirs(dataDir = "/data", modelsDir = "/models", cacheDir = "/cache"),
@@ -77,14 +80,14 @@ class ModelDownloadManagerTest : BehaviorSpec({
             models = models,
             // Detached: the manager's eager stateIn would otherwise keep the test job alive.
             scope = detachedTestScope(),
+            hfToken = hfToken,
         )
     }
 
     Given("a model download") {
         When("it starts for a HuggingFace model with a token configured") {
             Then("the request carries the token restricted to huggingface hosts") {
-                every { settings.value } returns AppSettings(hfToken = "secret")
-                val manager = createManager(MutableStateFlow(null))
+                val manager = createManager(MutableStateFlow(null), hfToken = "secret")
 
                 manager.start(fakeLlmModel())
                 advanceUntilIdle()
@@ -97,8 +100,7 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
         When("it starts for a non-HuggingFace url") {
             Then("the request carries no token") {
-                every { settings.value } returns AppSettings(hfToken = "secret")
-                val manager = createManager(MutableStateFlow(null))
+                val manager = createManager(MutableStateFlow(null), hfToken = "secret")
 
                 manager.start(fakeLlmModel(url = "https://example.com/m1.litertlm"))
                 advanceUntilIdle()

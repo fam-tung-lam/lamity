@@ -9,7 +9,6 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val language: String = "en",
-    val hfToken: String = "",
     /** Global tool toggles; a missing key means enabled. */
     val toolEnabled: Map<String, Boolean> = emptyMap(),
     val lastModelId: String? = null,

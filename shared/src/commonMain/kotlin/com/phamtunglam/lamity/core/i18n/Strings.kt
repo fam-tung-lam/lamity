@@ -101,8 +101,6 @@ data class Strings(
     val downloadsSection: String,
     val wifiOnly: String,
     val wifiOnlyHint: String,
-    val hfToken: String,
-    val hfTokenHint: String,
     val about: String,
 
     val back: String,

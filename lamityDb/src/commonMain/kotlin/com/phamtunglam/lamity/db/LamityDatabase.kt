@@ -3,8 +3,10 @@ package com.phamtunglam.lamity.db
 import androidx.room3.AutoMigration
 import androidx.room3.ConstructedBy
 import androidx.room3.Database
+import androidx.room3.DeleteColumn
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
+import androidx.room3.migration.AutoMigrationSpec
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.phamtunglam.lamity.db.daos.AgentsDao
 import com.phamtunglam.lamity.db.daos.ConversationsDao
@@ -30,14 +32,19 @@ const val LAMITY_DB_FILE_NAME = "lamity.db"
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // settings.wifiOnlyDownloads added
+        AutoMigration(from = 2, to = 3, spec = LamityDatabase.DropSettingsHfToken::class), // settings.hfToken removed
     ],
 )
 @ConstructedBy(LamityDatabaseConstructor::class)
 abstract class LamityDatabase : RoomDatabase() {
+    /** Drops the legacy `settings.hfToken` column; the token is now injected at build time. */
+    @DeleteColumn(tableName = "settings", columnName = "hfToken")
+    class DropSettingsHfToken : AutoMigrationSpec
+
     abstract fun settingsDao(): SettingsDao
     abstract fun modelsDao(): ModelsDao
     abstract fun agentsDao(): AgentsDao

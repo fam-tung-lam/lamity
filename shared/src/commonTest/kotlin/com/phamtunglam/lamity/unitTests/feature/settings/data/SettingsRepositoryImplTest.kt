@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 private fun fakeSettingsEntity(
     themeMode: String = "SYSTEM",
     language: String = "en",
-    hfToken: String = "",
     toolEnabledJson: String = "{}",
     lastModelId: String? = null,
     lastAgentId: String? = null,
@@ -31,7 +30,6 @@ private fun fakeSettingsEntity(
     id = 0,
     themeMode = themeMode,
     language = language,
-    hfToken = hfToken,
     toolEnabledJson = toolEnabledJson,
     lastModelId = lastModelId,
     lastAgentId = lastAgentId,
@@ -67,7 +65,6 @@ class SettingsRepositoryImplTest : BehaviorSpec({
                     fakeSettingsEntity(
                         themeMode = "DARK",
                         language = "vi",
-                        hfToken = "tok",
                         toolEnabledJson = """{"calculate":false}""",
                         lastModelId = "m1",
                     ),
