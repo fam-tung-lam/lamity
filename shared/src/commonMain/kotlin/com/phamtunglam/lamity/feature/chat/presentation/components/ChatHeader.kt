@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.designsystem.components.SimpleDropdown
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDropdown
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.studio.domain.Agent
 

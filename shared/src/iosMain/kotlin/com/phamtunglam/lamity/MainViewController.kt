@@ -1,9 +1,9 @@
 package com.phamtunglam.lamity
 
 import androidx.compose.ui.window.ComposeUIViewController
-import com.phamtunglam.lamity.core.tools.ToolDispatcher
-import com.phamtunglam.lamity.di.appModule
-import com.phamtunglam.lamity.di.platformModule
+import com.phamtunglam.lamity.core.domain.tools.ToolDispatcher
+import com.phamtunglam.lamity.core.di.appModule
+import com.phamtunglam.lamity.core.di.platformModule
 import com.phamtunglam.lamity.llm.NativeLlmBridge
 import org.koin.core.context.startKoin
 import org.koin.dsl.module

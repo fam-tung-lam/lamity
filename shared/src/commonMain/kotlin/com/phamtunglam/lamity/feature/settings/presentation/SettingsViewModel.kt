@@ -2,8 +2,8 @@ package com.phamtunglam.lamity.feature.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phamtunglam.lamity.core.platform.AppDirs
-import com.phamtunglam.lamity.core.platform.PlatformInfo
+import com.phamtunglam.lamity.core.domain.platform.AppDirs
+import com.phamtunglam.lamity.core.domain.platform.PlatformInfo
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode

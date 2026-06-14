@@ -15,6 +15,7 @@ koin = "4.2.1"
 kotest = "6.1.11"
 kotlin = "2.4.0"
 kotlinxCoroutines = "1.10.2"
+kotlinxDatetime = "0.7.1"
 kotlinxSerialization = "1.9.0"
 ksp = "2.3.9"
 litertlm = "0.13.1"
@@ -44,6 +45,7 @@ compose-materialIconsCore = { module = "org.jetbrains.compose.material:material-
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 litertlm-android = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm" }
 

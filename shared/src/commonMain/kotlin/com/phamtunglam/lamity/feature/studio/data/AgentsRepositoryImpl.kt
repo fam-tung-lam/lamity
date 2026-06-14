@@ -1,7 +1,7 @@
 package com.phamtunglam.lamity.feature.studio.data
 
-import com.phamtunglam.lamity.core.platform.epochMillis
-import com.phamtunglam.lamity.core.platform.newId
+import com.phamtunglam.lamity.core.domain.platform.epochMillis
+import com.phamtunglam.lamity.core.domain.platform.newId
 import com.phamtunglam.lamity.db.entities.AgentEntity
 import com.phamtunglam.lamity.db.daos.AgentsDao
 import com.phamtunglam.lamity.feature.studio.domain.Agent

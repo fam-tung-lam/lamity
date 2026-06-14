@@ -2,7 +2,7 @@ package com.phamtunglam.lamity.feature.history.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phamtunglam.lamity.core.platform.formatDateTime
+import com.phamtunglam.lamity.core.domain.platform.formatDateTime
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.chat.domain.ChatSessionManager
 import com.phamtunglam.lamity.feature.chat.domain.Conversation

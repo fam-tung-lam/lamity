@@ -2,7 +2,7 @@ package com.phamtunglam.lamity.unitTests.feature.models.data
 
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
-import com.phamtunglam.lamity.core.platform.AppDirs
+import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadException
 import com.phamtunglam.lamity.downloader.models.DownloadProgress

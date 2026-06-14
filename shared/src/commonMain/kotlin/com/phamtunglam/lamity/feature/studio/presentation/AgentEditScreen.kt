@@ -21,8 +21,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.designsystem.components.SubScreenScaffold
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 

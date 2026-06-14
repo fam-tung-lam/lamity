@@ -23,8 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.LamityBuildConfig
-import com.phamtunglam.lamity.core.designsystem.components.SimpleDropdown
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDropdown
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import org.koin.compose.viewmodel.koinViewModel
 

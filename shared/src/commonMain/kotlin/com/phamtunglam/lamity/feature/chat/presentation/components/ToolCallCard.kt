@@ -27,8 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.designsystem.theme.LamityTheme
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.theme.LamityTheme
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
 
 /** Collapsed tool invocation; expands to the raw arguments and result JSON. */

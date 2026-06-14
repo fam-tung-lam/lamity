@@ -1,6 +1,6 @@
 package com.phamtunglam.lamity.feature.models.data
 
-import com.phamtunglam.lamity.core.platform.newId
+import com.phamtunglam.lamity.core.domain.platform.newId
 import com.phamtunglam.lamity.db.entities.ModelEntity
 import com.phamtunglam.lamity.db.daos.ModelsDao
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend

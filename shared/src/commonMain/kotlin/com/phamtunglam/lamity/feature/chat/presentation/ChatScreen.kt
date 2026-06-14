@@ -14,8 +14,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.phamtunglam.lamity.core.designsystem.components.EmptyState
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatErrorBanner
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatHeader
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatInputBar

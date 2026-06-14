@@ -28,9 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.designsystem.theme.LamityTheme
-import com.phamtunglam.lamity.core.designsystem.theme.bubbleShape
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.theme.LamityTheme
+import com.phamtunglam.lamity.core.presentation.designSystem.theme.bubbleShape
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
 import kotlin.math.roundToInt
 

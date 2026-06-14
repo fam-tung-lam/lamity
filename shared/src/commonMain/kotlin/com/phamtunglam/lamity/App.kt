@@ -31,9 +31,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.phamtunglam.lamity.core.designsystem.theme.AppTheme
-import com.phamtunglam.lamity.core.i18n.LocalStrings
-import com.phamtunglam.lamity.core.i18n.stringsFor
+import com.phamtunglam.lamity.core.presentation.designSystem.theme.AppTheme
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.i18n.stringsFor
 import com.phamtunglam.lamity.feature.chat.presentation.ChatScreen
 import com.phamtunglam.lamity.feature.history.presentation.HistoryScreen
 import com.phamtunglam.lamity.feature.models.presentation.ModelConfigScreen
@@ -43,16 +43,16 @@ import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
 import com.phamtunglam.lamity.feature.studio.presentation.AgentEditScreen
 import com.phamtunglam.lamity.feature.studio.presentation.SkillEditScreen
 import com.phamtunglam.lamity.feature.studio.presentation.StudioScreen
-import com.phamtunglam.lamity.navigation.AgentEditKey
-import com.phamtunglam.lamity.navigation.ChatKey
-import com.phamtunglam.lamity.navigation.HistoryKey
-import com.phamtunglam.lamity.navigation.ModelConfigKey
-import com.phamtunglam.lamity.navigation.ModelsKey
-import com.phamtunglam.lamity.navigation.SettingsKey
-import com.phamtunglam.lamity.navigation.SkillEditKey
-import com.phamtunglam.lamity.navigation.StudioKey
-import com.phamtunglam.lamity.navigation.TabKey
-import com.phamtunglam.lamity.navigation.navSavedStateConfiguration
+import com.phamtunglam.lamity.core.presentation.navigation.AgentEditKey
+import com.phamtunglam.lamity.core.presentation.navigation.ChatKey
+import com.phamtunglam.lamity.core.presentation.navigation.HistoryKey
+import com.phamtunglam.lamity.core.presentation.navigation.ModelConfigKey
+import com.phamtunglam.lamity.core.presentation.navigation.ModelsKey
+import com.phamtunglam.lamity.core.presentation.navigation.SettingsKey
+import com.phamtunglam.lamity.core.presentation.navigation.SkillEditKey
+import com.phamtunglam.lamity.core.presentation.navigation.StudioKey
+import com.phamtunglam.lamity.core.presentation.navigation.TabKey
+import com.phamtunglam.lamity.core.presentation.navigation.navSavedStateConfiguration
 import org.koin.compose.koinInject
 
 @Composable

@@ -1,7 +1,7 @@
 package com.phamtunglam.lamity.feature.models.data
 
 import com.phamtunglam.lamity.core.LamityBuildConfig
-import com.phamtunglam.lamity.core.platform.AppDirs
+import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.feature.models.domain.LlmModel

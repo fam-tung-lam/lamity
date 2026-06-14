@@ -1,6 +1,5 @@
 package com.phamtunglam.lamity.feature.models.presentation.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,10 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.designsystem.formatEta
-import com.phamtunglam.lamity.core.designsystem.formatPercent
-import com.phamtunglam.lamity.core.designsystem.formatSpeed
-import com.phamtunglam.lamity.core.i18n.LocalStrings
+import com.phamtunglam.lamity.core.presentation.designSystem.formatEta
+import com.phamtunglam.lamity.core.presentation.designSystem.formatPercent
+import com.phamtunglam.lamity.core.presentation.designSystem.formatSpeed
+import com.phamtunglam.lamity.core.presentation.i18n.LocalStrings
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 
 /** Transfer status block of a model card: progress, speed/ETA and controls. */

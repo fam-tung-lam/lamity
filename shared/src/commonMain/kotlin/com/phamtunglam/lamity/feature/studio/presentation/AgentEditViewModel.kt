@@ -2,8 +2,8 @@ package com.phamtunglam.lamity.feature.studio.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phamtunglam.lamity.core.tools.BuiltinTool
-import com.phamtunglam.lamity.core.tools.ToolRegistry
+import com.phamtunglam.lamity.core.domain.tools.BuiltinTool
+import com.phamtunglam.lamity.core.domain.tools.ToolRegistry
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
 import com.phamtunglam.lamity.feature.studio.domain.SaveAgentUseCase
