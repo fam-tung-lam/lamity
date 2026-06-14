@@ -16,16 +16,3 @@ data class AppDirs(
     /** Scratch dir handed to the LiteRT-LM engine compilation cache. */
     val cacheDir: String,
 )
-
-/** Minimal file system abstraction implemented per platform. */
-interface FileIo {
-    fun readText(path: String): String?
-    fun writeTextAtomic(path: String, text: String): Boolean
-    fun delete(path: String)
-    fun exists(path: String): Boolean
-    fun fileSize(path: String): Long
-    fun mkdirs(path: String)
-    fun moveFile(from: String, to: String): Boolean
-}
-
-fun pathJoin(dir: String, name: String): String = dir.trimEnd('/') + "/" + name

@@ -1,8 +1,6 @@
 package com.phamtunglam.lamity.di
 
 import com.phamtunglam.lamity.core.platform.AppDirs
-import com.phamtunglam.lamity.core.platform.FileIo
-import com.phamtunglam.lamity.core.platform.IosFileIo
 import com.phamtunglam.lamity.core.platform.PlatformInfo
 import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.lamityDatabaseBuilder
@@ -24,7 +22,6 @@ import platform.UIKit.UIDevice
  * [com.phamtunglam.lamity.MainViewController], which registers it in Koin.
  */
 actual fun platformModule(): Module = module {
-    single<FileIo> { IosFileIo() }
     single {
         val documents = NSSearchPathForDirectoriesInDomains(
             NSDocumentDirectory, NSUserDomainMask, true,

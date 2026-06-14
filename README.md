@@ -47,6 +47,7 @@ shared/                App logic + Compose UI (builds the iOS "Shared" framework
 lamityLlm/             LiteRT-LM abstraction (NativeLlmBridge contract, ModelRuntime)
 lamityDownloader/      Background file downloads (WorkManager / URLSession bridge)
 lamityDb/              Room KMP database (entities/, daos/)
+lamityFileSystem/      Per-platform file system (LamityFileSystem facade, LamityPath)
 lamityCrashReporter/   Sentry KMP facade (CrashReporter, breadcrumb log writer)
 lamityLogger/          Kermit re-export so every module logs the same way
 ```
@@ -62,7 +63,7 @@ com/phamtunglam/lamity/
   core/
     designsystem/      theme/ (Color, Theme, Shape, Type, CustomColors) + components/ + Formatters
     i18n/              Strings model + per-language bundles (en/vi/es), runtime-switchable
-    platform/          FileIo, AppDirs, PlatformInfo, BuildInfo, ids/time (expect/actual)
+    platform/          AppDirs, PlatformInfo, BuildInfo, ids/time (expect/actual)
     tools/             Built-in tool specs, registry and dispatcher
   feature/
     chat/              data/ (conversations repo) domain/ (session manager) presentation/ (+components/)

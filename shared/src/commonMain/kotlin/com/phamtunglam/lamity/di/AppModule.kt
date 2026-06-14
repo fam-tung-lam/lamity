@@ -39,6 +39,8 @@ import com.phamtunglam.lamity.feature.studio.domain.SaveSkillUseCase
 import com.phamtunglam.lamity.feature.studio.presentation.AgentEditViewModel
 import com.phamtunglam.lamity.feature.studio.presentation.SkillEditViewModel
 import com.phamtunglam.lamity.feature.studio.presentation.StudioViewModel
+import com.phamtunglam.lamity.filesystem.LamityFileSystem
+import com.phamtunglam.lamity.filesystem.lamityFileSystem
 import com.phamtunglam.lamity.llm.ModelRuntime
 import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CoroutineScope
@@ -49,15 +51,21 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
- * Provided per platform: FileIo, AppDirs, PlatformInfo, FileDownloader,
+ * Provided per platform: AppDirs, PlatformInfo, Downloader,
  * RoomDatabase.Builder<LamityDatabase> and NativeLlmBridge (Android only —
  * iOS injects the Swift bridge through
  * [com.phamtunglam.lamity.MainViewController]).
+ *
+ * [LamityFileSystem] is platform-backed too, but bound here in common via the
+ * [lamityFileSystem] factory rather than per platform.
  */
 expect fun platformModule(): Module
 
 val appModule: Module = module {
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+
+    // --------------------------------------------------------- file system
+    single<LamityFileSystem> { lamityFileSystem() }
 
     // ------------------------------------------------------------- logging
     single(createdAtStart = true) {
@@ -96,7 +104,7 @@ val appModule: Module = module {
     single {
         ModelDownloadManager(
             dirs = get(),
-            fileIo = get(),
+            fileSystem = get(),
             settings = get(),
             downloader = get(),
             models = get(),

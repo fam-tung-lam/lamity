@@ -3,7 +3,6 @@ package com.phamtunglam.lamity.unitTests.feature.models.data
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
 import com.phamtunglam.lamity.core.platform.AppDirs
-import com.phamtunglam.lamity.core.platform.FileIo
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadException
 import com.phamtunglam.lamity.downloader.models.DownloadProgress
@@ -14,6 +13,8 @@ import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
+import com.phamtunglam.lamity.filesystem.LamityFileSystem
+import com.phamtunglam.lamity.filesystem.models.LamityPath
 import com.phamtunglam.lamity.fixtures.advanceUntilIdle
 import com.phamtunglam.lamity.fixtures.detachedTestScope
 import com.phamtunglam.lamity.fixtures.fakeLlmModel
@@ -34,7 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class ModelDownloadManagerTest : BehaviorSpec({
 
-    val fileIo = mock<FileIo>()
+    val fileSystem = mock<LamityFileSystem>()
     val settings = mock<SettingsRepository>()
     val downloader = mock<Downloader>()
     val models = mock<ModelsRepository>()
@@ -51,9 +52,9 @@ class ModelDownloadManagerTest : BehaviorSpec({
     }
 
     beforeEach {
-        every { fileIo.mkdirs(any()) } returns Unit
-        every { fileIo.delete(any()) } returns Unit
-        every { fileIo.exists(any()) } returns false
+        every { fileSystem.createDirectories(any()) } returns Unit
+        every { fileSystem.delete(any(), any()) } returns Unit
+        every { fileSystem.exists(any()) } returns false
         every { settings.value } returns AppSettings()
         every { models.models } returns MutableStateFlow(listOf(fakeLlmModel()))
         everySuspend { downloader.start(any()) } calls { (request: DownloadRequest) ->
@@ -63,8 +64,8 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
     afterEach {
         lastRequest = null
-        resetAnswers(fileIo, settings, downloader, models)
-        resetCalls(fileIo, settings, downloader, models)
+        resetAnswers(fileSystem, settings, downloader, models)
+        resetCalls(fileSystem, settings, downloader, models)
     }
 
     suspend fun createManager(
@@ -74,7 +75,7 @@ class ModelDownloadManagerTest : BehaviorSpec({
         every { downloader.observe(any()) } returns progress
         return ModelDownloadManager(
             dirs = AppDirs(dataDir = "/data", modelsDir = "/models", cacheDir = "/cache"),
-            fileIo = fileIo,
+            fileSystem = fileSystem,
             settings = settings,
             downloader = downloader,
             models = models,
@@ -150,7 +151,7 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
         When("the downloader reports success and the file landed") {
             Then("the model shows as downloaded") {
-                every { fileIo.exists("/models/m1.litertlm") } returns true
+                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns true
                 val progress = MutableStateFlow<DownloadProgress?>(null)
                 val manager = createManager(progress)
                 advanceUntilIdle()
@@ -164,12 +165,12 @@ class ModelDownloadManagerTest : BehaviorSpec({
 
         When("the file is deleted") {
             Then("the model returns to not downloaded") {
-                every { fileIo.exists("/models/m1.litertlm") } returns true
+                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns true
                 val manager = createManager(MutableStateFlow(null))
                 advanceUntilIdle()
                 manager.statuses.value["model-1"] shouldBe ModelStatus.Downloaded
 
-                every { fileIo.exists("/models/m1.litertlm") } returns false
+                every { fileSystem.exists(LamityPath("/models/m1.litertlm")) } returns false
                 manager.deleteFile(fakeLlmModel())
                 advanceUntilIdle()
 

@@ -2,14 +2,15 @@ package com.phamtunglam.lamity.feature.models.data
 
 import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.platform.AppDirs
-import com.phamtunglam.lamity.core.platform.FileIo
-import com.phamtunglam.lamity.core.platform.pathJoin
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
+import com.phamtunglam.lamity.filesystem.LamityFileSystem
+import com.phamtunglam.lamity.filesystem.models.LamityPath
+import com.phamtunglam.lamity.filesystem.models.toLamityPath
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class ModelDownloadManager(
     private val dirs: AppDirs,
-    private val fileIo: FileIo,
+    private val fileSystem: LamityFileSystem,
     private val settings: SettingsRepository,
     private val downloader: Downloader,
     models: ModelsRepository,
@@ -52,12 +53,15 @@ class ModelDownloadManager(
             .stateIn(scope, SharingStarted.Eagerly, emptyMap())
 
     init {
-        fileIo.mkdirs(dirs.modelsDir)
+        runCatching { fileSystem.createDirectories(dirs.modelsDir.toLamityPath()) }
+            .onFailure { log.w(it) { "Failed to create models directory ${dirs.modelsDir}" } }
     }
 
-    fun modelPath(model: LlmModel): String = pathJoin(dirs.modelsDir, model.fileName)
+    private fun modelFile(model: LlmModel): LamityPath = dirs.modelsDir.toLamityPath() / model.fileName
 
-    fun isDownloaded(model: LlmModel): Boolean = fileIo.exists(modelPath(model))
+    fun modelPath(model: LlmModel): String = modelFile(model).value
+
+    fun isDownloaded(model: LlmModel): Boolean = fileSystem.exists(modelFile(model))
 
     fun statusOf(model: LlmModel): ModelStatus =
         statuses.value[model.id]
@@ -90,7 +94,8 @@ class ModelDownloadManager(
     fun dismissError(model: LlmModel) = cancel(model)
 
     fun deleteFile(model: LlmModel) {
-        fileIo.delete(modelPath(model))
+        runCatching { fileSystem.delete(modelFile(model)) }
+            .onFailure { log.w(it) { "Failed to delete ${model.id}" } }
         filesChanged.update { it + 1 }
     }
 

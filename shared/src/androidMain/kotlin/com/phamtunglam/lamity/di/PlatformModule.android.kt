@@ -1,9 +1,7 @@
 package com.phamtunglam.lamity.di
 
 import android.os.Build
-import com.phamtunglam.lamity.core.platform.AndroidFileIo
 import com.phamtunglam.lamity.core.platform.AppDirs
-import com.phamtunglam.lamity.core.platform.FileIo
 import com.phamtunglam.lamity.core.platform.PlatformInfo
 import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.lamityDatabaseBuilder
@@ -18,7 +16,6 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 actual fun platformModule(): Module = module {
-    single<FileIo> { AndroidFileIo() }
     single {
         val context = androidContext()
         AppDirs(

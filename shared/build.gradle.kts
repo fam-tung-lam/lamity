@@ -62,6 +62,7 @@ kotlin {
             implementation(projects.lamityCrashReporter)
             implementation(projects.lamityLogger)
             implementation(projects.lamityDb)
+            implementation(projects.lamityFileSystem)
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
