@@ -2,8 +2,7 @@ package com.phamtunglam.lamity.feature.studio.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phamtunglam.lamity.core.domain.tools.BuiltinTool
-import com.phamtunglam.lamity.core.domain.tools.ToolRegistry
+import com.phamtunglam.lamity.core.domain.tools.AppTool
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
 import com.phamtunglam.lamity.feature.studio.domain.SaveAgentUseCase
@@ -33,10 +32,10 @@ class AgentEditViewModel(
     private val agentId: String?,
     agents: AgentsRepository,
     skills: SkillsRepository,
-    registry: ToolRegistry,
+    tools: List<AppTool>,
     private val saveAgent: SaveAgentUseCase,
 ) : ViewModel() {
-    val availableTools: List<BuiltinTool> = registry.userSelectable
+    val availableTools: List<AppTool> = tools
 
     val availableSkills: StateFlow<List<Skill>> =
         skills.skills

@@ -15,10 +15,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.phamtunglam.lamity.feature.chat.domain.ChatError
+import com.phamtunglam.lamity.feature.chat.domain.ChatErrorKind
+import com.phamtunglam.lamity.feature.chat.domain.ChatNotice
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.dismiss
+import com.phamtunglam.lamity.shared.resources.error_gpu_load_failed
+import com.phamtunglam.lamity.shared.resources.error_model_unsupported_on_device
 import com.phamtunglam.lamity.shared.resources.loading_model
+import com.phamtunglam.lamity.shared.resources.notice_switched_to_cpu
 import org.jetbrains.compose.resources.stringResource
 
 /** Indeterminate banner shown while the native engine loads a model. */
@@ -36,9 +43,35 @@ internal fun EngineLoadingBar() {
 }
 
 @Composable
-internal fun ChatErrorBanner(error: String, onDismiss: () -> Unit) {
+internal fun ChatErrorBanner(error: ChatError, onDismiss: () -> Unit) {
+    StatusBanner(
+        text = chatErrorText(error),
+        container = MaterialTheme.colorScheme.errorContainer,
+        content = MaterialTheme.colorScheme.onErrorContainer,
+        onDismiss = onDismiss,
+    )
+}
+
+/** Informational banner (e.g. a model was switched to the CPU backend), distinct from an error. */
+@Composable
+internal fun ChatNoticeBanner(notice: ChatNotice, onDismiss: () -> Unit) {
+    StatusBanner(
+        text = chatNoticeText(notice),
+        container = MaterialTheme.colorScheme.secondaryContainer,
+        content = MaterialTheme.colorScheme.onSecondaryContainer,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun StatusBanner(
+    text: String,
+    container: Color,
+    content: Color,
+    onDismiss: () -> Unit,
+) {
     Surface(
-        color = MaterialTheme.colorScheme.errorContainer,
+        color = container,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
@@ -47,12 +80,38 @@ internal fun ChatErrorBanner(error: String, onDismiss: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                error,
+                text,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = content,
                 modifier = Modifier.weight(1f),
             )
             TextButton(onClick = onDismiss) { Text(stringResource(Res.string.dismiss)) }
         }
     }
 }
+
+@Composable
+private fun chatErrorText(error: ChatError): String =
+    when (error) {
+        is ChatError.Raw -> {
+            error.message
+        }
+
+        is ChatError.Known -> {
+            when (error.kind) {
+                ChatErrorKind.MODEL_UNSUPPORTED_ON_DEVICE -> {
+                    stringResource(Res.string.error_model_unsupported_on_device)
+                }
+
+                ChatErrorKind.GPU_LOAD_FAILED -> {
+                    stringResource(Res.string.error_gpu_load_failed)
+                }
+            }
+        }
+    }
+
+@Composable
+private fun chatNoticeText(notice: ChatNotice): String =
+    when (notice) {
+        ChatNotice.SWITCHED_TO_CPU -> stringResource(Res.string.notice_switched_to_cpu)
+    }

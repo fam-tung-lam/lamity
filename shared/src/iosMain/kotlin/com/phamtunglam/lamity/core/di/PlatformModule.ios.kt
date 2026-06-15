@@ -17,9 +17,8 @@ import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIDevice
 
 /**
- * iOS platform graph. NativeLlmBridge is NOT defined here: the Swift side owns
- * that SDK and hands its implementation to
- * [com.phamtunglam.lamity.MainViewController], which registers it in Koin.
+ * iOS platform graph. The LiteRT-LM runtime lives in lamityLlm's iosMain (cinterop to the
+ * CLiteRTLM C API), so no Swift LLM bridge is registered here.
  */
 actual fun platformModule(): Module =
     module {

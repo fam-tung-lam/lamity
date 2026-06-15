@@ -22,6 +22,9 @@
     <string name="tool_call_label">Herramienta</string>
     <string name="dismiss">Cerrar</string>
     <string name="retry">Reintentar</string>
+    <string name="notice_switched_to_cpu">Este modelo no pudo usar tu GPU, así que ahora se ejecuta en la CPU (más lento). Puedes cambiarlo en los ajustes del modelo.</string>
+    <string name="error_gpu_load_failed">No se pudo cargar este modelo en tu GPU. Abre sus ajustes y cambia el backend a CPU.</string>
+    <string name="error_model_unsupported_on_device">Este modelo no puede ejecutarse en tu dispositivo. Prueba con un modelo más pequeño.</string>
 
     <string name="download">Descargar</string>
     <string name="cancel">Cancelar</string>

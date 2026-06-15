@@ -4,39 +4,35 @@ import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.core.domain.tools.ToolContext
-import com.phamtunglam.lamity.core.domain.tools.ToolDispatcher
-import com.phamtunglam.lamity.core.domain.tools.ToolEvent
-import com.phamtunglam.lamity.core.domain.tools.ToolIds
-import com.phamtunglam.lamity.core.domain.tools.ToolRegistry
+import com.phamtunglam.lamity.core.domain.tools.AppTool
+import com.phamtunglam.lamity.core.domain.tools.LoadSkillTool
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
+import com.phamtunglam.lamity.feature.models.domain.LlmBackend
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
 import com.phamtunglam.lamity.feature.studio.domain.Agent
 import com.phamtunglam.lamity.feature.studio.domain.Skill
-import com.phamtunglam.lamity.llm.ConversationSetup
-import com.phamtunglam.lamity.llm.EngineSetup
-import com.phamtunglam.lamity.llm.EngineState
-import com.phamtunglam.lamity.llm.GenEvent
-import com.phamtunglam.lamity.llm.ModelRuntime
-import com.phamtunglam.lamity.llm.NativeLlmBridge
+import com.phamtunglam.lamity.llm.model.Backend
+import com.phamtunglam.lamity.llm.model.ConversationConfig
+import com.phamtunglam.lamity.llm.model.EngineConfig
+import com.phamtunglam.lamity.llm.model.Message
+import com.phamtunglam.lamity.llm.model.SamplerConfig
+import com.phamtunglam.lamity.llm.tool.Tool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 data class ChatSessionState(
     val conversationId: String? = null,
@@ -47,7 +43,8 @@ data class ChatSessionState(
     val streamingThought: String = "",
     val isGenerating: Boolean = false,
     val engine: EngineState = EngineState.Idle,
-    val error: String? = null,
+    val error: ChatError? = null,
+    val notice: ChatNotice? = null,
 )
 
 /**
@@ -64,26 +61,24 @@ class ChatSessionManager(
     private val skills: SkillsRepository,
     private val models: ModelsRepository,
     private val settings: SettingsRepository,
-    private val registry: ToolRegistry,
-    private val toolContext: ToolContext,
-    private val dispatcher: ToolDispatcher,
+    /** User-selectable built-in tools (everything except the per-session load_skill). */
+    private val selectableTools: List<AppTool>,
     private val downloads: ModelDownloadManager,
     private val dirs: AppDirs,
-    llmBridge: NativeLlmBridge,
 ) {
     private val log = Logger.withTag("ChatSessionManager")
 
     private val _state = MutableStateFlow(ChatSessionState())
     val state: StateFlow<ChatSessionState> = _state.asStateFlow()
 
+    /** Tool invocations recorded during generation; persisted and shown as TOOL messages. */
+    private val toolMessages = MutableSharedFlow<ChatMessage>(extraBufferCapacity = 64)
+
     private var sessionHandle: String? = null
     private var sessionSignature: String? = null
     private var generateJob: Job? = null
 
     init {
-        // Model tool calls from the native runtimes land in the shared dispatcher.
-        llmBridge.toolExecutor = dispatcher
-
         scope.launch {
             settings.awaitLoaded()
             models.awaitLoaded()
@@ -105,7 +100,10 @@ class ChatSessionManager(
             runtime.engineState.collect { es -> _state.update { it.copy(engine = es) } }
         }
         scope.launch {
-            dispatcher.events.collect { onToolEvent(it) }
+            toolMessages.collect { message ->
+                conversations.appendMessage(message)
+                _state.update { it.copy(messages = it.messages + message) }
+            }
         }
     }
 
@@ -173,6 +171,8 @@ class ChatSessionManager(
 
     fun dismissError() = _state.update { it.copy(error = null) }
 
+    fun dismissNotice() = _state.update { it.copy(notice = null) }
+
     // ----------------------------------------------------------- generation
 
     // Surfaces any generation failure (including arbitrary native LLM errors) to the UI; cancellation is rethrown.
@@ -182,18 +182,24 @@ class ChatSessionManager(
         if (trimmed.isEmpty() || _state.value.isGenerating) return
         val model = models.byId(_state.value.modelId)
         if (model == null) {
-            _state.update { it.copy(error = "Select a model first") }
+            _state.update { it.copy(error = ChatError.Raw("Select a model first")) }
             return
         }
         if (!downloads.isDownloaded(model)) {
-            _state.update { it.copy(error = "Model is not downloaded yet") }
+            _state.update { it.copy(error = ChatError.Raw("Model is not downloaded yet")) }
             return
         }
 
         generateJob =
             scope.launch {
                 _state.update {
-                    it.copy(isGenerating = true, error = null, streamingText = "", streamingThought = "")
+                    it.copy(
+                        isGenerating = true,
+                        error = null,
+                        notice = null,
+                        streamingText = "",
+                        streamingThought = "",
+                    )
                 }
                 try {
                     runGeneration(model, trimmed)
@@ -201,7 +207,7 @@ class ChatSessionManager(
                     throw e
                 } catch (e: Throwable) {
                     log.e(e) { "generation failed" }
-                    _state.update { it.copy(error = e.message ?: "Generation failed") }
+                    _state.update { it.copy(error = ChatError.Raw(e.message ?: "Generation failed")) }
                 } finally {
                     _state.update { it.copy(isGenerating = false) }
                 }
@@ -216,32 +222,19 @@ class ChatSessionManager(
     private suspend fun runGeneration(model: LlmModel, text: String) {
         val agent = agents.byId(_state.value.agentId)
 
-        val engineKey = "${model.id}|${model.config.backend.name}|${model.config.maxTokens}"
-        val engineSetup =
-            EngineSetup(
-                modelPath = downloads.modelPath(model),
-                backend =
-                    model.config.backend.name
-                        .lowercase(),
-                maxTokens = model.config.maxTokens,
-                cacheDir = dirs.cacheDir,
-            )
-        runtime.ensureEngine(model.id, engineKey, engineSetup).getOrElse {
-            _state.update { s -> s.copy(error = it.message ?: "Could not load model") }
-            return
-        }
+        val effectiveModel = loadEngineWithFallback(model) ?: return
 
         // Conversation row (history) exists before the first token.
         val conversationId =
             _state.value.conversationId ?: run {
-                val created = conversations.create(agent?.id, model.id)
+                val created = conversations.create(agent?.id, effectiveModel.id)
                 _state.update { it.copy(conversationId = created.id) }
                 created.id
             }
         conversations.ensureTitle(conversationId, text)
 
-        ensureSession(model, agent, conversationId).getOrElse {
-            _state.update { s -> s.copy(error = it.message ?: "Could not start conversation") }
+        ensureSession(effectiveModel, agent, conversationId).getOrElse {
+            _state.update { s -> s.copy(error = ChatError.Raw(it.message ?: "Could not start conversation")) }
             return
         }
 
@@ -256,7 +249,47 @@ class ChatSessionManager(
         conversations.appendMessage(userMessage)
         _state.update { it.copy(messages = it.messages + userMessage) }
 
-        streamAndPersist(model, agent, conversationId, text)
+        streamAndPersist(effectiveModel, agent, conversationId, text)
+    }
+
+    private suspend fun ensureEngineFor(model: LlmModel): Result<Unit> {
+        val engineKey = "${model.id}|${model.config.backend.name}|${model.config.maxTokens}"
+        val engineConfig =
+            EngineConfig(
+                modelPath = downloads.modelPath(model),
+                backend = if (model.config.backend == LlmBackend.GPU) Backend.Gpu() else Backend.Cpu(),
+                maxNumTokens = model.config.maxTokens,
+                cacheDir = dirs.cacheDir,
+            )
+        return runtime.ensureEngine(model.id, engineKey, engineConfig)
+    }
+
+    /**
+     * Loads the engine for [model], transparently retrying once on the CPU backend when a GPU load
+     * fails with a recoverable native error (see [shouldFallBackToCpu] — e.g. the Gemma 4 E-series
+     * `llm_litert_compiled_model_executor` failures). A successful CPU fallback is persisted and a
+     * [ChatNotice.SWITCHED_TO_CPU] notice is shown. Returns the effective model to use for the
+     * conversation, or null after setting [ChatSessionState.error] on failure.
+     */
+    private suspend fun loadEngineWithFallback(model: LlmModel): LlmModel? {
+        val first = ensureEngineFor(model)
+        if (first.isSuccess) return model
+
+        val cause = first.exceptionOrNull()
+        if (!shouldFallBackToCpu(model.config.backend, cause?.message)) {
+            _state.update { it.copy(error = loadError(cause?.message)) }
+            return null
+        }
+
+        log.w { "GPU load failed for ${model.id}; retrying on CPU: ${cause?.message}" }
+        val cpuModel = model.copy(config = model.config.copy(backend = LlmBackend.CPU))
+        if (ensureEngineFor(cpuModel).isFailure) {
+            _state.update { it.copy(error = ChatError.Known(ChatErrorKind.MODEL_UNSUPPORTED_ON_DEVICE)) }
+            return null
+        }
+        models.updateConfig(model.id, cpuModel.config)
+        _state.update { it.copy(notice = ChatNotice.SWITCHED_TO_CPU, error = null) }
+        return cpuModel
     }
 
     private suspend fun streamAndPersist(
@@ -293,7 +326,7 @@ class ChatSessionManager(
                     is GenEvent.Error -> {
                         completed = true
                         finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
-                        _state.update { it.copy(error = event.message) }
+                        handleGenerationError(model, hadOutput = charCount > 0, message = event.message)
                     }
                 }
             }
@@ -342,6 +375,22 @@ class ChatSessionManager(
         }
     }
 
+    /**
+     * Surfaces a generation failure. When a GPU model fails before producing any output with a
+     * recoverable native error, the model is transparently switched to CPU (persisted) and a
+     * [ChatNotice.SWITCHED_TO_CPU] is shown so the next send runs on CPU; otherwise the error is
+     * mapped to a user-facing [ChatError].
+     */
+    private suspend fun handleGenerationError(model: LlmModel, hadOutput: Boolean, message: String) {
+        if (!hadOutput && shouldFallBackToCpu(model.config.backend, message)) {
+            log.w { "GPU generation failed for ${model.id}; switching to CPU: $message" }
+            models.updateConfig(model.id, model.config.copy(backend = LlmBackend.CPU))
+            _state.update { it.copy(notice = ChatNotice.SWITCHED_TO_CPU, error = null) }
+            return
+        }
+        _state.update { it.copy(error = loadError(message)) }
+    }
+
     // ----------------------------------------------------------- session
 
     private suspend fun ensureSession(model: LlmModel, agent: Agent?, conversationId: String): Result<Unit> {
@@ -351,21 +400,21 @@ class ChatSessionManager(
         if (sessionHandle != null && sessionSignature == signature) return Result.success(Unit)
 
         closeSession()
-        // load_skill resolves against the skills attached to this session
-        toolContext.activeSkills = { skillsForAgent }
 
         val history = _state.value.messages.filter { it.role != MessageRole.TOOL }
-        val setup =
-            ConversationSetup(
-                systemPrompt = buildSystemPrompt(agent, skillsForAgent),
-                historyJson = historyJson(history),
-                toolIds = toolIds,
-                toolSpecsJson = registry.specsJsonFor(toolIds),
-                topK = model.config.topK,
-                topP = model.config.topP,
-                temperature = model.config.temperature,
+        val config =
+            ConversationConfig(
+                systemMessage = buildSystemPrompt(agent, skillsForAgent)?.let { Message.system(it) },
+                initialMessages = historyMessages(history),
+                tools = sessionTools(toolIds, skillsForAgent),
+                samplerConfig =
+                    SamplerConfig(
+                        topK = model.config.topK,
+                        topP = model.config.topP,
+                        temperature = model.config.temperature,
+                    ),
             )
-        return runtime.createConversation(setup).map { handle ->
+        return runtime.createConversation(config).map { handle ->
             sessionHandle = handle
             sessionSignature = signature
         }
@@ -387,13 +436,35 @@ class ChatSessionManager(
     private fun effectiveToolIds(agent: Agent?, skillsForAgent: List<Skill>): List<String> {
         val base =
             agent?.toolIds
-                ?: registry.userSelectable.map { it.id } // no agent: all globally enabled tools
+                ?: selectableTools.map { it.id } // no agent: all globally enabled tools
         val enabled =
             base.filter { id ->
-                settings.isToolEnabled(id) && registry.byId(id) != null && id != ToolIds.LOAD_SKILL
+                settings.isToolEnabled(id) && selectableTools.any { it.id == id } && id != LoadSkillTool.ID
             }
-        return if (skillsForAgent.isNotEmpty()) enabled + ToolIds.LOAD_SKILL else enabled
+        return if (skillsForAgent.isNotEmpty()) enabled + LoadSkillTool.ID else enabled
     }
+
+    /**
+     * Builds the executable tools for this session in [toolIds] order, wiring each one's invocation
+     * sink to the chat recorder. load_skill is created here with the session's [skillsForAgent].
+     */
+    private fun sessionTools(toolIds: List<String>, skillsForAgent: List<Skill>): List<Tool> =
+        buildList {
+            toolIds.forEach { id ->
+                when (id) {
+                    LoadSkillTool.ID -> {
+                        add(LoadSkillTool(skillsForAgent).apply { onInvoked = ::recordToolInvocation })
+                    }
+
+                    else -> {
+                        selectableTools.firstOrNull { it.id == id }?.let { tool ->
+                            tool.onInvoked = ::recordToolInvocation
+                            add(tool)
+                        }
+                    }
+                }
+            }
+        }
 
     private fun sessionSignatureOf(
         model: LlmModel,
@@ -431,39 +502,36 @@ class ChatSessionManager(
         return parts.joinToString("\n\n").ifBlank { null }
     }
 
-    private fun historyJson(history: List<ChatMessage>): String {
-        val arr =
-            buildJsonArray {
-                for (m in history) {
-                    if (m.content.isBlank()) continue
-                    add(
-                        buildJsonObject {
-                            put("role", if (m.role == MessageRole.USER) "user" else "model")
-                            put("text", m.content)
-                        },
-                    )
-                }
+    private fun historyMessages(history: List<ChatMessage>): List<Message> =
+        history.mapNotNull { m ->
+            when {
+                m.content.isBlank() -> null
+                m.role == MessageRole.USER -> Message.user(m.content)
+                else -> Message.model(m.content)
             }
-        return arr.toString()
-    }
+        }
 
     // ----------------------------------------------------------- tool events
 
-    private suspend fun onToolEvent(event: ToolEvent) {
+    /**
+     * Called by each tool after it runs (inside the conversation's tool loop, off the model's
+     * generation). Builds a TOOL message and hands it to the tool-message flow, whose single
+     * collector persists and appends it in order.
+     */
+    private fun recordToolInvocation(toolName: String, argsJson: String, resultJson: String) {
         val s = _state.value
         val conversationId = s.conversationId ?: return
         if (!s.isGenerating) return
-        val message =
+        toolMessages.tryEmit(
             ChatMessage(
-                id = event.id,
+                id = newId(),
                 conversationId = conversationId,
                 role = MessageRole.TOOL,
-                toolName = event.toolId,
-                toolArgs = event.argsJson,
-                toolResult = event.resultJson,
-                createdAt = event.atMillis,
-            )
-        conversations.appendMessage(message)
-        _state.update { it.copy(messages = it.messages + message) }
+                toolName = toolName,
+                toolArgs = argsJson,
+                toolResult = resultJson,
+                createdAt = epochMillis(),
+            ),
+        )
     }
 }

@@ -23,12 +23,9 @@ val chatModule: Module =
                 skills = get(),
                 models = get(),
                 settings = get(),
-                registry = get(),
-                toolContext = get(),
-                dispatcher = get(),
+                selectableTools = get(),
                 downloads = get(),
                 dirs = get(),
-                llmBridge = get(),
             )
         }
 

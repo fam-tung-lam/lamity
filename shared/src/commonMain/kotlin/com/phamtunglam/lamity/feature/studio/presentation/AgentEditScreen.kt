@@ -21,7 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.core.domain.tools.BuiltinTool
+import com.phamtunglam.lamity.core.domain.tools.AppTool
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.feature.studio.domain.Skill
 import com.phamtunglam.lamity.shared.resources.Res
@@ -118,7 +118,7 @@ private fun AgentTextFields(ui: AgentEditUiState, viewModel: AgentEditViewModel)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AttachedToolsSection(tools: List<BuiltinTool>, selectedIds: List<String>, onToggle: (String) -> Unit) {
+private fun AttachedToolsSection(tools: List<AppTool>, selectedIds: List<String>, onToggle: (String) -> Unit) {
     Text(stringResource(Res.string.attached_tools), style = MaterialTheme.typography.titleSmall)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         tools.forEach { tool ->

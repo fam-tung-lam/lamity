@@ -8,8 +8,6 @@ import com.phamtunglam.lamity.db.LamityDatabase
 import com.phamtunglam.lamity.db.lamityDatabaseBuilder
 import com.phamtunglam.lamity.downloader.AndroidDownloader
 import com.phamtunglam.lamity.downloader.Downloader
-import com.phamtunglam.lamity.llm.AndroidLlmBridge
-import com.phamtunglam.lamity.llm.NativeLlmBridge
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -34,5 +32,4 @@ actual fun platformModule(): Module =
         }
         single<Downloader> { AndroidDownloader(androidContext()) }
         single<RoomDatabase.Builder<LamityDatabase>> { lamityDatabaseBuilder(androidContext()) }
-        single<NativeLlmBridge> { AndroidLlmBridge() }
     }

@@ -22,6 +22,9 @@
     <string name="tool_call_label">Gọi công cụ</string>
     <string name="dismiss">Đóng</string>
     <string name="retry">Thử lại</string>
+    <string name="notice_switched_to_cpu">Mô hình này không dùng được GPU của bạn nên hiện đang chạy trên CPU (chậm hơn). Bạn có thể thay đổi trong cài đặt của mô hình.</string>
+    <string name="error_gpu_load_failed">Không thể nạp mô hình này trên GPU của bạn. Mở cài đặt của mô hình và chuyển Backend sang CPU.</string>
+    <string name="error_model_unsupported_on_device">Mô hình này không thể chạy trên thiết bị của bạn. Hãy thử một mô hình nhỏ hơn.</string>
 
     <string name="download">Tải về</string>
     <string name="cancel">Hủy</string>

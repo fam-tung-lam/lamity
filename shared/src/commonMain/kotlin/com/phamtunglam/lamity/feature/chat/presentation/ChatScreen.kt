@@ -15,12 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
+import com.phamtunglam.lamity.feature.chat.domain.EngineState
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatErrorBanner
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatHeader
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatInputBar
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatMessageList
+import com.phamtunglam.lamity.feature.chat.presentation.components.ChatNoticeBanner
 import com.phamtunglam.lamity.feature.chat.presentation.components.EngineLoadingBar
-import com.phamtunglam.lamity.llm.EngineState
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.chat_empty_body
 import com.phamtunglam.lamity.shared.resources.chat_empty_title
@@ -52,23 +53,10 @@ fun ChatScreen(onGoToModels: () -> Unit, viewModel: ChatViewModel = koinViewMode
                 state.isGenerating ||
                     state.streamingText.isNotEmpty() || state.streamingThought.isNotEmpty()
             if (state.messages.isEmpty() && !showStreaming) {
-                Column(
-                    Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    if (!ui.selectedModelReady) {
-                        EmptyState(stringResource(Res.string.no_model_title), stringResource(Res.string.no_model_body))
-                        Button(onClick = onGoToModels) {
-                            Text(stringResource(Res.string.go_to_models))
-                        }
-                    } else {
-                        EmptyState(
-                            stringResource(Res.string.chat_empty_title),
-                            stringResource(Res.string.chat_empty_body),
-                        )
-                    }
-                }
+                ChatEmptyState(
+                    selectedModelReady = ui.selectedModelReady,
+                    onGoToModels = onGoToModels,
+                )
             } else {
                 ChatMessageList(
                     messages = state.messages,
@@ -82,6 +70,9 @@ fun ChatScreen(onGoToModels: () -> Unit, viewModel: ChatViewModel = koinViewMode
         if (state.engine is EngineState.Loading) {
             EngineLoadingBar()
         }
+        state.notice?.let { notice ->
+            ChatNoticeBanner(notice = notice, onDismiss = viewModel::dismissNotice)
+        }
         state.error?.let { error ->
             ChatErrorBanner(error = error, onDismiss = viewModel::dismissError)
         }
@@ -92,5 +83,26 @@ fun ChatScreen(onGoToModels: () -> Unit, viewModel: ChatViewModel = koinViewMode
             onSend = viewModel::send,
             onStop = viewModel::stopGeneration,
         )
+    }
+}
+
+@Composable
+private fun ChatEmptyState(selectedModelReady: Boolean, onGoToModels: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (!selectedModelReady) {
+            EmptyState(stringResource(Res.string.no_model_title), stringResource(Res.string.no_model_body))
+            Button(onClick = onGoToModels) {
+                Text(stringResource(Res.string.go_to_models))
+            }
+        } else {
+            EmptyState(
+                stringResource(Res.string.chat_empty_title),
+                stringResource(Res.string.chat_empty_body),
+            )
+        }
     }
 }

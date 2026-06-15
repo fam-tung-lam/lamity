@@ -41,12 +41,14 @@ lint:
 # Tests
 # ============================================================================
 
-# Only these KMP modules opt into unit tests (withHostTest + commonTest sources);
-# lamityDb and lamityLlm have no test sources, so they are excluded here.
+# These KMP modules opt into unit tests (withHostTest + commonTest sources);
+# only lamityDb has no test sources, so it is excluded here.
 TEST_KMP_ANDROID = $(SHARED):testAndroidHostTest $(LAMITY_DOWNLOADER):testAndroidHostTest \
-        $(LAMITY_LOGGER):testAndroidHostTest $(LAMITY_CRASH):testAndroidHostTest
+        $(LAMITY_LOGGER):testAndroidHostTest $(LAMITY_CRASH):testAndroidHostTest \
+        $(LAMITY_LLM):testAndroidHostTest
 TEST_KMP_IOS = $(SHARED):iosSimulatorArm64Test $(LAMITY_DOWNLOADER):iosSimulatorArm64Test \
-        $(LAMITY_LOGGER):iosSimulatorArm64Test $(LAMITY_CRASH):iosSimulatorArm64Test
+        $(LAMITY_LOGGER):iosSimulatorArm64Test $(LAMITY_CRASH):iosSimulatorArm64Test \
+        $(LAMITY_LLM):iosSimulatorArm64Test
 
 # ---- Compile-only fast feedback ----
 
@@ -60,12 +62,13 @@ test-typecheck-common:
 test-typecheck-android:
 	$(GRADLE) $(ANDROID_APP):compileDebugUnitTestKotlin $(SHARED):compileAndroidHostTest \
         $(LAMITY_DOWNLOADER):compileAndroidHostTest $(LAMITY_LOGGER):compileAndroidHostTest \
-        $(LAMITY_CRASH):compileAndroidHostTest $(RERUN_TASKS)
+        $(LAMITY_CRASH):compileAndroidHostTest $(LAMITY_LLM):compileAndroidHostTest $(RERUN_TASKS)
 
 # Typecheck iOS unit-test sources.
 test-typecheck-ios:
 	$(GRADLE) $(SHARED):compileTestKotlinIosSimulatorArm64 $(LAMITY_DOWNLOADER):compileTestKotlinIosSimulatorArm64 \
-        $(LAMITY_LOGGER):compileTestKotlinIosSimulatorArm64 $(LAMITY_CRASH):compileTestKotlinIosSimulatorArm64 $(RERUN_TASKS)
+        $(LAMITY_LOGGER):compileTestKotlinIosSimulatorArm64 $(LAMITY_CRASH):compileTestKotlinIosSimulatorArm64 \
+        $(LAMITY_LLM):compileTestKotlinIosSimulatorArm64 $(RERUN_TASKS)
 
 # ---- Unit tests ----
 
@@ -127,12 +130,20 @@ test-crash-android:
 test-crash-ios:
 	$(GRADLE) $(LAMITY_CRASH):iosSimulatorArm64Test $(RERUN)
 
-# lamityDb / lamityLlm have no unit tests (no host-test/commonTest sources);
+# lamityLlm
+test-llm:
+	$(GRADLE) $(LAMITY_LLM):testAndroidHostTest $(LAMITY_LLM):iosSimulatorArm64Test $(RERUN)
+test-llm-common:
+	$(GRADLE) $(LAMITY_LLM):compileCommonMainKotlinMetadata $(RERUN_TASKS)
+test-llm-android:
+	$(GRADLE) $(LAMITY_LLM):testAndroidHostTest $(RERUN)
+test-llm-ios:
+	$(GRADLE) $(LAMITY_LLM):iosSimulatorArm64Test $(RERUN)
+
+# lamityDb has no unit tests (no host-test/commonTest sources);
 # only the commonMain typecheck applies.
 test-db-common:
 	$(GRADLE) $(LAMITY_DB):compileCommonMainKotlinMetadata $(RERUN_TASKS)
-test-llm-common:
-	$(GRADLE) $(LAMITY_LLM):compileCommonMainKotlinMetadata $(RERUN_TASKS)
 
 # androidApp is an Android application module — JVM unit tests only.
 test-app:
@@ -145,4 +156,5 @@ test-app:
         test-downloader test-downloader-common test-downloader-android test-downloader-ios \
         test-logger test-logger-common test-logger-android test-logger-ios \
         test-crash test-crash-common test-crash-android test-crash-ios \
-        test-db-common test-llm-common test-app
+        test-llm test-llm-common test-llm-android test-llm-ios \
+        test-db-common test-app

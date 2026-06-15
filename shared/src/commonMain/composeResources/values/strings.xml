@@ -24,6 +24,9 @@
     <string name="tool_call_label">Tool call</string>
     <string name="dismiss">Dismiss</string>
     <string name="retry">Retry</string>
+    <string name="notice_switched_to_cpu">This model couldn\'t use your GPU, so it\'s now running on CPU (slower). You can change this in the model\'s settings.</string>
+    <string name="error_gpu_load_failed">Couldn\'t load this model on your GPU. Open its settings and switch Backend to CPU.</string>
+    <string name="error_model_unsupported_on_device">This model can\'t run on your device. Try a smaller model.</string>
 
     <!-- Models / downloader -->
     <string name="download">Download</string>

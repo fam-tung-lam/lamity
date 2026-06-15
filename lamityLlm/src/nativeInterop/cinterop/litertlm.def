@@ -1,0 +1,9 @@
+language = C
+package = com.phamtunglam.lamity.llm.cinterop
+headers = engine.h capabilities_c.h
+
+# The CLiteRTLM C API. Headers are vendored from the v0.13.1 CLiteRTLM.xcframework
+# (kept in sync with the `litertlm` version in gradle/libs.versions.toml). Only bindings are
+# generated here; the symbols live in the dynamic CLiteRTLM.framework, which the LiteRTLM Swift
+# package embeds into the iOS app. dyld loads it at launch and binds its litert_lm_* exports to the
+# Shared framework's -undefined dynamic_lookup references. See shared/build.gradle.kts.

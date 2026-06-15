@@ -1,0 +1,115 @@
+package com.phamtunglam.lamity.llm
+
+import com.phamtunglam.lamity.llm.model.Contents
+import com.phamtunglam.lamity.llm.model.Message
+import com.phamtunglam.lamity.llm.model.Role
+import com.phamtunglam.lamity.llm.model.ToolCall
+import com.phamtunglam.lamity.llm.native.ConversationHandle
+import com.phamtunglam.lamity.llm.native.LiteRtLmNativeRuntime
+import com.phamtunglam.lamity.llm.native.TurnCallback
+import com.phamtunglam.lamity.llm.tool.ToolManager
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
+
+private const val RECURRING_TOOL_CALL_LIMIT = 25
+
+/**
+ * A LiteRT-LM conversation.
+ */
+class Conversation internal constructor(
+    private val runtime: LiteRtLmNativeRuntime,
+    private val handle: ConversationHandle,
+    private val toolManager: ToolManager,
+) {
+    private var alive = true
+    val isAlive: Boolean get() = alive
+
+    /**
+     * Sends [message] and streams the response as a flow of [Message] chunks. Tool calls are
+     * handled transparently: when the model requests tools, they run via the [ToolManager] and the
+     * conversation continues, up to [RECURRING_TOOL_CALL_LIMIT] rounds.
+     */
+    fun sendMessageStream(message: Message, extraContext: JsonObject? = null): Flow<Message> =
+        channelFlow {
+            val producer = this
+            var current = message
+            var iterations = 0
+            var completedNormally = false
+            try {
+                while (true) {
+                    if (iterations++ >= RECURRING_TOOL_CALL_LIMIT) {
+                        throw LiteRtLmException(
+                            "Exceeded recurring tool call limit ($RECURRING_TOOL_CALL_LIMIT)",
+                        )
+                    }
+                    val pending = mutableListOf<ToolCall>()
+                    val turn = CompletableDeferred<Unit>()
+                    runtime.streamTurn(
+                        handle,
+                        current,
+                        extraContext,
+                        object : TurnCallback {
+                            override fun onChunk(message: Message) {
+                                if (message.toolCalls.isNotEmpty()) pending += message.toolCalls
+                                if (!message.contents.isEmpty || message.channels.isNotEmpty()) {
+                                    producer.trySend(message)
+                                }
+                            }
+
+                            override fun onComplete() {
+                                turn.complete(Unit)
+                            }
+
+                            override fun onError(message: String) {
+                                turn.completeExceptionally(LiteRtLmException(message))
+                            }
+                        },
+                    )
+                    turn.await()
+                    if (pending.isEmpty()) {
+                        completedNormally = true
+                        break
+                    }
+                    current = toolManager.handleToolCalls(pending)
+                }
+            } finally {
+                if (!completedNormally) runtime.cancel(handle)
+            }
+        }.buffer(Channel.UNLIMITED)
+
+    /** Sends [message] and returns the merged final response. */
+    suspend fun sendMessage(message: Message, extraContext: JsonObject? = null): Message {
+        val text = StringBuilder()
+        val channels = mutableMapOf<String, String>()
+        sendMessageStream(message, extraContext).collect { chunk ->
+            text.append(chunk.text)
+            channels.putAll(chunk.channels)
+        }
+        return Message(Role.Model, Contents.text(text.toString()), channels = channels)
+    }
+
+    /** Cancels any ongoing generation. */
+    fun cancel() {
+        runtime.cancel(handle)
+    }
+
+    /** Number of tokens currently in the conversation KV cache. */
+    suspend fun getTokenCount(): Int = withContext(Dispatchers.Default) { runtime.getTokenCount(handle) }
+
+    /** Renders [message] into the model's prompt string (for debugging/inspection). */
+    suspend fun renderMessageIntoString(message: Message): String =
+        withContext(Dispatchers.Default) { runtime.renderMessage(handle, message) }
+
+    /** Releases the native conversation. */
+    fun dispose() {
+        if (!alive) return
+        alive = false
+        runtime.deleteConversation(handle)
+    }
+}

@@ -54,4 +54,6 @@ class ChatViewModel(
     fun stopGeneration() = chat.stopGeneration()
 
     fun dismissError() = chat.dismissError()
+
+    fun dismissNotice() = chat.dismissNotice()
 }

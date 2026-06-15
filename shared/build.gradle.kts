@@ -24,13 +24,17 @@ kotlin {
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "Shared"
-            // Dynamic: the LiteRT-LM Swift package links the app with -all_load,
-            // which would force-load duplicate objects from a static Kotlin framework.
+            // Dynamic so dyld resolves the cinterop's litert_lm_* references at launch against the
+            // separately-loaded CLiteRTLM.framework (see linkerOpts below).
             isStatic = false
-            // The Swift side implements NativeLlmBridge and
-            // LamityDownloaderBridge, so those modules' APIs must be visible
-            // in the framework header.
-            export(projects.lamityLlm)
+            // lamityLlm binds the CLiteRTLM C API via cinterop but does not link it; the litert_lm_*
+            // symbols live in the dynamic CLiteRTLM.framework, which the LiteRTLM Swift package
+            // embeds into the app and dyld loads at launch. Leave them undefined here so this
+            // framework links; they resolve dynamically at app load time.
+            linkerOpts("-undefined", "dynamic_lookup")
+            // lamityDownloader's bridge is still implemented in Swift, so its API must be visible
+            // in the framework header. lamityLlm is no longer Swift-facing (its runtime is pure
+            // Kotlin via cinterop), so it is not exported.
             export(projects.lamityDownloader)
         }
     }

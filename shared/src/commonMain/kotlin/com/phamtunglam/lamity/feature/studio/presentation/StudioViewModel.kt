@@ -2,8 +2,7 @@ package com.phamtunglam.lamity.feature.studio.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phamtunglam.lamity.core.domain.tools.BuiltinTool
-import com.phamtunglam.lamity.core.domain.tools.ToolRegistry
+import com.phamtunglam.lamity.core.domain.tools.AppTool
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
@@ -20,7 +19,7 @@ import kotlinx.coroutines.launch
 data class StudioUiState(
     val agents: List<Agent> = emptyList(),
     val skills: List<Skill> = emptyList(),
-    val tools: List<BuiltinTool> = emptyList(),
+    val tools: List<AppTool> = emptyList(),
     val toolEnabled: Map<String, Boolean> = emptyMap(),
 )
 
@@ -28,7 +27,7 @@ class StudioViewModel(
     agents: AgentsRepository,
     private val skills: SkillsRepository,
     private val settings: SettingsRepository,
-    registry: ToolRegistry,
+    tools: List<AppTool>,
     private val deleteAgentUseCase: DeleteAgentUseCase,
     private val deleteSkillUseCase: DeleteSkillUseCase,
 ) : ViewModel() {
@@ -41,13 +40,13 @@ class StudioViewModel(
             StudioUiState(
                 agents = agentList,
                 skills = skillList,
-                tools = registry.userSelectable,
+                tools = tools,
                 toolEnabled = appSettings.toolEnabled,
             )
         }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            StudioUiState(tools = registry.userSelectable),
+            StudioUiState(tools = tools),
         )
 
     fun deleteAgent(agentId: String) {
