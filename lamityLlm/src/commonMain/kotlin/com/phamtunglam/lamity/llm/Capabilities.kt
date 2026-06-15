@@ -1,12 +1,12 @@
 package com.phamtunglam.lamity.llm
 
 import com.phamtunglam.lamity.llm.native.CapabilitiesHandle
-import com.phamtunglam.lamity.llm.native.LiteRtLmNativeRuntime
-import com.phamtunglam.lamity.llm.native.createNativeRuntime
+import com.phamtunglam.lamity.llm.native.CapabilityNativeRuntime
+import com.phamtunglam.lamity.llm.native.createCapabilityNativeRuntime
 
 /** Queries capabilities supported by the LiteRT-LM file at [modelPath]. */
 class Capabilities(val modelPath: String) {
-    private val runtime: LiteRtLmNativeRuntime = createNativeRuntime()
+    private val runtime: CapabilityNativeRuntime = createCapabilityNativeRuntime()
     private var handle: CapabilitiesHandle? = runtime.createCapabilities(modelPath)
 
     /** Whether these capabilities are still loaded. */

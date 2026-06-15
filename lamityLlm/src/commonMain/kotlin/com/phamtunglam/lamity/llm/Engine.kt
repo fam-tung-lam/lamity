@@ -4,8 +4,10 @@ import com.phamtunglam.lamity.llm.model.ConversationConfig
 import com.phamtunglam.lamity.llm.model.EngineConfig
 import com.phamtunglam.lamity.llm.model.SessionConfig
 import com.phamtunglam.lamity.llm.native.EngineHandle
-import com.phamtunglam.lamity.llm.native.LiteRtLmNativeRuntime
-import com.phamtunglam.lamity.llm.native.createNativeRuntime
+import com.phamtunglam.lamity.llm.native.EngineNativeRuntime
+import com.phamtunglam.lamity.llm.native.createConversationNativeRuntime
+import com.phamtunglam.lamity.llm.native.createEngineNativeRuntime
+import com.phamtunglam.lamity.llm.native.createSessionNativeRuntime
 import com.phamtunglam.lamity.llm.tool.ToolManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +16,7 @@ import kotlinx.coroutines.withContext
  * A LiteRT-LM engine: load a model, then create conversations or sessions from it.
  */
 class Engine(val engineConfig: EngineConfig) {
-    private val runtime: LiteRtLmNativeRuntime = createNativeRuntime()
+    private val runtime: EngineNativeRuntime = createEngineNativeRuntime()
     private var handle: EngineHandle? = null
 
     val isInitialized: Boolean get() = handle != null
@@ -41,7 +43,7 @@ class Engine(val engineConfig: EngineConfig) {
                     toolsJson = toolManager.toolsJsonDescription,
                 )
             }
-        return Conversation(runtime, conversation, toolManager, config.automaticToolCalling)
+        return Conversation(createConversationNativeRuntime(), conversation, toolManager, config.automaticToolCalling)
     }
 
     /** Creates a new lower-level session from the initialized engine. */
@@ -51,7 +53,7 @@ class Engine(val engineConfig: EngineConfig) {
             withContext(Dispatchers.Default) {
                 runtime.createSession(engine, config.samplerConfig, config.loraConfig)
             }
-        return Session(runtime, session)
+        return Session(createSessionNativeRuntime(), session)
     }
 
     /** Releases the native engine. */

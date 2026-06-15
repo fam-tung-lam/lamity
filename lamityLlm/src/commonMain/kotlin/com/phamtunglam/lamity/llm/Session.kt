@@ -1,8 +1,8 @@
 package com.phamtunglam.lamity.llm
 
 import com.phamtunglam.lamity.llm.model.InputData
-import com.phamtunglam.lamity.llm.native.LiteRtLmNativeRuntime
 import com.phamtunglam.lamity.llm.native.SessionHandle
+import com.phamtunglam.lamity.llm.native.SessionNativeRuntime
 import com.phamtunglam.lamity.llm.native.SessionStreamCallback
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
  * A lower-level LiteRT-LM session exposing explicit prefill/decode and content generation,
  * created via [Engine.createSession].
  */
-class Session internal constructor(private val runtime: LiteRtLmNativeRuntime, private val handle: SessionHandle) {
+class Session internal constructor(private val runtime: SessionNativeRuntime, private val handle: SessionHandle) {
     private var alive = true
     val isAlive: Boolean get() = alive
 

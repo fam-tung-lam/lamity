@@ -6,7 +6,7 @@ import com.phamtunglam.lamity.llm.model.Message
 import com.phamtunglam.lamity.llm.model.Role
 import com.phamtunglam.lamity.llm.model.ToolCall
 import com.phamtunglam.lamity.llm.native.ConversationHandle
-import com.phamtunglam.lamity.llm.native.LiteRtLmNativeRuntime
+import com.phamtunglam.lamity.llm.native.ConversationNativeRuntime
 import com.phamtunglam.lamity.llm.native.TurnCallback
 import com.phamtunglam.lamity.llm.tool.ToolManager
 import kotlinx.coroutines.CompletableDeferred
@@ -24,22 +24,27 @@ private const val RECURRING_TOOL_CALL_LIMIT = 25
  * A LiteRT-LM conversation.
  */
 class Conversation internal constructor(
-    private val runtime: LiteRtLmNativeRuntime,
-    private val handle: ConversationHandle,
+    private val runtime: ConversationNativeRuntime,
+    handle: ConversationHandle,
     private val toolManager: ToolManager,
     private val automaticToolCalling: Boolean = true,
 ) {
-    private var alive = true
-    val isAlive: Boolean get() = alive
+    private var handle: ConversationHandle? = handle
+
+    val isAlive: Boolean get() = handle != null
+
+    private fun requireHandle(): ConversationHandle =
+        handle ?: throw LiteRtLmException("Conversation has been disposed")
 
     /**
      * Sends [message] and streams the response as a flow of [Message] chunks. When
      * [automaticToolCalling] is enabled and the model requests tools, they run via the
      * [ToolManager] and the conversation continues, up to [RECURRING_TOOL_CALL_LIMIT] rounds.
-     * Otherwise tool calls are surfaced to the collector and the turn ends.
+     * Otherwise, tool calls are surfaced to the collector and the turn ends.
      */
     fun sendMessageStream(message: Message, extraContext: JsonObject? = null): Flow<Message> =
         channelFlow {
+            val handle = requireHandle()
             val producer = this
             var current = message
             var iterations = 0
@@ -108,24 +113,28 @@ class Conversation internal constructor(
 
     /** Cancels any ongoing generation. */
     fun cancel() {
-        runtime.cancel(handle)
+        val handleLocal = handle
+        if (handleLocal != null) {
+            runtime.cancel(handleLocal)
+        }
     }
 
     /** Number of tokens currently in the conversation KV cache. */
-    suspend fun getTokenCount(): Int = withContext(Dispatchers.Default) { runtime.getTokenCount(handle) }
+    suspend fun getTokenCount(): Int =
+        withContext(Dispatchers.Default) { runtime.getTokenCount(requireHandle()) }
 
     /** Benchmark information for this conversation (requires a benchmark-enabled engine). */
     suspend fun getBenchmarkInfo(): BenchmarkInfo =
-        withContext(Dispatchers.Default) { runtime.getBenchmarkInfo(handle) }
+        withContext(Dispatchers.Default) { runtime.getBenchmarkInfo(requireHandle()) }
 
     /** Renders [message] into the model's prompt string (for debugging/inspection). */
     suspend fun renderMessageIntoString(message: Message): String =
-        withContext(Dispatchers.Default) { runtime.renderMessage(handle, message) }
+        withContext(Dispatchers.Default) { runtime.renderMessage(requireHandle(), message) }
 
     /** Releases the native conversation. */
     fun dispose() {
-        if (!alive) return
-        alive = false
+        val handle = this.handle ?: return
+        this.handle = null
         runtime.deleteConversation(handle)
     }
 }
