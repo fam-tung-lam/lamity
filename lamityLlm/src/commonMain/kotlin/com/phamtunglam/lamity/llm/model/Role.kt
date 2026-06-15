@@ -9,6 +9,9 @@ enum class Role(val jsonName: String) {
     ;
 
     companion object {
-        fun fromJsonName(name: String?): Role = entries.firstOrNull { it.jsonName == name } ?: User
+        /** Maps a JSON role name to a [Role]; `"assistant"` is accepted as an alias for [Model]. */
+        fun fromJsonName(name: String?): Role =
+            entries.firstOrNull { it.jsonName == name }
+                ?: if (name == "assistant") Model else User
     }
 }

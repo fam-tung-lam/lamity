@@ -9,4 +9,7 @@ sealed class Backend(val name: String) {
 
     /** GPU backend. */
     class Gpu : Backend("gpu")
+
+    /** NPU backend. [nativeLibraryDir] points at the LiteRT dispatch library directory. */
+    class Npu(val nativeLibraryDir: String? = null) : Backend("npu")
 }

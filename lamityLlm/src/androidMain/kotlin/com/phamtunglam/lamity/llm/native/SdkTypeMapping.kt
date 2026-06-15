@@ -17,6 +17,7 @@ internal fun Backend.toSdk(): SdkBackend =
     when (this) {
         is Backend.Gpu -> SdkBackend.GPU()
         is Backend.Cpu -> SdkBackend.CPU(threadCount)
+        is Backend.Npu -> nativeLibraryDir?.let { SdkBackend.NPU(it) } ?: SdkBackend.NPU()
     }
 
 internal fun Role.toSdk(): SdkRole =

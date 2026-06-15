@@ -1,5 +1,6 @@
 package com.phamtunglam.lamity.llm
 
+import com.phamtunglam.lamity.llm.model.BenchmarkInfo
 import com.phamtunglam.lamity.llm.model.Contents
 import com.phamtunglam.lamity.llm.model.Message
 import com.phamtunglam.lamity.llm.model.Role
@@ -26,14 +27,16 @@ class Conversation internal constructor(
     private val runtime: LiteRtLmNativeRuntime,
     private val handle: ConversationHandle,
     private val toolManager: ToolManager,
+    private val automaticToolCalling: Boolean = true,
 ) {
     private var alive = true
     val isAlive: Boolean get() = alive
 
     /**
-     * Sends [message] and streams the response as a flow of [Message] chunks. Tool calls are
-     * handled transparently: when the model requests tools, they run via the [ToolManager] and the
-     * conversation continues, up to [RECURRING_TOOL_CALL_LIMIT] rounds.
+     * Sends [message] and streams the response as a flow of [Message] chunks. When
+     * [automaticToolCalling] is enabled and the model requests tools, they run via the
+     * [ToolManager] and the conversation continues, up to [RECURRING_TOOL_CALL_LIMIT] rounds.
+     * Otherwise tool calls are surfaced to the collector and the turn ends.
      */
     fun sendMessageStream(message: Message, extraContext: JsonObject? = null): Flow<Message> =
         channelFlow {
@@ -56,8 +59,15 @@ class Conversation internal constructor(
                         extraContext,
                         object : TurnCallback {
                             override fun onChunk(message: Message) {
-                                if (message.toolCalls.isNotEmpty()) pending += message.toolCalls
-                                if (!message.contents.isEmpty || message.channels.isNotEmpty()) {
+                                if (automaticToolCalling && message.toolCalls.isNotEmpty()) {
+                                    pending += message.toolCalls
+                                }
+                                val surfaceToolCalls =
+                                    !automaticToolCalling && message.toolCalls.isNotEmpty()
+                                if (!message.contents.isEmpty ||
+                                    message.channels.isNotEmpty() ||
+                                    surfaceToolCalls
+                                ) {
                                     producer.trySend(message)
                                 }
                             }
@@ -87,11 +97,13 @@ class Conversation internal constructor(
     suspend fun sendMessage(message: Message, extraContext: JsonObject? = null): Message {
         val text = StringBuilder()
         val channels = mutableMapOf<String, String>()
+        val toolCalls = mutableListOf<ToolCall>()
         sendMessageStream(message, extraContext).collect { chunk ->
             text.append(chunk.text)
             channels.putAll(chunk.channels)
+            toolCalls += chunk.toolCalls
         }
-        return Message(Role.Model, Contents.text(text.toString()), channels = channels)
+        return Message(Role.Model, Contents.text(text.toString()), toolCalls = toolCalls, channels = channels)
     }
 
     /** Cancels any ongoing generation. */
@@ -101,6 +113,10 @@ class Conversation internal constructor(
 
     /** Number of tokens currently in the conversation KV cache. */
     suspend fun getTokenCount(): Int = withContext(Dispatchers.Default) { runtime.getTokenCount(handle) }
+
+    /** Benchmark information for this conversation (requires a benchmark-enabled engine). */
+    suspend fun getBenchmarkInfo(): BenchmarkInfo =
+        withContext(Dispatchers.Default) { runtime.getBenchmarkInfo(handle) }
 
     /** Renders [message] into the model's prompt string (for debugging/inspection). */
     suspend fun renderMessageIntoString(message: Message): String =

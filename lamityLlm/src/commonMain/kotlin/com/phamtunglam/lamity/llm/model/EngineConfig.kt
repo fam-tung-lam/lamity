@@ -7,5 +7,6 @@ data class EngineConfig(
     val visionBackend: Backend? = null,
     val audioBackend: Backend? = null,
     val maxNumTokens: Int? = null,
+    val maxNumImages: Int? = null,
     val cacheDir: String? = null,
 )

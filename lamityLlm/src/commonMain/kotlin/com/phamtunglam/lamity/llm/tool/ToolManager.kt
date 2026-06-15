@@ -14,7 +14,12 @@ import kotlinx.serialization.json.buildJsonArray
  * Holds the tools for a conversation and runs them by name.
  */
 class ToolManager(tools: List<Tool> = emptyList()) {
-    private val toolsByName: Map<String, Tool> = tools.associateBy { it.toolName() }
+    private val toolsByName: Map<String, Tool> =
+        tools.associateBy { tool ->
+            tool.toolName().ifBlank {
+                throw LiteRtLmException("Tool description must contain [\"function\"][\"name\"]")
+            }
+        }
 
     /** JSON array of every tool description, passed to the native conversation config. */
     val toolsJsonDescription: String =
