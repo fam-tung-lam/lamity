@@ -15,14 +15,14 @@ import kotlinx.serialization.json.buildJsonObject
  * whatever thread LiteRT-LM invokes tools on; everything inside is thread-safe.
  */
 class ToolDispatcher(private val registry: ToolRegistry) : ToolExecutor {
-
     private val _events = MutableSharedFlow<ToolEvent>(extraBufferCapacity = 64)
     val events: SharedFlow<ToolEvent> = _events.asSharedFlow()
 
     override fun executeTool(toolId: String, paramsJson: String): String {
-        val args = runCatching {
-            Json.parseToJsonElement(paramsJson.ifBlank { "{}" }) as? JsonObject
-        }.getOrNull() ?: buildJsonObject { }
+        val args =
+            runCatching {
+                Json.parseToJsonElement(paramsJson.ifBlank { "{}" }) as? JsonObject
+            }.getOrNull() ?: buildJsonObject { }
 
         val result = registry.execute(toolId, args)
         val resultText = result.toString()
@@ -33,7 +33,7 @@ class ToolDispatcher(private val registry: ToolRegistry) : ToolExecutor {
                 argsJson = paramsJson,
                 resultJson = resultText,
                 atMillis = epochMillis(),
-            )
+            ),
         )
         return resultText
     }

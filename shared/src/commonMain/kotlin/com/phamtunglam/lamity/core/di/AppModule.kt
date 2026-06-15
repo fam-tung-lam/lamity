@@ -12,17 +12,18 @@ import org.koin.dsl.module
 /**
  * Application-wide infrastructure.
  */
-val appModule: Module = module {
-    includes(
-        coreModule,
-        chatModule,
-        historyModule,
-        localizationModule,
-        modelsModule,
-        settingsModule,
-        studioModule,
-        dbModule,
-        llmModule,
-        platformModule(),
-    )
-}
+val appModule: Module =
+    module {
+        includes(
+            coreModule,
+            chatModule,
+            historyModule,
+            localizationModule,
+            modelsModule,
+            settingsModule,
+            studioModule,
+            dbModule,
+            llmModule,
+            platformModule(),
+        )
+    }

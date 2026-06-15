@@ -7,10 +7,11 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val settingsModule: Module = module {
-    // Data
-    single<SettingsRepository> { SettingsRepositoryImpl(get(), get()) }
+val settingsModule: Module =
+    module {
+        // Data
+        single<SettingsRepository> { SettingsRepositoryImpl(get(), get()) }
 
-    // Presentation
-    viewModel { SettingsViewModel(get(), get(), get()) }
-}
+        // Presentation
+        viewModel { SettingsViewModel(get(), get(), get()) }
+    }

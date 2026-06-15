@@ -23,7 +23,10 @@ fun ConfirmDialog(
         title = { Text(title) },
         text = { Text(text) },
         confirmButton = {
-            TextButton(onClick = { onConfirm(); onDismiss() }) {
+            TextButton(onClick = {
+                onConfirm()
+                onDismiss()
+            }) {
                 Text(confirmLabel, color = MaterialTheme.colorScheme.error)
             }
         },

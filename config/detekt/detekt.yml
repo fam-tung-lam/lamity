@@ -1,0 +1,95 @@
+# Detekt configuration for Lamity (KMP + Compose Multiplatform).
+# Keep this file small: only project-specific overrides live here; all other
+# rules inherit Detekt defaults via buildUponDefaultConfig = true.
+
+config:
+  validation: true
+  warningsAsErrors: true
+
+console-reports:
+  active: true
+
+coroutines:
+  InjectDispatcher:
+    # Re-enable when dispatchers are provided through DI across modules.
+    active: false
+
+complexity:
+  LongParameterList:
+    # Compose functions frequently expose several optional parameters.
+    ignoreDefaultParameters: true
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 10
+  TooManyFunctions:
+    # Compose files often contain several small @Composable helpers/previews.
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerClass: 15
+    allowedFunctionsPerInterface: 15
+    ignoreAnnotatedFunctions:
+      - 'Preview'
+  CyclomaticComplexMethod:
+    allowedComplexity: 20
+  LargeClass:
+    excludes: [ '**/test/**', '**/commonTest/**', '**/androidUnitTest/**', '**/androidHostTest/**', '**/iosTest/**' ]
+
+exceptions:
+  TooGenericExceptionThrown:
+    excludes: [ '**/test/**', '**/commonTest/**', '**/androidUnitTest/**', '**/androidHostTest/**', '**/iosTest/**' ]
+
+naming:
+  FunctionNaming:
+    # @Composable functions use PascalCase by convention.
+    ignoreAnnotated:
+      - 'Composable'
+  InvalidPackageDeclaration:
+    # Test files may live under grouping folders intentionally omitted from package declarations.
+    excludes: [ '**/unitTests/**' ]
+  MatchingDeclarationName:
+    # KMP platform-specific files commonly use Foo.android.kt / Foo.ios.kt.
+    excludes:
+      - '**/*.android.kt'
+      - '**/*.ios.kt'
+  TopLevelPropertyNaming:
+    # Allows Compose/resource-generated-style names without requiring pure SCREAMING_SNAKE_CASE.
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+style:
+  MagicNumber:
+    # Compose UI code naturally contains dp/sp/color literals.
+    ignoreAnnotated:
+      - 'Composable'
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreEnums: true
+    ignoreRanges: true
+    # Test fixtures and data builders legitimately use literal values.
+    excludes: [ '**/test/**', '**/commonTest/**', '**/androidUnitTest/**', '**/androidHostTest/**', '**/iosTest/**' ]
+  MaxLineLength:
+    maxLineLength: 120
+    excludeCommentStatements: true
+    excludes: [ '**/test/**', '**/commonTest/**', '**/androidUnitTest/**', '**/androidHostTest/**', '**/iosTest/**' ]
+  ReturnCount:
+    max: 4
+  UnusedPrivateFunction:
+    # Compose previews are referenced by tooling, not by source code.
+    allowedNames: '(_|Preview.*)'
+    ignoreAnnotated:
+      - 'Preview'
+
+comments:
+  # Keep KDoc correctness checks available while avoiding a noisy blanket
+  # documentation mandate for this evolving app/library codebase.
+  active: true
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicProperty:
+    active: false
+  KDocReferencesNonPublicProperty:
+    active: true
+  OutdatedDocumentation:
+    active: true
+    matchTypeParameters: true
+    matchDeclarationsOrder: true
+    allowParamOnConstructorProperties: false

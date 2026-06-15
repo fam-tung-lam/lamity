@@ -8,7 +8,6 @@ import io.sentry.kotlin.multiplatform.Sentry
  * App-wide crash reporter backed by Sentry.
  */
 object LamityCrashReporter {
-
     /** Initializes crash reporting from [config]. Call once at app start. */
     fun init(config: LamityCrashReporterConfig) {
         Sentry.init { options -> config.applyTo(options) }

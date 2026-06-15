@@ -39,8 +39,9 @@ internal fun ChatHeader(
     ) {
         SimpleDropdown(
             label = stringResource(Res.string.agent_label),
-            options = listOf<Pair<String?, String>>(null to stringResource(Res.string.no_agent)) +
-                agents.map { it.id as String? to it.name },
+            options =
+                listOf<Pair<String?, String>>(null to stringResource(Res.string.no_agent)) +
+                    agents.map { it.id as String? to it.name },
             selectedId = selectedAgentId,
             onSelect = onSelectAgent,
             modifier = Modifier.weight(1f, fill = false),

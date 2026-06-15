@@ -5,7 +5,6 @@ import okio.Path
 import okio.Path.Companion.toPath
 
 internal object DownloadWorkData {
-
     /** Extension of the in-flight file next to the destination path. */
     const val PARTIAL_FILE_EXT = "part"
 
@@ -24,5 +23,4 @@ internal object DownloadWorkData {
     }
 }
 
-internal fun DownloadRequest.partialFile(): Path =
-    "$destinationPath.${DownloadWorkData.PARTIAL_FILE_EXT}".toPath()
+internal fun DownloadRequest.partialFile(): Path = "$destinationPath.${DownloadWorkData.PARTIAL_FILE_EXT}".toPath()

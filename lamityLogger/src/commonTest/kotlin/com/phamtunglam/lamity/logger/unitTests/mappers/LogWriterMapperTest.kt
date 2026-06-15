@@ -18,50 +18,51 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
 
-class LogWriterMapperTest : BehaviorSpec({
+class LogWriterMapperTest :
+    BehaviorSpec({
 
-    Given("a Lamity log writer adapted to a Kermit writer") {
+        Given("a Lamity log writer adapted to a Kermit writer") {
 
-        When("isLoggable is queried for any tag and severity") {
-            Then("it delegates with the severity translated to Lamity and returns the result") {
-                checkAll(
-                    Exhaustive.enum<Severity>(),
-                    Arb.string(),
-                    Arb.boolean(),
-                ) { severity, tag, loggable ->
-                    // Arrange
-                    val writer = mock<LamityLogWriter>()
-                    every { writer.isLoggable(tag, severity.toLamity()) } returns loggable
+            When("isLoggable is queried for any tag and severity") {
+                Then("it delegates with the severity translated to Lamity and returns the result") {
+                    checkAll(
+                        Exhaustive.enum<Severity>(),
+                        Arb.string(),
+                        Arb.boolean(),
+                    ) { severity, tag, loggable ->
+                        // Arrange
+                        val writer = mock<LamityLogWriter>()
+                        every { writer.isLoggable(tag, severity.toLamity()) } returns loggable
 
-                    // Act
-                    writer.asKermitWriter().isLoggable(tag, severity) shouldBe loggable
+                        // Act
+                        writer.asKermitWriter().isLoggable(tag, severity) shouldBe loggable
 
-                    // Assert
-                    verify { writer.isLoggable(tag, severity.toLamity()) }
+                        // Assert
+                        verify { writer.isLoggable(tag, severity.toLamity()) }
+                    }
+                }
+            }
+
+            When("a record is logged for any severity, tag, message and throwable") {
+                Then("it forwards the record unchanged, translating only the severity") {
+                    val failure = IllegalStateException("boom")
+                    checkAll(
+                        Exhaustive.enum<Severity>(),
+                        Arb.string(),
+                        Arb.string(),
+                        Arb.of(null, failure),
+                    ) { severity, tag, message, throwable ->
+                        // Arrange
+                        val writer = mock<LamityLogWriter>()
+                        every { writer.log(severity.toLamity(), message, tag, throwable) } returns Unit
+
+                        // Act
+                        writer.asKermitWriter().log(severity, message, tag, throwable)
+
+                        // Assert
+                        verify { writer.log(severity.toLamity(), message, tag, throwable) }
+                    }
                 }
             }
         }
-
-        When("a record is logged for any severity, tag, message and throwable") {
-            Then("it forwards the record unchanged, translating only the severity") {
-                val failure = IllegalStateException("boom")
-                checkAll(
-                    Exhaustive.enum<Severity>(),
-                    Arb.string(),
-                    Arb.string(),
-                    Arb.of(null, failure),
-                ) { severity, tag, message, throwable ->
-                    // Arrange
-                    val writer = mock<LamityLogWriter>()
-                    every { writer.log(severity.toLamity(), message, tag, throwable) } returns Unit
-
-                    // Act
-                    writer.asKermitWriter().log(severity, message, tag, throwable)
-
-                    // Assert
-                    verify { writer.log(severity.toLamity(), message, tag, throwable) }
-                }
-            }
-        }
-    }
-})
+    })

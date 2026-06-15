@@ -60,54 +60,14 @@ fun ModelConfigScreen(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            Column {
-                Text(stringResource(Res.string.backend), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.padding(2.dp))
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    LlmBackend.entries.forEachIndexed { index, entry ->
-                        SegmentedButton(
-                            selected = ui.backend == entry,
-                            onClick = { viewModel.setBackend(entry) },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = LlmBackend.entries.size,
-                            ),
-                        ) { Text(entry.name) }
-                    }
-                }
-            }
+            BackendSelector(selected = ui.backend, onSelect = viewModel::setBackend)
 
-            LabeledSlider(
-                label = stringResource(Res.string.max_tokens),
-                value = ui.maxTokens,
-                valueText = ((ui.maxTokens / 256f).roundToInt() * 256).toString(),
-                range = 256f..8192f,
-                steps = 30,
-                onChange = { viewModel.setMaxTokens(it) },
-            )
-            LabeledSlider(
-                label = stringResource(Res.string.top_k),
-                value = ui.topK,
-                valueText = ui.topK.roundToInt().toString(),
-                range = 1f..128f,
-                steps = 126,
-                onChange = { viewModel.setTopK(it) },
-            )
-            LabeledSlider(
-                label = stringResource(Res.string.top_p),
-                value = ui.topP,
-                valueText = fmt2(ui.topP),
-                range = 0.05f..1f,
-                steps = 18,
-                onChange = { viewModel.setTopP(it) },
-            )
-            LabeledSlider(
-                label = stringResource(Res.string.temperature),
-                value = ui.temperature,
-                valueText = fmt2(ui.temperature),
-                range = 0f..2f,
-                steps = 39,
-                onChange = { viewModel.setTemperature(it) },
+            ModelParamSliders(
+                maxTokens = ui.maxTokens,
+                topK = ui.topK,
+                topP = ui.topP,
+                temperature = ui.temperature,
+                viewModel = viewModel,
             )
 
             Text(
@@ -127,4 +87,69 @@ fun ModelConfigScreen(
     }
 }
 
-private fun fmt2(value: Float): String = ((value * 100).roundToInt() / 100.0).toString()
+@Composable
+private fun BackendSelector(selected: LlmBackend, onSelect: (LlmBackend) -> Unit) {
+    Column {
+        Text(stringResource(Res.string.backend), style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.padding(2.dp))
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            LlmBackend.entries.forEachIndexed { index, entry ->
+                SegmentedButton(
+                    selected = selected == entry,
+                    onClick = { onSelect(entry) },
+                    shape =
+                        SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = LlmBackend.entries.size,
+                        ),
+                ) { Text(entry.name) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModelParamSliders(
+    maxTokens: Float,
+    topK: Float,
+    topP: Float,
+    temperature: Float,
+    viewModel: ModelConfigViewModel,
+) {
+    LabeledSlider(
+        label = stringResource(Res.string.max_tokens),
+        value = maxTokens,
+        valueText = ((maxTokens / 256f).roundToInt() * 256).toString(),
+        range = 256f..8192f,
+        steps = 30,
+        onChange = { viewModel.setMaxTokens(it) },
+    )
+    LabeledSlider(
+        label = stringResource(Res.string.top_k),
+        value = topK,
+        valueText = topK.roundToInt().toString(),
+        range = 1f..128f,
+        steps = 126,
+        onChange = { viewModel.setTopK(it) },
+    )
+    LabeledSlider(
+        label = stringResource(Res.string.top_p),
+        value = topP,
+        valueText = fmt2(topP),
+        range = 0.05f..1f,
+        steps = 18,
+        onChange = { viewModel.setTopP(it) },
+    )
+    LabeledSlider(
+        label = stringResource(Res.string.temperature),
+        value = temperature,
+        valueText = fmt2(temperature),
+        range = 0f..2f,
+        steps = 39,
+        onChange = { viewModel.setTemperature(it) },
+    )
+}
+
+private const val TWO_DECIMAL_PLACES = 100.0
+
+private fun fmt2(value: Float): String = ((value * TWO_DECIMAL_PLACES).roundToInt() / TWO_DECIMAL_PLACES).toString()

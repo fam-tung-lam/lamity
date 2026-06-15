@@ -36,13 +36,11 @@ internal fun fakeConversation(
     updatedAt = updatedAt,
 )
 
-internal fun fakeAgent(
-    id: String = "agent-1",
-    name: String = "Researcher",
-) = Agent(
-    id = id,
-    name = name,
-)
+internal fun fakeAgent(id: String = "agent-1", name: String = "Researcher") =
+    Agent(
+        id = id,
+        name = name,
+    )
 
 /** Scope sharing the test's virtual-time dispatcher, for scope-taking SUTs. */
 internal suspend fun testScope(): CoroutineScope = CoroutineScope(currentCoroutineContext())
@@ -51,8 +49,7 @@ internal suspend fun testScope(): CoroutineScope = CoroutineScope(currentCorouti
  * Like [testScope] but with its own [Job], for SUTs that launch never-ending
  * work (eager shareIn/stateIn) the test must not wait for.
  */
-internal suspend fun detachedTestScope(): CoroutineScope =
-    CoroutineScope(currentCoroutineContext() + Job())
+internal suspend fun detachedTestScope(): CoroutineScope = CoroutineScope(currentCoroutineContext() + Job())
 
 /** Runs all coroutines queued on the test's virtual-time scheduler. */
 internal suspend fun advanceUntilIdle() {

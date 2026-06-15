@@ -3,9 +3,7 @@ package com.phamtunglam.lamity.feature.studio.domain
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
 
 /** Validates and saves a skill. Returns null when the name is blank. */
-class SaveSkillUseCase(
-    private val skills: SkillsRepository,
-) {
+class SaveSkillUseCase(private val skills: SkillsRepository) {
     suspend operator fun invoke(
         id: String?,
         name: String,

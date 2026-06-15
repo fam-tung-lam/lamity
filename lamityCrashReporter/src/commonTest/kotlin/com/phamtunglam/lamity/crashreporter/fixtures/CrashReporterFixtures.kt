@@ -21,18 +21,19 @@ internal fun fakeCrashReporterConfig(
  * Sentry options whose fields are deliberately set to values that differ from
  * both the SDK defaults and from what [LamityCrashReporterConfig.applyTo] writes.
  */
-internal fun fakeSentryOptions() = SentryOptions().apply {
-    dsn = "stale-dsn"
-    environment = "stale-env"
-    release = "stale-release"
-    debug = true
-    attachStackTrace = false
-    attachThreads = false
-    enableAutoSessionTracking = false
-    sessionTrackingIntervalMillis = 1L
-    isAnrEnabled = false
-    anrTimeoutIntervalMillis = 1L
-    enableAppHangTracking = false
-    appHangTimeoutIntervalMillis = 1L
-    enableWatchdogTerminationTracking = false
-}
+internal fun fakeSentryOptions() =
+    SentryOptions().apply {
+        dsn = "stale-dsn"
+        environment = "stale-env"
+        release = "stale-release"
+        debug = true
+        attachStackTrace = false
+        attachThreads = false
+        enableAutoSessionTracking = false
+        sessionTrackingIntervalMillis = 1L
+        isAnrEnabled = false
+        anrTimeoutIntervalMillis = 1L
+        enableAppHangTracking = false
+        appHangTimeoutIntervalMillis = 1L
+        enableWatchdogTerminationTracking = false
+    }

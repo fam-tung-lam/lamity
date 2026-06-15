@@ -5,12 +5,12 @@ import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.downloader.models.isAuthTrustedHost
 import com.phamtunglam.lamity.downloader.utils.DownloadRate
 import com.phamtunglam.lamity.downloader.workmanager.partialFile
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import okio.FileSystem
 import okio.Path
 import okio.buffer
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 internal class PreparedConnection(
     val connection: HttpURLConnection,
@@ -27,7 +27,6 @@ internal class PreparedConnection(
  * request when the server supports it.
  */
 internal object HttpDownload {
-
     private val fileSystem = FileSystem.SYSTEM
 
     suspend fun download(
@@ -43,11 +42,12 @@ internal object HttpDownload {
 
         val prepared = openFollowingRedirects(request, partialFile)
         try {
-            val totalBytes = progressTotalBytes(
-                connection = prepared.connection,
-                retainedBytes = prepared.retainedBytes,
-                totalBytesHint = request.expectedSizeBytes,
-            )
+            val totalBytes =
+                progressTotalBytes(
+                    connection = prepared.connection,
+                    retainedBytes = prepared.retainedBytes,
+                    totalBytesHint = request.expectedSizeBytes,
+                )
             transfer(partialFile, prepared, totalBytes, isStopped, onProgress)
         } finally {
             runCatching { prepared.connection.disconnect() }
@@ -55,36 +55,36 @@ internal object HttpDownload {
         return partialFile
     }
 
-    private fun openFollowingRedirects(
-        request: DownloadRequest,
-        partialFile: Path,
-    ): PreparedConnection {
+    private fun openFollowingRedirects(request: DownloadRequest, partialFile: Path): PreparedConnection {
         var currentUrl = URL(request.url)
         val partialBytes = partialFile.sizeBytes()
         val rangeRequested = partialBytes > 0
         repeat(MAX_REDIRECTS) {
-            val connection = (currentUrl.openConnection() as HttpURLConnection).apply {
-                instanceFollowRedirects = false
-                connectTimeout = CONNECT_TIMEOUT_MILLIS
-                readTimeout = READ_TIMEOUT_MILLIS
-                request.headers.forEach { (name, value) -> setRequestProperty(name, value) }
-                if (rangeRequested) {
-                    setRequestProperty("Range", "bytes=$partialBytes-")
-                    // Transparent compression would corrupt byte-offset resumes.
-                    setRequestProperty("Accept-Encoding", "identity")
+            val connection =
+                (currentUrl.openConnection() as HttpURLConnection).apply {
+                    instanceFollowRedirects = false
+                    connectTimeout = CONNECT_TIMEOUT_MILLIS
+                    readTimeout = READ_TIMEOUT_MILLIS
+                    request.headers.forEach { (name, value) -> setRequestProperty(name, value) }
+                    if (rangeRequested) {
+                        setRequestProperty("Range", "bytes=$partialBytes-")
+                        // Transparent compression would corrupt byte-offset resumes.
+                        setRequestProperty("Accept-Encoding", "identity")
+                    }
+                    if (request.bearerToken != null && request.isAuthTrustedHost(currentUrl.host)) {
+                        setRequestProperty("Authorization", "Bearer ${request.bearerToken}")
+                    }
                 }
-                if (request.bearerToken != null && request.isAuthTrustedHost(currentUrl.host)) {
-                    setRequestProperty("Authorization", "Bearer ${request.bearerToken}")
-                }
-            }
             val code = connection.responseCode
             when {
                 code in REDIRECT_CODES -> {
-                    val location = connection.getHeaderField("Location")
-                        ?: throw IOException("HTTP $code without Location header")
+                    val location =
+                        connection.getHeaderField("Location")
+                            ?: throw IOException("HTTP $code without Location header")
                     connection.disconnect()
                     currentUrl = URL(currentUrl, location)
                 }
+
                 code == HttpURLConnection.HTTP_OK || code == HttpURLConnection.HTTP_PARTIAL -> {
                     val append = code == HttpURLConnection.HTTP_PARTIAL && rangeRequested
                     if (!append && partialBytes > 0) fileSystem.delete(partialFile, mustExist = false)
@@ -94,18 +94,24 @@ internal object HttpDownload {
                         retainedBytes = if (append) partialBytes else 0L,
                     )
                 }
+
                 else -> {
                     connection.disconnect()
-                    val hint = if (code == 401 || code == 403) {
-                        " — the resource may require a valid access token"
-                    } else {
-                        ""
-                    }
-                    throw IOException("HTTP $code$hint")
+                    failHttp(code)
                 }
             }
         }
         throw IOException("Too many redirects")
+    }
+
+    private fun failHttp(code: Int): Nothing {
+        val hint =
+            if (code == HttpURLConnection.HTTP_UNAUTHORIZED || code == HttpURLConnection.HTTP_FORBIDDEN) {
+                " — the resource may require a valid access token"
+            } else {
+                ""
+            }
+        throw IOException("HTTP $code$hint")
     }
 
     private suspend fun transfer(
@@ -121,11 +127,12 @@ internal object HttpDownload {
         var lastProgressMillis = 0L
 
         prepared.connection.inputStream.use { input ->
-            val rawSink = if (prepared.append) {
-                fileSystem.appendingSink(partialFile)
-            } else {
-                fileSystem.sink(partialFile)
-            }
+            val rawSink =
+                if (prepared.append) {
+                    fileSystem.appendingSink(partialFile)
+                } else {
+                    fileSystem.sink(partialFile)
+                }
             rawSink.buffer().use { output ->
                 val buffer = ByteArray(BUFFER_SIZE)
                 while (true) {
@@ -138,12 +145,13 @@ internal object HttpDownload {
 
                     val nowMillis = System.currentTimeMillis()
                     if (nowMillis - lastProgressMillis > PROGRESS_INTERVAL_MILLIS) {
-                        val snapshot = rate.record(
-                            bytesRead = bytesSinceLastProgress,
-                            downloadedBytes = downloadedBytes,
-                            totalBytes = totalBytes,
-                            nowMillis = nowMillis,
-                        )
+                        val snapshot =
+                            rate.record(
+                                bytesRead = bytesSinceLastProgress,
+                                downloadedBytes = downloadedBytes,
+                                totalBytes = totalBytes,
+                                nowMillis = nowMillis,
+                            )
                         bytesSinceLastProgress = 0L
                         lastProgressMillis = nowMillis
                         onProgress(downloadedBytes, totalBytes, snapshot.bytesPerSecond, snapshot.etaMillis)
@@ -153,14 +161,13 @@ internal object HttpDownload {
         }
     }
 
-    private fun progressTotalBytes(
-        connection: HttpURLConnection,
-        retainedBytes: Long,
-        totalBytesHint: Long,
-    ): Long {
+    private fun progressTotalBytes(connection: HttpURLConnection, retainedBytes: Long, totalBytesHint: Long): Long {
         if (totalBytesHint > 0) return totalBytesHint
-        val contentRangeTotal = connection.getHeaderField("Content-Range")
-            ?.substringAfterLast('/')?.toLongOrNull()
+        val contentRangeTotal =
+            connection
+                .getHeaderField("Content-Range")
+                ?.substringAfterLast('/')
+                ?.toLongOrNull()
         if (contentRangeTotal != null && contentRangeTotal > 0) return contentRangeTotal
         val contentLength = connection.contentLengthLong
         return if (contentLength > 0) retainedBytes + contentLength else 0

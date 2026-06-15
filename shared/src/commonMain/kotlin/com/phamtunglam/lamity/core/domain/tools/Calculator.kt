@@ -25,7 +25,6 @@ import kotlin.math.tan
  * min(a,b) max(a,b) pow(a,b). Trigonometry uses radians.
  */
 object Calculator {
-
     fun evaluate(expression: String): Double {
         val parser = Parser(expression)
         val value = parser.parseExpression()
@@ -41,9 +40,19 @@ object Calculator {
             while (true) {
                 skipWs()
                 when (peek()) {
-                    '+' -> { pos++; value += parseTerm() }
-                    '-' -> { pos++; value -= parseTerm() }
-                    else -> return value
+                    '+' -> {
+                        pos++
+                        value += parseTerm()
+                    }
+
+                    '-' -> {
+                        pos++
+                        value -= parseTerm()
+                    }
+
+                    else -> {
+                        return value
+                    }
                 }
             }
         }
@@ -53,10 +62,24 @@ object Calculator {
             while (true) {
                 skipWs()
                 when (peek()) {
-                    '*' -> { pos++; value *= parseFactor() }
-                    '/' -> { pos++; value /= parseFactor() }
-                    '%' -> { pos++; value %= parseFactor() }
-                    else -> return value
+                    '*' -> {
+                        pos++
+                        value *= parseFactor()
+                    }
+
+                    '/' -> {
+                        pos++
+                        value /= parseFactor()
+                    }
+
+                    '%' -> {
+                        pos++
+                        value %= parseFactor()
+                    }
+
+                    else -> {
+                        return value
+                    }
                 }
             }
         }
@@ -74,9 +97,19 @@ object Calculator {
         private fun parseUnary(): Double {
             skipWs()
             return when (peek()) {
-                '-' -> { pos++; -parseUnary() }
-                '+' -> { pos++; parseUnary() }
-                else -> parsePrimary()
+                '-' -> {
+                    pos++
+                    -parseUnary()
+                }
+
+                '+' -> {
+                    pos++
+                    parseUnary()
+                }
+
+                else -> {
+                    parsePrimary()
+                }
             }
         }
 
@@ -90,9 +123,18 @@ object Calculator {
                     expect(')')
                     v
                 }
-                c.isDigit() || c == '.' -> parseNumber()
-                c.isLetter() -> parseIdentifier()
-                else -> fail("unexpected character '$c'")
+
+                c.isDigit() || c == '.' -> {
+                    parseNumber()
+                }
+
+                c.isLetter() -> {
+                    parseIdentifier()
+                }
+
+                else -> {
+                    fail("unexpected character '$c'")
+                }
             }
         }
 
@@ -133,34 +175,15 @@ object Calculator {
         }
 
         private fun applyFunction(name: String, args: List<Double>): Double {
-            fun one(): Double {
+            UNARY_FUNCTIONS[name]?.let { fn ->
                 if (args.size != 1) fail("$name expects 1 argument")
-                return args[0]
+                return fn(args[0])
             }
-            fun two(): Pair<Double, Double> {
+            BINARY_FUNCTIONS[name]?.let { fn ->
                 if (args.size != 2) fail("$name expects 2 arguments")
-                return args[0] to args[1]
+                return fn(args[0], args[1])
             }
-            return when (name) {
-                "sin" -> sin(one())
-                "cos" -> cos(one())
-                "tan" -> tan(one())
-                "asin" -> asin(one())
-                "acos" -> acos(one())
-                "atan" -> atan(one())
-                "sqrt" -> sqrt(one())
-                "abs" -> abs(one())
-                "ln" -> ln(one())
-                "log" -> log10(one())
-                "exp" -> exp(one())
-                "floor" -> floor(one())
-                "ceil" -> ceil(one())
-                "round" -> round(one())
-                "min" -> two().let { minOf(it.first, it.second) }
-                "max" -> two().let { maxOf(it.first, it.second) }
-                "pow" -> two().let { it.first.pow(it.second) }
-                else -> fail("unknown function '$name'")
-            }
+            fail("unknown function '$name'")
         }
 
         fun expectEnd() {
@@ -175,7 +198,38 @@ object Calculator {
         }
 
         private fun peek(): Char? = src.getOrNull(pos)
-        private fun skipWs() { while (peek() == ' ' || peek() == '\t') pos++ }
+
+        private fun skipWs() {
+            while (peek() == ' ' || peek() == '\t') pos++
+        }
+
         private fun fail(message: String): Nothing = throw IllegalArgumentException(message)
+
+        private companion object {
+            val UNARY_FUNCTIONS: Map<String, (Double) -> Double> =
+                mapOf(
+                    "sin" to { x -> sin(x) },
+                    "cos" to { x -> cos(x) },
+                    "tan" to { x -> tan(x) },
+                    "asin" to { x -> asin(x) },
+                    "acos" to { x -> acos(x) },
+                    "atan" to { x -> atan(x) },
+                    "sqrt" to { x -> sqrt(x) },
+                    "abs" to { x -> abs(x) },
+                    "ln" to { x -> ln(x) },
+                    "log" to { x -> log10(x) },
+                    "exp" to { x -> exp(x) },
+                    "floor" to { x -> floor(x) },
+                    "ceil" to { x -> ceil(x) },
+                    "round" to { x -> round(x) },
+                )
+
+            val BINARY_FUNCTIONS: Map<String, (Double, Double) -> Double> =
+                mapOf(
+                    "min" to { a, b -> minOf(a, b) },
+                    "max" to { a, b -> maxOf(a, b) },
+                    "pow" to { a, b -> a.pow(b) },
+                )
+        }
     }
 }

@@ -13,23 +13,19 @@ import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.downloader.models.DownloadState
 import com.phamtunglam.lamity.downloader.notifications.DownloadNotification
 import com.phamtunglam.lamity.downloader.persistence.RequestStore
-import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+import java.io.IOException
 
 /**
  * Downloads one file: transfer (resuming any partial bytes), optional SHA-256
  * verification, then an atomic move to the destination path. Progress goes to
  * WorkManager progress data and a foreground notification.
  */
-internal class DownloadWorker(
-    context: Context,
-    params: WorkerParameters,
-) : CoroutineWorker(context, params) {
-
+internal class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     private val log = Logger.withTag("DownloadWorker")
     private val store = RequestStore(applicationContext)
     private val fileSystem = FileSystem.SYSTEM
@@ -39,50 +35,53 @@ internal class DownloadWorker(
         return notification(request).foregroundInfo(request?.displayName ?: "Download", 0)
     }
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val id = inputData.getString(DownloadWorkData.Keys.ID)
-            ?: return@withContext Result.failure(errorData("Missing download id."))
-        val request = store.load(id)
-            ?: return@withContext Result.failure(errorData("No stored download request for '$id'."))
+    override suspend fun doWork(): Result =
+        withContext(Dispatchers.IO) {
+            val id =
+                inputData.getString(DownloadWorkData.Keys.ID)
+                    ?: return@withContext Result.failure(errorData("Missing download id."))
+            val request =
+                store.load(id)
+                    ?: return@withContext Result.failure(errorData("No stored download request for '$id'."))
 
-        val notification = notification(request)
-        runCatching { setForeground(notification.foregroundInfo(request.displayName, 0)) }
+            val notification = notification(request)
+            runCatching { setForeground(notification.foregroundInfo(request.displayName, 0)) }
 
-        try {
-            var lastPercent = -1
-            val partialFile = HttpDownload.download(
-                request = request,
-                isStopped = { isStopped },
-                onProgress = { downloadedBytes, totalBytes, bytesPerSecond, etaMillis ->
-                    publishProgress(
+            try {
+                var lastPercent = -1
+                val partialFile =
+                    HttpDownload.download(
                         request = request,
-                        state = DownloadState.RUNNING,
-                        downloadedBytes = downloadedBytes,
-                        totalBytes = totalBytes,
-                        bytesPerSecond = bytesPerSecond,
-                        etaMillis = etaMillis,
+                        isStopped = { isStopped },
+                        onProgress = { downloadedBytes, totalBytes, bytesPerSecond, etaMillis ->
+                            publishProgress(
+                                state = DownloadState.RUNNING,
+                                downloadedBytes = downloadedBytes,
+                                totalBytes = totalBytes,
+                                bytesPerSecond = bytesPerSecond,
+                                etaMillis = etaMillis,
+                            )
+                            val percent = percentOf(downloadedBytes, totalBytes)
+                            if (percent != lastPercent) {
+                                lastPercent = percent
+                                runCatching { setForeground(notification.foregroundInfo(request.displayName, percent)) }
+                            }
+                        },
                     )
-                    val percent = percentOf(downloadedBytes, totalBytes)
-                    if (percent != lastPercent) {
-                        lastPercent = percent
-                        runCatching { setForeground(notification.foregroundInfo(request.displayName, percent)) }
-                    }
-                },
-            )
-            verify(request, partialFile)
-            moveToDestination(partialFile, request.destinationPath)
-            store.delete(request.id)
-            val finalBytes = request.destinationPath.toPath().sizeBytes()
-            log.i { "download ${request.id} complete ($finalBytes bytes)" }
-            Result.success(
-                workDataOf(DownloadWorkData.Keys.DOWNLOADED_BYTES to finalBytes),
-            )
-        } catch (e: DownloadException) {
-            failure(request, e)
-        } catch (e: IOException) {
-            failure(request, e)
+                verify(request, partialFile)
+                moveToDestination(partialFile, request.destinationPath)
+                store.delete(request.id)
+                val finalBytes = request.destinationPath.toPath().sizeBytes()
+                log.i { "download ${request.id} complete ($finalBytes bytes)" }
+                Result.success(
+                    workDataOf(DownloadWorkData.Keys.DOWNLOADED_BYTES to finalBytes),
+                )
+            } catch (e: DownloadException) {
+                failure(request, e)
+            } catch (e: IOException) {
+                failure(request, e)
+            }
         }
-    }
 
     private suspend fun verify(request: DownloadRequest, partialFile: Path) {
         val actualSize = partialFile.sizeBytes()
@@ -95,7 +94,6 @@ internal class DownloadWorker(
         }
         val expectedSha256 = request.sha256 ?: return
         publishProgress(
-            request = request,
             state = DownloadState.VERIFYING,
             downloadedBytes = actualSize,
             totalBytes = actualSize,
@@ -121,7 +119,6 @@ internal class DownloadWorker(
     private fun Path.sizeBytes(): Long = fileSystem.metadataOrNull(this)?.size ?: 0L
 
     private suspend fun publishProgress(
-        request: DownloadRequest,
         state: DownloadState,
         downloadedBytes: Long,
         totalBytes: Long,
@@ -146,15 +143,17 @@ internal class DownloadWorker(
 
     private fun errorData(message: String) = workDataOf(DownloadWorkData.Keys.ERROR to message)
 
-    private fun notification(request: DownloadRequest?) = DownloadNotification(
-        applicationContext,
-        notificationId = NOTIFICATION_ID_BASE + (request?.id?.hashCode() ?: 0),
-    )
+    private fun notification(request: DownloadRequest?) =
+        DownloadNotification(
+            applicationContext,
+            notificationId = NOTIFICATION_ID_BASE + (request?.id?.hashCode() ?: 0),
+        )
 
     private fun percentOf(downloadedBytes: Long, totalBytes: Long): Int =
-        if (totalBytes > 0) (downloadedBytes * 100 / totalBytes).toInt() else 0
+        if (totalBytes > 0) (downloadedBytes * PERCENT_MULTIPLIER / totalBytes).toInt() else 0
 
     private companion object {
         const val NOTIFICATION_ID_BASE = 0x4C414D
+        const val PERCENT_MULTIPLIER = 100
     }
 }

@@ -27,7 +27,6 @@ class SkillEditViewModel(
     skills: SkillsRepository,
     private val saveSkill: SaveSkillUseCase,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(SkillEditUiState())
     val uiState: StateFlow<SkillEditUiState> = _uiState.asStateFlow()
 
@@ -35,33 +34,38 @@ class SkillEditViewModel(
         viewModelScope.launch {
             skills.awaitLoaded()
             skills.byId(skillId)?.let { skill ->
-                _uiState.value = SkillEditUiState(
-                    existingName = skill.name,
-                    name = skill.name,
-                    description = skill.description,
-                    instructions = skill.instructions,
-                    enabled = skill.enabled,
-                )
+                _uiState.value =
+                    SkillEditUiState(
+                        existingName = skill.name,
+                        name = skill.name,
+                        description = skill.description,
+                        instructions = skill.instructions,
+                        enabled = skill.enabled,
+                    )
             }
         }
     }
 
     fun setName(value: String) = _uiState.update { it.copy(name = value) }
+
     fun setDescription(value: String) = _uiState.update { it.copy(description = value) }
+
     fun setInstructions(value: String) = _uiState.update { it.copy(instructions = value) }
+
     fun setEnabled(value: Boolean) = _uiState.update { it.copy(enabled = value) }
 
     fun save() {
         val s = _uiState.value
         if (!s.canSave) return
         viewModelScope.launch {
-            val skill = saveSkill(
-                id = skillId,
-                name = s.name,
-                description = s.description,
-                instructions = s.instructions,
-                enabled = s.enabled,
-            )
+            val skill =
+                saveSkill(
+                    id = skillId,
+                    name = s.name,
+                    description = s.description,
+                    instructions = s.instructions,
+                    enabled = s.enabled,
+                )
             if (skill != null) _uiState.update { it.copy(saved = true) }
         }
     }

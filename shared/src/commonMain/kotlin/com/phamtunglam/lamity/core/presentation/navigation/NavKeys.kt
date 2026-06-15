@@ -41,17 +41,19 @@ data class ModelConfigKey(val modelId: String) : NavKey
  * polymorphic serialization (required by rememberNavBackStack on non-Android
  * platforms).
  */
-val navSavedStateConfiguration: SavedStateConfiguration = SavedStateConfiguration {
-    serializersModule = SerializersModule {
-        polymorphic(NavKey::class) {
-            subclass(ChatKey::class)
-            subclass(ModelsKey::class)
-            subclass(HistoryKey::class)
-            subclass(StudioKey::class)
-            subclass(SettingsKey::class)
-            subclass(AgentEditKey::class)
-            subclass(SkillEditKey::class)
-            subclass(ModelConfigKey::class)
-        }
+val navSavedStateConfiguration: SavedStateConfiguration =
+    SavedStateConfiguration {
+        serializersModule =
+            SerializersModule {
+                polymorphic(NavKey::class) {
+                    subclass(ChatKey::class)
+                    subclass(ModelsKey::class)
+                    subclass(HistoryKey::class)
+                    subclass(StudioKey::class)
+                    subclass(SettingsKey::class)
+                    subclass(AgentEditKey::class)
+                    subclass(SkillEditKey::class)
+                    subclass(ModelConfigKey::class)
+                }
+            }
     }
-}

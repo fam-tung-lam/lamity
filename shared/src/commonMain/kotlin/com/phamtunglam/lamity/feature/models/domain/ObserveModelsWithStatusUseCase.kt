@@ -21,16 +21,17 @@ class ObserveModelsWithStatusUseCase(
     /** HuggingFace token injected at build time; blank means gated models need one. */
     private val hfToken: String = LamityBuildConfig.hfToken,
 ) {
-    operator fun invoke(): Flow<List<ModelWithStatus>> = combine(
-        models.models,
-        downloads.statuses,
-    ) { modelList, statuses ->
-        modelList.map { model ->
-            ModelWithStatus(
-                model = model,
-                status = statuses[model.id] ?: ModelStatus.NotDownloaded,
-                needsToken = model.requiresAuth && hfToken.isBlank(),
-            )
+    operator fun invoke(): Flow<List<ModelWithStatus>> =
+        combine(
+            models.models,
+            downloads.statuses,
+        ) { modelList, statuses ->
+            modelList.map { model ->
+                ModelWithStatus(
+                    model = model,
+                    status = statuses[model.id] ?: ModelStatus.NotDownloaded,
+                    needsToken = model.requiresAuth && hfToken.isBlank(),
+                )
+            }
         }
-    }
 }

@@ -10,12 +10,13 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val localizationModule: Module = module {
-    // Data
-    single<AppLocaleStore> { DataStoreAppLocaleStore(get()) }
-    single<DeviceLocaleProvider> { systemDeviceLocaleProvider() }
-    single { AppLocaleRepository(get(), get()) }
+val localizationModule: Module =
+    module {
+        // Data
+        single<AppLocaleStore> { DataStoreAppLocaleStore(get()) }
+        single<DeviceLocaleProvider> { systemDeviceLocaleProvider() }
+        single { AppLocaleRepository(get(), get()) }
 
-    // Presentation
-    viewModel { LocalizationViewModel(get(), get()) }
-}
+        // Presentation
+        viewModel { LocalizationViewModel(get(), get()) }
+    }

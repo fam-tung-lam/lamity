@@ -2,13 +2,18 @@ package com.phamtunglam.lamity.core.presentation.designSystem
 
 import kotlin.math.roundToInt
 
+private const val BYTES_PER_GB = 1_073_741_824.0
+private const val BYTES_PER_MB = 1_048_576.0
+private const val BYTES_PER_KB = 1024.0
+private const val ONE_DECIMAL_PLACE = 10.0
+
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "?"
-    val gb = bytes / 1_073_741_824.0
-    if (gb >= 1.0) return "${(gb * 10).roundToInt() / 10.0} GB"
-    val mb = bytes / 1_048_576.0
+    val gb = bytes / BYTES_PER_GB
+    if (gb >= 1.0) return "${(gb * ONE_DECIMAL_PLACE).roundToInt() / ONE_DECIMAL_PLACE} GB"
+    val mb = bytes / BYTES_PER_MB
     if (mb >= 1.0) return "${mb.roundToInt()} MB"
-    return "${(bytes / 1024.0).roundToInt()} KB"
+    return "${(bytes / BYTES_PER_KB).roundToInt()} KB"
 }
 
 fun formatPercent(received: Long, total: Long): String {
@@ -17,8 +22,7 @@ fun formatPercent(received: Long, total: Long): String {
     return "$pct% • ${formatBytes(received)} / ${formatBytes(total)}"
 }
 
-fun formatSpeed(bytesPerSecond: Long): String? =
-    if (bytesPerSecond <= 0) null else "${formatBytes(bytesPerSecond)}/s"
+fun formatSpeed(bytesPerSecond: Long): String? = if (bytesPerSecond <= 0) null else "${formatBytes(bytesPerSecond)}/s"
 
 fun formatEta(etaMillis: Long): String? {
     if (etaMillis <= 0) return null

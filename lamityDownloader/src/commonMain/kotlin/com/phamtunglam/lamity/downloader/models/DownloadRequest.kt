@@ -6,9 +6,11 @@ import kotlinx.serialization.Serializable
  * One HTTP(S) file download to a local path.
  *
  * @property id stable key used to pause/resume/cancel/observe the download.
- * @property displayName human-readable name shown in platform notifications.
+ * @property url source HTTP(S) URL to transfer from.
  * @property destinationPath final absolute path; the transfer itself writes to
  *   a temporary sibling and moves it here after (optional) verification.
+ * @property displayName human-readable name shown in platform notifications.
+ * @property headers extra request headers sent with every request to [url].
  * @property bearerToken sent as `Authorization: Bearer …`, but only to
  *   [trustedAuthHosts]; redirects to other hosts have the header stripped
  *   (S3-style signed URLs reject requests that still carry one).
@@ -43,5 +45,10 @@ internal fun DownloadRequest.isAuthTrustedHost(host: String?): Boolean {
 }
 
 internal fun hostOf(url: String): String? =
-    url.substringAfter("://", "").substringBefore('/').substringBefore('?')
-        .substringAfterLast('@').substringBefore(':').ifBlank { null }
+    url
+        .substringAfter("://", "")
+        .substringBefore('/')
+        .substringBefore('?')
+        .substringAfterLast('@')
+        .substringBefore(':')
+        .ifBlank { null }

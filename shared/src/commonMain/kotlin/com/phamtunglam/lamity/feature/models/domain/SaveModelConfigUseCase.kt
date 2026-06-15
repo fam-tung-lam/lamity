@@ -8,9 +8,7 @@ import kotlin.math.roundToInt
  * valid grid: maxTokens to multiples of 256, topK to whole numbers, topP and
  * temperature to two decimals.
  */
-class SaveModelConfigUseCase(
-    private val models: ModelsRepository,
-) {
+class SaveModelConfigUseCase(private val models: ModelsRepository) {
     suspend operator fun invoke(
         modelId: String,
         backend: LlmBackend,

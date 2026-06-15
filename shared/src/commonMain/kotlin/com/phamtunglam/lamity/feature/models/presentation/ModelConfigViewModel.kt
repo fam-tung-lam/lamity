@@ -29,7 +29,6 @@ class ModelConfigViewModel(
     private val models: ModelsRepository,
     private val saveModelConfig: SaveModelConfigUseCase,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(ModelConfigUiState())
     val uiState: StateFlow<ModelConfigUiState> = _uiState.asStateFlow()
 
@@ -54,9 +53,13 @@ class ModelConfigViewModel(
         } ?: ModelConfigUiState(isLoading = false)
 
     fun setBackend(backend: LlmBackend) = _uiState.update { it.copy(backend = backend) }
+
     fun setMaxTokens(value: Float) = _uiState.update { it.copy(maxTokens = value) }
+
     fun setTopK(value: Float) = _uiState.update { it.copy(topK = value) }
+
     fun setTopP(value: Float) = _uiState.update { it.copy(topP = value) }
+
     fun setTemperature(value: Float) = _uiState.update { it.copy(temperature = value) }
 
     fun resetToDefaults() {

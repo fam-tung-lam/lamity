@@ -24,14 +24,14 @@ class SettingsViewModel(
     platformInfo: PlatformInfo,
     dirs: AppDirs,
 ) : ViewModel() {
-
-    val uiState: StateFlow<SettingsUiState> = settingsRepository.settings
-        .map { SettingsUiState(it, platformInfo, dirs.modelsDir) }
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
-            SettingsUiState(settingsRepository.value, platformInfo, dirs.modelsDir),
-        )
+    val uiState: StateFlow<SettingsUiState> =
+        settingsRepository.settings
+            .map { SettingsUiState(it, platformInfo, dirs.modelsDir) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                SettingsUiState(settingsRepository.value, platformInfo, dirs.modelsDir),
+            )
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }

@@ -11,9 +11,7 @@ class CrashReportingLogWriter(
     private val reporter: LamityCrashReporter,
     private val minSeverity: LamityLogSeverity = LamityLogSeverity.Error,
 ) : LamityLogWriter {
-
-    override fun isLoggable(tag: String, severity: LamityLogSeverity): Boolean =
-        severity >= minSeverity
+    override fun isLoggable(tag: String, severity: LamityLogSeverity): Boolean = severity >= minSeverity
 
     override fun log(
         severity: LamityLogSeverity,

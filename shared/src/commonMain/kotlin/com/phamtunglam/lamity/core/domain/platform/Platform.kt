@@ -1,11 +1,7 @@
 package com.phamtunglam.lamity.core.domain.platform
 
 /** Static facts about the device, used by the device_info tool and the About section. */
-data class PlatformInfo(
-    val platform: String,
-    val osVersion: String,
-    val deviceModel: String,
-)
+data class PlatformInfo(val platform: String, val osVersion: String, val deviceModel: String)
 
 /** Absolute directories the app may write to. */
 data class AppDirs(

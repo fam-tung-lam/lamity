@@ -1,17 +1,14 @@
 package com.phamtunglam.lamity.feature.models.data
 
+import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
+import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelStatus
-import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import co.touchlab.kermit.Logger
-import okio.FileSystem
-import okio.Path
-import okio.Path.Companion.toPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +22,9 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
 
 /**
  * Connects the model catalog to the background [Downloader]: one download per
@@ -105,7 +105,8 @@ class ModelDownloadManager(
         } else {
             combine(
                 models.map { model ->
-                    downloader.observe(model.id)
+                    downloader
+                        .observe(model.id)
                         .onStart { emit(null) }
                         .map { progress -> model.id to ModelStatusMapper.map(progress, isDownloaded(model)) }
                 },
@@ -119,9 +120,10 @@ class ModelDownloadManager(
             url = url,
             destinationPath = modelPath(this),
             displayName = name,
-            bearerToken = hfToken.takeIf {
-                it.isNotBlank() && url.contains("huggingface.co")
-            },
+            bearerToken =
+                hfToken.takeIf {
+                    it.isNotBlank() && url.contains("huggingface.co")
+                },
             trustedAuthHosts = setOf("huggingface.co"),
             expectedSizeBytes = sizeBytes,
             requireUnmetered = appSettings.wifiOnlyDownloads,

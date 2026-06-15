@@ -2,26 +2,23 @@ package com.phamtunglam.lamity.downloader.persistence
 
 import android.content.Context
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
-import java.util.Base64
 import kotlinx.serialization.json.Json
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+import java.util.Base64
 
 /**
  * Persists full [DownloadRequest]s as JSON files so workers and resumes can
  * recover them across process restarts (WorkManager `Data` has a 10 KB cap).
  */
-internal class RequestStore(
-    context: Context,
-    private val fileSystem: FileSystem = FileSystem.SYSTEM,
-) {
-
+internal class RequestStore(context: Context, private val fileSystem: FileSystem = FileSystem.SYSTEM) {
     private val dir: Path = context.filesDir.absolutePath.toPath() / STORE_DIR
-    private val json = Json {
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-    }
+    private val json =
+        Json {
+            encodeDefaults = true
+            ignoreUnknownKeys = true
+        }
 
     fun save(request: DownloadRequest) {
         fileSystem.createDirectories(dir)

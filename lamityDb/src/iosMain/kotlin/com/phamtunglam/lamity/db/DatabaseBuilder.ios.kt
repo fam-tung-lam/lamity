@@ -14,9 +14,12 @@ import platform.Foundation.NSUserDomainMask
 
 /** Room builder for the app database, stored under Application Support. */
 fun lamityDatabaseBuilder(): RoomDatabase.Builder<LamityDatabase> {
-    val baseDir = NSSearchPathForDirectoriesInDomains(
-        NSApplicationSupportDirectory, NSUserDomainMask, true,
-    ).firstOrNull() as? String ?: NSTemporaryDirectory()
+    val baseDir =
+        NSSearchPathForDirectoriesInDomains(
+            NSApplicationSupportDirectory,
+            NSUserDomainMask,
+            true,
+        ).firstOrNull() as? String ?: NSTemporaryDirectory()
     val dbDir = "$baseDir/databases"
     FileSystem.SYSTEM.createDirectories(dbDir.toPath())
     return Room.databaseBuilder<LamityDatabase>(name = "$dbDir/$LAMITY_DB_FILE_NAME")

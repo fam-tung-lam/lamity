@@ -27,26 +27,31 @@ class ChatViewModel(
     modelsRepository: ModelsRepository,
     downloads: ModelDownloadManager,
 ) : ViewModel() {
-
-    val uiState: StateFlow<ChatUiState> = combine(
-        chat.state,
-        agentsRepository.agents,
-        modelsRepository.models,
-        downloads.statuses,
-    ) { chatState, agents, models, _ ->
-        val selected = models.firstOrNull { it.id == chatState.modelId }
-        ChatUiState(
-            chat = chatState,
-            agents = agents,
-            models = models,
-            selectedModelReady = selected != null && downloads.isDownloaded(selected),
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState(chat = chat.state.value))
+    val uiState: StateFlow<ChatUiState> =
+        combine(
+            chat.state,
+            agentsRepository.agents,
+            modelsRepository.models,
+            downloads.statuses,
+        ) { chatState, agents, models, _ ->
+            val selected = models.firstOrNull { it.id == chatState.modelId }
+            ChatUiState(
+                chat = chatState,
+                agents = agents,
+                models = models,
+                selectedModelReady = selected != null && downloads.isDownloaded(selected),
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState(chat = chat.state.value))
 
     fun selectAgent(agentId: String?) = chat.selectAgent(agentId)
+
     fun selectModel(modelId: String) = chat.selectModel(modelId)
+
     fun newChat() = chat.newChat()
+
     fun send(text: String) = chat.send(text)
+
     fun stopGeneration() = chat.stopGeneration()
+
     fun dismissError() = chat.dismissError()
 }

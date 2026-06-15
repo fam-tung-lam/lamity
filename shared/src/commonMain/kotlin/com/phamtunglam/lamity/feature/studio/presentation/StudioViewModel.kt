@@ -32,23 +32,23 @@ class StudioViewModel(
     private val deleteAgentUseCase: DeleteAgentUseCase,
     private val deleteSkillUseCase: DeleteSkillUseCase,
 ) : ViewModel() {
-
-    val uiState: StateFlow<StudioUiState> = combine(
-        agents.agents,
-        skills.skills,
-        settings.settings,
-    ) { agentList, skillList, appSettings ->
-        StudioUiState(
-            agents = agentList,
-            skills = skillList,
-            tools = registry.userSelectable,
-            toolEnabled = appSettings.toolEnabled,
+    val uiState: StateFlow<StudioUiState> =
+        combine(
+            agents.agents,
+            skills.skills,
+            settings.settings,
+        ) { agentList, skillList, appSettings ->
+            StudioUiState(
+                agents = agentList,
+                skills = skillList,
+                tools = registry.userSelectable,
+                toolEnabled = appSettings.toolEnabled,
+            )
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            StudioUiState(tools = registry.userSelectable),
         )
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5_000),
-        StudioUiState(tools = registry.userSelectable),
-    )
 
     fun deleteAgent(agentId: String) {
         viewModelScope.launch { deleteAgentUseCase(agentId) }

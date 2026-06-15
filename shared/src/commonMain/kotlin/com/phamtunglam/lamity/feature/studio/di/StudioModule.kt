@@ -15,21 +15,22 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val studioModule: Module = module {
-    // Data
-    single<AgentsRepository> { AgentsRepositoryImpl(get(), get()) }
-    single<SkillsRepository> { SkillsRepositoryImpl(get(), get()) }
+val studioModule: Module =
+    module {
+        // Data
+        single<AgentsRepository> { AgentsRepositoryImpl(get(), get()) }
+        single<SkillsRepository> { SkillsRepositoryImpl(get(), get()) }
 
-    // Domain
-    factory { DeleteAgentUseCase(get(), get()) }
-    factory { DeleteSkillUseCase(get(), get()) }
-    factory { SaveAgentUseCase(get()) }
-    factory { SaveSkillUseCase(get()) }
+        // Domain
+        factory { DeleteAgentUseCase(get(), get()) }
+        factory { DeleteSkillUseCase(get(), get()) }
+        factory { SaveAgentUseCase(get()) }
+        factory { SaveSkillUseCase(get()) }
 
-    // Presentation
-    viewModel { StudioViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { params ->
-        AgentEditViewModel(params.getOrNull<String>(), get(), get(), get(), get())
+        // Presentation
+        viewModel { StudioViewModel(get(), get(), get(), get(), get(), get()) }
+        viewModel { params ->
+            AgentEditViewModel(params.getOrNull<String>(), get(), get(), get(), get())
+        }
+        viewModel { params -> SkillEditViewModel(params.getOrNull<String>(), get(), get()) }
     }
-    viewModel { params -> SkillEditViewModel(params.getOrNull<String>(), get(), get()) }
-}

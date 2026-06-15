@@ -73,7 +73,14 @@ internal fun ChatInputBar(
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
-                    contentDescription = if (isGenerating) stringResource(Res.string.stop) else stringResource(Res.string.send),
+                    contentDescription =
+                        if (isGenerating) {
+                            stringResource(
+                                Res.string.stop,
+                            )
+                        } else {
+                            stringResource(Res.string.send)
+                        },
                 )
             }
         }

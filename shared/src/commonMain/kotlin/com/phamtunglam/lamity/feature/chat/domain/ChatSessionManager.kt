@@ -1,5 +1,6 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
+import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
@@ -10,20 +11,19 @@ import com.phamtunglam.lamity.core.domain.tools.ToolIds
 import com.phamtunglam.lamity.core.domain.tools.ToolRegistry
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
-import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
+import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.feature.studio.domain.Agent
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
-import com.phamtunglam.lamity.feature.studio.domain.Skill
 import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
+import com.phamtunglam.lamity.feature.studio.domain.Agent
+import com.phamtunglam.lamity.feature.studio.domain.Skill
 import com.phamtunglam.lamity.llm.ConversationSetup
 import com.phamtunglam.lamity.llm.EngineSetup
 import com.phamtunglam.lamity.llm.EngineState
 import com.phamtunglam.lamity.llm.GenEvent
 import com.phamtunglam.lamity.llm.ModelRuntime
 import com.phamtunglam.lamity.llm.NativeLlmBridge
-import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -55,6 +55,7 @@ data class ChatSessionState(
  * Lives for the whole process so chat state survives navigation; ViewModels
  * are thin observers of [state].
  */
+@Suppress("TooManyFunctions") // Cohesive chat orchestrator; splitting would scatter related logic.
 class ChatSessionManager(
     private val scope: CoroutineScope,
     private val runtime: ModelRuntime,
@@ -91,8 +92,12 @@ class ChatSessionManager(
             _state.update {
                 it.copy(
                     agentId = s.lastAgentId.takeIf { id -> agents.byId(id) != null },
-                    modelId = (s.lastModelId.takeIf { id -> models.byId(id) != null }
-                        ?: models.models.value.firstOrNull()?.id),
+                    modelId = (
+                        s.lastModelId.takeIf { id -> models.byId(id) != null }
+                            ?: models.models.value
+                                .firstOrNull()
+                                ?.id
+                    ),
                 )
             }
         }
@@ -170,6 +175,8 @@ class ChatSessionManager(
 
     // ----------------------------------------------------------- generation
 
+    // Surfaces any generation failure (including arbitrary native LLM errors) to the UI; cancellation is rethrown.
+    @Suppress("TooGenericExceptionCaught")
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || _state.value.isGenerating) return
@@ -183,21 +190,22 @@ class ChatSessionManager(
             return
         }
 
-        generateJob = scope.launch {
-            _state.update {
-                it.copy(isGenerating = true, error = null, streamingText = "", streamingThought = "")
+        generateJob =
+            scope.launch {
+                _state.update {
+                    it.copy(isGenerating = true, error = null, streamingText = "", streamingThought = "")
+                }
+                try {
+                    runGeneration(model, trimmed)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    log.e(e) { "generation failed" }
+                    _state.update { it.copy(error = e.message ?: "Generation failed") }
+                } finally {
+                    _state.update { it.copy(isGenerating = false) }
+                }
             }
-            try {
-                runGeneration(model, trimmed)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                log.e(e) { "generation failed" }
-                _state.update { it.copy(error = e.message ?: "Generation failed") }
-            } finally {
-                _state.update { it.copy(isGenerating = false) }
-            }
-        }
     }
 
     fun stopGeneration() {
@@ -209,23 +217,27 @@ class ChatSessionManager(
         val agent = agents.byId(_state.value.agentId)
 
         val engineKey = "${model.id}|${model.config.backend.name}|${model.config.maxTokens}"
-        val engineSetup = EngineSetup(
-            modelPath = downloads.modelPath(model),
-            backend = model.config.backend.name.lowercase(),
-            maxTokens = model.config.maxTokens,
-            cacheDir = dirs.cacheDir,
-        )
+        val engineSetup =
+            EngineSetup(
+                modelPath = downloads.modelPath(model),
+                backend =
+                    model.config.backend.name
+                        .lowercase(),
+                maxTokens = model.config.maxTokens,
+                cacheDir = dirs.cacheDir,
+            )
         runtime.ensureEngine(model.id, engineKey, engineSetup).getOrElse {
             _state.update { s -> s.copy(error = it.message ?: "Could not load model") }
             return
         }
 
         // Conversation row (history) exists before the first token.
-        val conversationId = _state.value.conversationId ?: run {
-            val created = conversations.create(agent?.id, model.id)
-            _state.update { it.copy(conversationId = created.id) }
-            created.id
-        }
+        val conversationId =
+            _state.value.conversationId ?: run {
+                val created = conversations.create(agent?.id, model.id)
+                _state.update { it.copy(conversationId = created.id) }
+                created.id
+            }
         conversations.ensureTitle(conversationId, text)
 
         ensureSession(model, agent, conversationId).getOrElse {
@@ -233,16 +245,26 @@ class ChatSessionManager(
             return
         }
 
-        val userMessage = ChatMessage(
-            id = newId(),
-            conversationId = conversationId,
-            role = MessageRole.USER,
-            content = text,
-            createdAt = epochMillis(),
-        )
+        val userMessage =
+            ChatMessage(
+                id = newId(),
+                conversationId = conversationId,
+                role = MessageRole.USER,
+                content = text,
+                createdAt = epochMillis(),
+            )
         conversations.appendMessage(userMessage)
         _state.update { it.copy(messages = it.messages + userMessage) }
 
+        streamAndPersist(model, agent, conversationId, text)
+    }
+
+    private suspend fun streamAndPersist(
+        model: LlmModel,
+        agent: Agent?,
+        conversationId: String,
+        text: String,
+    ) {
         val startedAt = epochMillis()
         var firstTokenAt = 0L
         var charCount = 0
@@ -256,15 +278,18 @@ class ChatSessionManager(
                         charCount += event.text.length
                         _state.update { it.copy(streamingText = it.streamingText + event.text) }
                     }
+
                     is GenEvent.Thought -> {
                         if (firstTokenAt == 0L) firstTokenAt = epochMillis()
                         charCount += event.text.length
                         _state.update { it.copy(streamingThought = it.streamingThought + event.text) }
                     }
+
                     is GenEvent.Done -> {
                         completed = true
                         finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
                     }
+
                     is GenEvent.Error -> {
                         completed = true
                         finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
@@ -300,16 +325,17 @@ class ChatSessionManager(
         val now = epochMillis()
         val streamMillis = (now - (if (firstTokenAt > 0) firstTokenAt else startedAt)).coerceAtLeast(1)
         val tokensPerSec = (charCount / 4.0) / (streamMillis / 1000.0)
-        val message = ChatMessage(
-            id = newId(),
-            conversationId = conversationId,
-            role = MessageRole.ASSISTANT,
-            content = s.streamingText.trim(),
-            thought = s.streamingThought.trim(),
-            genMillis = now - startedAt,
-            tokensPerSec = tokensPerSec,
-            createdAt = now,
-        )
+        val message =
+            ChatMessage(
+                id = newId(),
+                conversationId = conversationId,
+                role = MessageRole.ASSISTANT,
+                content = s.streamingText.trim(),
+                thought = s.streamingThought.trim(),
+                genMillis = now - startedAt,
+                tokensPerSec = tokensPerSec,
+                createdAt = now,
+            )
         conversations.appendMessage(message)
         _state.update {
             it.copy(messages = it.messages + message, streamingText = "", streamingThought = "")
@@ -318,11 +344,7 @@ class ChatSessionManager(
 
     // ----------------------------------------------------------- session
 
-    private suspend fun ensureSession(
-        model: LlmModel,
-        agent: Agent?,
-        conversationId: String,
-    ): Result<Unit> {
+    private suspend fun ensureSession(model: LlmModel, agent: Agent?, conversationId: String): Result<Unit> {
         val skillsForAgent = effectiveSkills(agent)
         val toolIds = effectiveToolIds(agent, skillsForAgent)
         val signature = sessionSignatureOf(model, agent, conversationId, toolIds, skillsForAgent)
@@ -333,15 +355,16 @@ class ChatSessionManager(
         toolContext.activeSkills = { skillsForAgent }
 
         val history = _state.value.messages.filter { it.role != MessageRole.TOOL }
-        val setup = ConversationSetup(
-            systemPrompt = buildSystemPrompt(agent, skillsForAgent),
-            historyJson = historyJson(history),
-            toolIds = toolIds,
-            toolSpecsJson = registry.specsJsonFor(toolIds),
-            topK = model.config.topK,
-            topP = model.config.topP,
-            temperature = model.config.temperature,
-        )
+        val setup =
+            ConversationSetup(
+                systemPrompt = buildSystemPrompt(agent, skillsForAgent),
+                historyJson = historyJson(history),
+                toolIds = toolIds,
+                toolSpecsJson = registry.specsJsonFor(toolIds),
+                topK = model.config.topK,
+                topP = model.config.topP,
+                temperature = model.config.temperature,
+            )
         return runtime.createConversation(setup).map { handle ->
             sessionHandle = handle
             sessionSignature = signature
@@ -355,16 +378,20 @@ class ChatSessionManager(
     }
 
     private fun effectiveSkills(agent: Agent?): List<Skill> =
-        agent?.skillIds.orEmpty()
+        agent
+            ?.skillIds
+            .orEmpty()
             .mapNotNull { skills.byId(it) }
             .filter { it.enabled }
 
     private fun effectiveToolIds(agent: Agent?, skillsForAgent: List<Skill>): List<String> {
-        val base = agent?.toolIds
-            ?: registry.userSelectable.map { it.id } // no agent: all globally enabled tools
-        val enabled = base.filter { id ->
-            settings.isToolEnabled(id) && registry.byId(id) != null && id != ToolIds.LOAD_SKILL
-        }
+        val base =
+            agent?.toolIds
+                ?: registry.userSelectable.map { it.id } // no agent: all globally enabled tools
+        val enabled =
+            base.filter { id ->
+                settings.isToolEnabled(id) && registry.byId(id) != null && id != ToolIds.LOAD_SKILL
+            }
         return if (skillsForAgent.isNotEmpty()) enabled + ToolIds.LOAD_SKILL else enabled
     }
 
@@ -374,44 +401,49 @@ class ChatSessionManager(
         conversationId: String,
         toolIds: List<String>,
         skillsForAgent: List<Skill>,
-    ): String = buildString {
-        append(conversationId)
-        append('|').append(model.id)
-        append('|').append(model.config.backend).append(model.config.maxTokens)
-        append('|').append(model.config.topK).append(model.config.topP).append(model.config.temperature)
-        append('|').append(agent?.id).append(':').append(agent?.updatedAt)
-        append('|').append(toolIds.sorted().joinToString(","))
-        append('|').append(skillsForAgent.joinToString(",") { "${it.id}:${it.updatedAt}" })
-    }
+    ): String =
+        buildString {
+            append(conversationId)
+            append('|').append(model.id)
+            append('|').append(model.config.backend).append(model.config.maxTokens)
+            append('|').append(model.config.topK).append(model.config.topP).append(model.config.temperature)
+            append('|').append(agent?.id).append(':').append(agent?.updatedAt)
+            append('|').append(toolIds.sorted().joinToString(","))
+            append('|').append(skillsForAgent.joinToString(",") { "${it.id}:${it.updatedAt}" })
+        }
 
     private fun buildSystemPrompt(agent: Agent?, skillsForAgent: List<Skill>): String? {
         val parts = mutableListOf<String>()
         agent?.systemPrompt?.takeIf { it.isNotBlank() }?.let { parts += it.trim() }
         if (skillsForAgent.isNotEmpty()) {
-            parts += buildString {
-                appendLine("# Skills")
-                appendLine(
-                    "You have the following optional skills. Before applying a skill, " +
-                        "call the load_skill tool with its exact name to get its full instructions."
-                )
-                for (skill in skillsForAgent) {
-                    appendLine("- ${skill.name}: ${skill.description.ifBlank { "(no description)" }}")
-                }
-            }.trim()
+            parts +=
+                buildString {
+                    appendLine("# Skills")
+                    appendLine(
+                        "You have the following optional skills. Before applying a skill, " +
+                            "call the load_skill tool with its exact name to get its full instructions.",
+                    )
+                    for (skill in skillsForAgent) {
+                        appendLine("- ${skill.name}: ${skill.description.ifBlank { "(no description)" }}")
+                    }
+                }.trim()
         }
         return parts.joinToString("\n\n").ifBlank { null }
     }
 
     private fun historyJson(history: List<ChatMessage>): String {
-        val arr = buildJsonArray {
-            for (m in history) {
-                if (m.content.isBlank()) continue
-                add(buildJsonObject {
-                    put("role", if (m.role == MessageRole.USER) "user" else "model")
-                    put("text", m.content)
-                })
+        val arr =
+            buildJsonArray {
+                for (m in history) {
+                    if (m.content.isBlank()) continue
+                    add(
+                        buildJsonObject {
+                            put("role", if (m.role == MessageRole.USER) "user" else "model")
+                            put("text", m.content)
+                        },
+                    )
+                }
             }
-        }
         return arr.toString()
     }
 
@@ -421,15 +453,16 @@ class ChatSessionManager(
         val s = _state.value
         val conversationId = s.conversationId ?: return
         if (!s.isGenerating) return
-        val message = ChatMessage(
-            id = event.id,
-            conversationId = conversationId,
-            role = MessageRole.TOOL,
-            toolName = event.toolId,
-            toolArgs = event.argsJson,
-            toolResult = event.resultJson,
-            createdAt = event.atMillis,
-        )
+        val message =
+            ChatMessage(
+                id = event.id,
+                conversationId = conversationId,
+                role = MessageRole.TOOL,
+                toolName = event.toolId,
+                toolArgs = event.argsJson,
+                toolResult = event.resultJson,
+                createdAt = event.atMillis,
+            )
         conversations.appendMessage(message)
         _state.update { it.copy(messages = it.messages + message) }
     }

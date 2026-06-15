@@ -15,9 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class ModelsUiState(
-    val rows: List<ModelWithStatus> = emptyList(),
-)
+data class ModelsUiState(val rows: List<ModelWithStatus> = emptyList())
 
 class ModelsViewModel(
     observeModelsWithStatus: ObserveModelsWithStatusUseCase,
@@ -26,16 +24,21 @@ class ModelsViewModel(
     private val downloads: ModelDownloadManager,
     private val chat: ChatSessionManager,
 ) : ViewModel() {
-
-    val uiState: StateFlow<ModelsUiState> = observeModelsWithStatus()
-        .map { ModelsUiState(rows = it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ModelsUiState())
+    val uiState: StateFlow<ModelsUiState> =
+        observeModelsWithStatus()
+            .map { ModelsUiState(rows = it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ModelsUiState())
 
     fun download(model: LlmModel) = downloads.start(model)
+
     fun pauseDownload(model: LlmModel) = downloads.pause(model)
+
     fun resumeDownload(model: LlmModel) = downloads.resume(model)
+
     fun cancelDownload(model: LlmModel) = downloads.cancel(model)
+
     fun dismissError(model: LlmModel) = downloads.dismissError(model)
+
     fun deleteFile(model: LlmModel) = downloads.deleteFile(model)
 
     fun addCustomModel(name: String, url: String, requiresAuth: Boolean) {

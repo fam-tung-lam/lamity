@@ -44,31 +44,41 @@ internal fun DownloadPanel(
                 TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
+
         is ModelStatus.Downloading -> {
             ProgressBar(status.downloadedBytes, status.totalBytes)
-            val rate = listOfNotNull(
-                formatSpeed(status.bytesPerSecond),
-                formatEta(status.etaMillis),
-            ).joinToString(" • ")
+            val rate =
+                listOfNotNull(
+                    formatSpeed(status.bytesPerSecond),
+                    formatEta(status.etaMillis),
+                ).joinToString(" • ")
             StatusRow(
-                label = formatPercent(status.downloadedBytes, status.totalBytes) +
-                    if (rate.isNotEmpty()) "\n$rate" else "",
+                label =
+                    formatPercent(status.downloadedBytes, status.totalBytes) +
+                        if (rate.isNotEmpty()) "\n$rate" else "",
             ) {
                 TextButton(onClick = onPause) { Text(stringResource(Res.string.pause)) }
                 TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
+
         is ModelStatus.Paused -> {
             ProgressBar(status.downloadedBytes, status.totalBytes)
-            StatusRow(label = "${stringResource(Res.string.paused)} • ${formatPercent(status.downloadedBytes, status.totalBytes)}") {
+            StatusRow(
+                label = "${stringResource(
+                    Res.string.paused,
+                )} • ${formatPercent(status.downloadedBytes, status.totalBytes)}",
+            ) {
                 TextButton(onClick = onResume) { Text(stringResource(Res.string.resume)) }
                 TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) }
             }
         }
+
         is ModelStatus.Verifying -> {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             StatusRow(label = stringResource(Res.string.verifying)) {}
         }
+
         is ModelStatus.Failed -> {
             Text(
                 status.message,
@@ -80,7 +90,10 @@ internal fun DownloadPanel(
                 TextButton(onClick = onDismissError) { Text(stringResource(Res.string.dismiss)) }
             }
         }
-        ModelStatus.NotDownloaded, ModelStatus.Downloaded -> Unit // handled by the card itself
+
+        ModelStatus.NotDownloaded, ModelStatus.Downloaded -> {
+            Unit
+        } // handled by the card itself
     }
 }
 

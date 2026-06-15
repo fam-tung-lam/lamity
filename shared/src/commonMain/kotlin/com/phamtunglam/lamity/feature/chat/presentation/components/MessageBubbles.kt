@@ -147,4 +147,6 @@ private fun ThoughtBlock(thought: String, label: String, initiallyExpanded: Bool
     }
 }
 
-private fun fmt1(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
+private const val ONE_DECIMAL_PLACE = 10.0
+
+private fun fmt1(value: Double): String = ((value * ONE_DECIMAL_PLACE).roundToInt() / ONE_DECIMAL_PLACE).toString()

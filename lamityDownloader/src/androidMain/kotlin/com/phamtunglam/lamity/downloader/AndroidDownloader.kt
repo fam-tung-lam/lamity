@@ -7,6 +7,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkManager
 import androidx.work.await
 import androidx.work.workDataOf
 import com.phamtunglam.lamity.downloader.models.DownloadException
@@ -17,7 +18,6 @@ import com.phamtunglam.lamity.downloader.workmanager.DownloadWorkData
 import com.phamtunglam.lamity.downloader.workmanager.DownloadWorker
 import com.phamtunglam.lamity.downloader.workmanager.WorkInfoMapping
 import com.phamtunglam.lamity.downloader.workmanager.partialFile
-import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -33,7 +33,6 @@ import okio.FileSystem
  * through WorkManager progress data.
  */
 class AndroidDownloader(context: Context) : Downloader {
-
     private val appContext = context.applicationContext
     private val workManager = WorkManager.getInstance(appContext)
     private val store = RequestStore(appContext)
@@ -51,8 +50,9 @@ class AndroidDownloader(context: Context) : Downloader {
     }
 
     override suspend fun resume(id: String) {
-        val request = store.load(id)
-            ?: throw DownloadException("No stored download request for '$id'.")
+        val request =
+            store.load(id)
+                ?: throw DownloadException("No stored download request for '$id'.")
         start(request)
     }
 
@@ -74,8 +74,7 @@ class AndroidDownloader(context: Context) : Downloader {
                     partialBytes = request?.partialFile()?.let { fileSystem.metadataOrNull(it)?.size } ?: 0L,
                     totalBytes = request?.expectedSizeBytes ?: 0L,
                 )
-            }
-            .distinctUntilChanged()
+            }.distinctUntilChanged()
             .flowOn(Dispatchers.IO)
 
     private fun workRequest(request: DownloadRequest): OneTimeWorkRequest =
@@ -83,14 +82,14 @@ class AndroidDownloader(context: Context) : Downloader {
             .setInputData(workDataOf(DownloadWorkData.Keys.ID to request.id))
             .setConstraints(
                 Constraints(
-                    requiredNetworkType = if (request.requireUnmetered) {
-                        NetworkType.UNMETERED
-                    } else {
-                        NetworkType.CONNECTED
-                    },
+                    requiredNetworkType =
+                        if (request.requireUnmetered) {
+                            NetworkType.UNMETERED
+                        } else {
+                            NetworkType.CONNECTED
+                        },
                 ),
-            )
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            ).setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .addTag(DownloadWorkData.Tags.ALL)
             .build()
 }

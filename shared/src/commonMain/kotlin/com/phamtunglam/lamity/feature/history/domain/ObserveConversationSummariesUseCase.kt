@@ -8,11 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
 /** A conversation joined with the display names of its agent and model. */
-data class ConversationSummary(
-    val conversation: Conversation,
-    val agentName: String?,
-    val modelName: String,
-)
+data class ConversationSummary(val conversation: Conversation, val agentName: String?, val modelName: String)
 
 /** Streams conversations enriched with agent and model names for the history list. */
 class ObserveConversationSummariesUseCase(
@@ -20,18 +16,20 @@ class ObserveConversationSummariesUseCase(
     private val agents: AgentsRepository,
     private val models: ModelsRepository,
 ) {
-    operator fun invoke(): Flow<List<ConversationSummary>> = combine(
-        conversations.conversations,
-        agents.agents,
-        models.models,
-    ) { conversationList, agentList, modelList ->
-        conversationList.map { conversation ->
-            ConversationSummary(
-                conversation = conversation,
-                agentName = agentList.firstOrNull { it.id == conversation.agentId }?.name,
-                modelName = modelList.firstOrNull { it.id == conversation.modelId }?.name
-                    ?: conversation.modelId,
-            )
+    operator fun invoke(): Flow<List<ConversationSummary>> =
+        combine(
+            conversations.conversations,
+            agents.agents,
+            models.models,
+        ) { conversationList, agentList, modelList ->
+            conversationList.map { conversation ->
+                ConversationSummary(
+                    conversation = conversation,
+                    agentName = agentList.firstOrNull { it.id == conversation.agentId }?.name,
+                    modelName =
+                        modelList.firstOrNull { it.id == conversation.modelId }?.name
+                            ?: conversation.modelId,
+                )
+            }
         }
-    }
 }

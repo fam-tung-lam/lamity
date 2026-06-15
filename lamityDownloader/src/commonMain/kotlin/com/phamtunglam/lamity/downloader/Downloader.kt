@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.Flow
  * (iosMain, backed by a Swift bridge over a background URLSession).
  */
 interface Downloader {
-
     /** Starts (or restarts) the download for [request], replacing any active one with the same id. */
     suspend fun start(request: DownloadRequest)
 

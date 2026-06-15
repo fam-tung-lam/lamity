@@ -61,9 +61,12 @@ fun SkillEditScreen(
                 value = ui.name,
                 onValueChange = viewModel::setName,
                 label = { Text(stringResource(Res.string.skill_name)) },
-                supportingText = if (ui.name.isBlank()) {
-                    { Text(stringResource(Res.string.name_required)) }
-                } else null,
+                supportingText =
+                    if (ui.name.isBlank()) {
+                        { Text(stringResource(Res.string.name_required)) }
+                    } else {
+                        null
+                    },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )

@@ -3,9 +3,7 @@ package com.phamtunglam.lamity.feature.studio.domain
 import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
 
 /** Validates and saves an agent. Returns null when the name is blank. */
-class SaveAgentUseCase(
-    private val agents: AgentsRepository,
-) {
+class SaveAgentUseCase(private val agents: AgentsRepository) {
     suspend operator fun invoke(
         id: String?,
         name: String,

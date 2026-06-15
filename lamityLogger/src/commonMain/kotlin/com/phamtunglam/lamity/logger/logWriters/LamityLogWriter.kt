@@ -1,7 +1,7 @@
 package com.phamtunglam.lamity.logger.logWriters
 
-import com.phamtunglam.lamity.logger.models.LamityLogSeverity
 import com.phamtunglam.lamity.logger.LamityLogger
+import com.phamtunglam.lamity.logger.models.LamityLogSeverity
 
 /**
  * A sink for log records routed through the Lamity logging facade.
@@ -15,5 +15,10 @@ interface LamityLogWriter {
     fun isLoggable(tag: String, severity: LamityLogSeverity): Boolean = true
 
     /** Processes a single log record. */
-    fun log(severity: LamityLogSeverity, message: String, tag: String, throwable: Throwable?)
+    fun log(
+        severity: LamityLogSeverity,
+        message: String,
+        tag: String,
+        throwable: Throwable?,
+    )
 }

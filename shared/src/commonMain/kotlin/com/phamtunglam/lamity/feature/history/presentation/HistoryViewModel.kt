@@ -21,9 +21,7 @@ data class ConversationRowUiState(
     val updatedAtText: String,
 )
 
-data class HistoryUiState(
-    val rows: List<ConversationRowUiState> = emptyList(),
-)
+data class HistoryUiState(val rows: List<ConversationRowUiState> = emptyList())
 
 class HistoryViewModel(
     observeConversationSummaries: ObserveConversationSummariesUseCase,
@@ -31,21 +29,21 @@ class HistoryViewModel(
     private val conversations: ConversationsRepository,
     private val chat: ChatSessionManager,
 ) : ViewModel() {
-
-    val uiState: StateFlow<HistoryUiState> = observeConversationSummaries()
-        .map { summaries ->
-            HistoryUiState(
-                rows = summaries.map { summary ->
-                    ConversationRowUiState(
-                        conversation = summary.conversation,
-                        agentName = summary.agentName,
-                        modelName = summary.modelName,
-                        updatedAtText = formatDateTime(summary.conversation.updatedAt),
-                    )
-                },
-            )
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
+    val uiState: StateFlow<HistoryUiState> =
+        observeConversationSummaries()
+            .map { summaries ->
+                HistoryUiState(
+                    rows =
+                        summaries.map { summary ->
+                            ConversationRowUiState(
+                                conversation = summary.conversation,
+                                agentName = summary.agentName,
+                                modelName = summary.modelName,
+                                updatedAtText = formatDateTime(summary.conversation.updatedAt),
+                            )
+                        },
+                )
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
 
     /** Opens [conversationId] in the chat session; the caller navigates to the chat tab. */
     fun open(conversationId: String) = chat.openConversation(conversationId)

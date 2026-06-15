@@ -1,12 +1,12 @@
 package com.phamtunglam.lamity.feature.studio.data
 
+import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.db.entities.SkillEntity
 import com.phamtunglam.lamity.db.daos.SkillsDao
+import com.phamtunglam.lamity.db.entities.SkillEntity
 import com.phamtunglam.lamity.feature.studio.domain.Skill
 import com.phamtunglam.lamity.feature.studio.domain.StudioSeedData
-import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,31 +18,29 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** Skills live in Room; the database is the single source of truth. */
-class SkillsRepositoryImpl(
-    private val dao: SkillsDao,
-    scope: CoroutineScope,
-) : SkillsRepository {
-
+class SkillsRepositoryImpl(private val dao: SkillsDao, scope: CoroutineScope) : SkillsRepository {
     private val log = Logger.withTag("SkillsRepository")
 
     private val loaded = CompletableDeferred<Unit>()
 
-    override val skills: StateFlow<List<Skill>> = dao.observeAll()
-        .map { rows -> rows.map { it.toDomain() } }
-        .catch { e ->
-            log.e(e) { "failed to observe skills" }
-            emit(emptyList())
-        }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+    override val skills: StateFlow<List<Skill>> =
+        dao
+            .observeAll()
+            .map { rows -> rows.map { it.toDomain() } }
+            .catch { e ->
+                log.e(e) { "failed to observe skills" }
+                emit(emptyList())
+            }.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     init {
         scope.launch {
-            val seeded = runCatching {
-                if (dao.getAll().isEmpty()) {
-                    dao.upsertAll(StudioSeedData.sampleSkills(epochMillis()).map { it.toEntity() })
-                }
-                true
-            }.onFailure { log.e(it) { "failed to seed skills" } }.getOrDefault(false)
+            val seeded =
+                runCatching {
+                    if (dao.getAll().isEmpty()) {
+                        dao.upsertAll(StudioSeedData.sampleSkills(epochMillis()).map { it.toEntity() })
+                    }
+                    true
+                }.onFailure { log.e(it) { "failed to seed skills" } }.getOrDefault(false)
             // Loaded once the flow reflects the stored (or just-seeded) skills.
             if (seeded) skills.first { it.isNotEmpty() }
             loaded.complete(Unit)
@@ -62,14 +60,15 @@ class SkillsRepositoryImpl(
     ): Skill {
         val now = epochMillis()
         val existing = byId(id)
-        val skill = (existing ?: Skill(id = "skill-${newId().take(8)}", name = "", createdAt = now))
-            .copy(
-                name = name.trim(),
-                description = description.trim(),
-                instructions = instructions.trim(),
-                enabled = enabled,
-                updatedAt = now,
-            )
+        val skill =
+            (existing ?: Skill(id = "skill-${newId().take(8)}", name = "", createdAt = now))
+                .copy(
+                    name = name.trim(),
+                    description = description.trim(),
+                    instructions = instructions.trim(),
+                    enabled = enabled,
+                    updatedAt = now,
+                )
         runCatching { dao.upsert(skill.toEntity()) }
             .onFailure { log.e(it) { "failed to persist skill ${skill.id}" } }
         return skill
@@ -87,22 +86,24 @@ class SkillsRepositoryImpl(
     }
 }
 
-private fun SkillEntity.toDomain() = Skill(
-    id = id,
-    name = name,
-    description = description,
-    instructions = instructions,
-    enabled = enabled,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-)
+private fun SkillEntity.toDomain() =
+    Skill(
+        id = id,
+        name = name,
+        description = description,
+        instructions = instructions,
+        enabled = enabled,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
 
-private fun Skill.toEntity() = SkillEntity(
-    id = id,
-    name = name,
-    description = description,
-    instructions = instructions,
-    enabled = enabled,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-)
+private fun Skill.toEntity() =
+    SkillEntity(
+        id = id,
+        name = name,
+        description = description,
+        instructions = instructions,
+        enabled = enabled,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )

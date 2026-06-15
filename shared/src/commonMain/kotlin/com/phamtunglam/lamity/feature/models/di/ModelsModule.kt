@@ -12,26 +12,27 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val modelsModule: Module = module {
-    // Data
-    single<ModelsRepository> { ModelsRepositoryImpl(get(), get()) }
-    single {
-        ModelDownloadManager(
-            dirs = get(),
-            fileSystem = get(),
-            settings = get(),
-            downloader = get(),
-            models = get(),
-            scope = get(),
-        )
+val modelsModule: Module =
+    module {
+        // Data
+        single<ModelsRepository> { ModelsRepositoryImpl(get(), get()) }
+        single {
+            ModelDownloadManager(
+                dirs = get(),
+                fileSystem = get(),
+                settings = get(),
+                downloader = get(),
+                models = get(),
+                scope = get(),
+            )
+        }
+
+        // Domain
+        factory { ObserveModelsWithStatusUseCase(get(), get()) }
+        factory { RemoveCustomModelUseCase(get(), get()) }
+        factory { SaveModelConfigUseCase(get()) }
+
+        // Presentation
+        viewModel { ModelsViewModel(get(), get(), get(), get(), get()) }
+        viewModel { params -> ModelConfigViewModel(params.get<String>(), get(), get()) }
     }
-
-    // Domain
-    factory { ObserveModelsWithStatusUseCase(get(), get()) }
-    factory { RemoveCustomModelUseCase(get(), get()) }
-    factory { SaveModelConfigUseCase(get()) }
-
-    // Presentation
-    viewModel { ModelsViewModel(get(), get(), get(), get(), get()) }
-    viewModel { params -> ModelConfigViewModel(params.get<String>(), get(), get()) }
-}

@@ -8,7 +8,6 @@ package com.phamtunglam.lamity.downloader.bridge
  * Swift-friendly.
  */
 interface LamityDownloaderBridge {
-
     @Suppress("LongParameterList")
     fun start(
         id: String,
@@ -24,7 +23,9 @@ interface LamityDownloaderBridge {
     )
 
     fun pause(id: String)
+
     fun resume(id: String)
+
     fun cancel(id: String)
 
     /**
@@ -34,7 +35,13 @@ interface LamityDownloaderBridge {
      */
     fun observe(
         id: String,
-        onProgress: (state: String, downloadedBytes: Long, totalBytes: Long, bytesPerSecond: Long, etaMillis: Long) -> Unit,
+        onProgress: (
+            state: String,
+            downloadedBytes: Long,
+            totalBytes: Long,
+            bytesPerSecond: Long,
+            etaMillis: Long,
+        ) -> Unit,
         onError: (message: String) -> Unit,
     )
 }

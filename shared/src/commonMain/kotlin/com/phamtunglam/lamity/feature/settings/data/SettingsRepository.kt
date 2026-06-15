@@ -15,8 +15,7 @@ interface SettingsRepository {
 
     suspend fun setThemeMode(mode: ThemeMode) = update { it.copy(themeMode = mode) }
 
-    suspend fun setWifiOnlyDownloads(enabled: Boolean) =
-        update { it.copy(wifiOnlyDownloads = enabled) }
+    suspend fun setWifiOnlyDownloads(enabled: Boolean) = update { it.copy(wifiOnlyDownloads = enabled) }
 
     fun isToolEnabled(toolId: String): Boolean = value.toolEnabled[toolId] ?: true
 

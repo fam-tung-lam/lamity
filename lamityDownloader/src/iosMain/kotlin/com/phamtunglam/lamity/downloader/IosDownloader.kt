@@ -21,7 +21,6 @@ fun iosDownloader(): Downloader = IosDownloader(LamityDownloaderIos.requireBridg
  * background downloads keep reporting.
  */
 internal class IosDownloader(private val bridge: LamityDownloaderBridge) : Downloader {
-
     private val progressById = MutableStateFlow<Map<String, DownloadProgress?>>(emptyMap())
     private val observed = MutableStateFlow<Set<String>>(emptySet())
 
@@ -68,33 +67,40 @@ internal class IosDownloader(private val bridge: LamityDownloaderBridge) : Downl
         bridge.observe(
             id = id,
             onProgress = { state, downloadedBytes, totalBytes, bytesPerSecond, etaMillis ->
-                val mapped = runCatching { DownloadState.valueOf(state) }
-                    .getOrDefault(DownloadState.FAILED)
+                val mapped =
+                    runCatching { DownloadState.valueOf(state) }
+                        .getOrDefault(DownloadState.FAILED)
                 if (mapped == DownloadState.CANCELLED) {
                     progressById.update { it + (id to null) }
                 } else {
                     progressById.update {
-                        it + (id to DownloadProgress(
-                            id = id,
-                            state = mapped,
-                            downloadedBytes = downloadedBytes,
-                            totalBytes = totalBytes,
-                            bytesPerSecond = bytesPerSecond,
-                            etaMillis = etaMillis,
-                        ))
+                        it + (
+                            id to
+                                DownloadProgress(
+                                    id = id,
+                                    state = mapped,
+                                    downloadedBytes = downloadedBytes,
+                                    totalBytes = totalBytes,
+                                    bytesPerSecond = bytesPerSecond,
+                                    etaMillis = etaMillis,
+                                )
+                        )
                     }
                 }
             },
             onError = { message ->
                 progressById.update { current ->
                     val previous = current[id]
-                    current + (id to DownloadProgress(
-                        id = id,
-                        state = DownloadState.FAILED,
-                        downloadedBytes = previous?.downloadedBytes ?: 0,
-                        totalBytes = previous?.totalBytes ?: 0,
-                        error = message,
-                    ))
+                    current + (
+                        id to
+                            DownloadProgress(
+                                id = id,
+                                state = DownloadState.FAILED,
+                                downloadedBytes = previous?.downloadedBytes ?: 0,
+                                totalBytes = previous?.totalBytes ?: 0,
+                                error = message,
+                            )
+                    )
                 }
             },
         )
@@ -103,12 +109,15 @@ internal class IosDownloader(private val bridge: LamityDownloaderBridge) : Downl
     private fun setState(id: String, state: DownloadState) {
         progressById.update { current ->
             val previous = current[id]
-            current + (id to DownloadProgress(
-                id = id,
-                state = state,
-                downloadedBytes = previous?.downloadedBytes ?: 0,
-                totalBytes = previous?.totalBytes ?: 0,
-            ))
+            current + (
+                id to
+                    DownloadProgress(
+                        id = id,
+                        state = state,
+                        downloadedBytes = previous?.downloadedBytes ?: 0,
+                        totalBytes = previous?.totalBytes ?: 0,
+                    )
+            )
         }
     }
 }

@@ -1,16 +1,12 @@
 package com.phamtunglam.lamity.downloader.utils
 
-internal data class DownloadRateSnapshot(
-    val bytesPerSecond: Long = 0,
-    val etaMillis: Long = 0,
-)
+internal data class DownloadRateSnapshot(val bytesPerSecond: Long = 0, val etaMillis: Long = 0)
 
 /**
  * Rolling transfer-rate estimator over the last [maxSamples] progress ticks;
  * smooths the bursty byte counts a network read loop produces.
  */
 internal class DownloadRate(private val maxSamples: Int = SAMPLE_COUNT) {
-
     private val byteSamples = ArrayDeque<Long>()
     private val latencySamples = ArrayDeque<Long>()
     private var lastSampleMillis = 0L
@@ -39,11 +35,12 @@ internal class DownloadRate(private val maxSamples: Int = SAMPLE_COUNT) {
         val elapsedMillis = latencySamples.sum()
         if (elapsedMillis <= 0) return DownloadRateSnapshot()
         val bytesPerSecond = byteSamples.sum() * 1000 / elapsedMillis
-        val etaMillis = if (bytesPerSecond > 0 && totalBytes > 0) {
-            (totalBytes - downloadedBytes).coerceAtLeast(0) * 1000 / bytesPerSecond
-        } else {
-            0
-        }
+        val etaMillis =
+            if (bytesPerSecond > 0 && totalBytes > 0) {
+                (totalBytes - downloadedBytes).coerceAtLeast(0) * 1000 / bytesPerSecond
+            } else {
+                0
+            }
         return DownloadRateSnapshot(bytesPerSecond = bytesPerSecond, etaMillis = etaMillis)
     }
 

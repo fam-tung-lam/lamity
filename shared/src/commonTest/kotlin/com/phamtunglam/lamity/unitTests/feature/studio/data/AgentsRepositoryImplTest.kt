@@ -21,107 +21,110 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class AgentsRepositoryImplTest : BehaviorSpec({
+class AgentsRepositoryImplTest :
+    BehaviorSpec({
 
-    val dao = mock<AgentsDao>()
+        val dao = mock<AgentsDao>()
 
-    afterEach {
-        resetAnswers(dao)
-        resetCalls(dao)
-    }
-
-    // The database is the single source of truth: the mocked DAO is backed by
-    // a StateFlow that writes update and the repository observes.
-    suspend fun createRepository(): AgentsRepository {
-        val backing = MutableStateFlow<List<AgentEntity>>(emptyList())
-        every { dao.observeAll() } returns backing
-        everySuspend { dao.getAll() } calls { backing.value }
-        everySuspend { dao.upsert(any()) } calls { (entity: AgentEntity) ->
-            backing.value = backing.value.filterNot { it.id == entity.id } + entity
+        afterEach {
+            resetAnswers(dao)
+            resetCalls(dao)
         }
-        everySuspend { dao.upsertAll(any()) } calls { (entities: List<AgentEntity>) ->
-            val ids = entities.map { it.id }.toSet()
-            backing.value = backing.value.filterNot { it.id in ids } + entities
-        }
-        everySuspend { dao.delete(any()) } calls { (id: String) ->
-            backing.value = backing.value.filterNot { it.id == id }
-        }
-        val repository = AgentsRepositoryImpl(dao, detachedTestScope())
-        repository.awaitLoaded()
-        return repository
-    }
 
-    Given("an empty agents table") {
-        When("the repository loads") {
-            Then("it seeds the sample agents") {
-                val repository = createRepository()
-
-                repository.agents.value.shouldHaveSize(2)
+        // The database is the single source of truth: the mocked DAO is backed by
+        // a StateFlow that writes update and the repository observes.
+        suspend fun createRepository(): AgentsRepository {
+            val backing = MutableStateFlow<List<AgentEntity>>(emptyList())
+            every { dao.observeAll() } returns backing
+            everySuspend { dao.getAll() } calls { backing.value }
+            everySuspend { dao.upsert(any()) } calls { (entity: AgentEntity) ->
+                backing.value = backing.value.filterNot { it.id == entity.id } + entity
             }
-            Then("it persists the seeded agents") {
-                createRepository()
-                advanceUntilIdle()
-
-                verifySuspend { dao.upsertAll(any()) }
+            everySuspend { dao.upsertAll(any()) } calls { (entities: List<AgentEntity>) ->
+                val ids = entities.map { it.id }.toSet()
+                backing.value = backing.value.filterNot { it.id in ids } + entities
             }
+            everySuspend { dao.delete(any()) } calls { (id: String) ->
+                backing.value = backing.value.filterNot { it.id == id }
+            }
+            val repository = AgentsRepositoryImpl(dao, detachedTestScope())
+            repository.awaitLoaded()
+            return repository
         }
 
-        When("an agent is saved") {
-            Then("it trims fields and deduplicates tool ids") {
-                val repository = createRepository()
+        Given("an empty agents table") {
+            When("the repository loads") {
+                Then("it seeds the sample agents") {
+                    val repository = createRepository()
 
-                val created = repository.upsert(
-                    id = null,
-                    name = "  Researcher  ",
-                    description = "desc",
-                    systemPrompt = "prompt",
-                    toolIds = listOf("calculate", "calculate"),
-                    skillIds = emptyList(),
-                )
+                    repository.agents.value.shouldHaveSize(2)
+                }
+                Then("it persists the seeded agents") {
+                    createRepository()
+                    advanceUntilIdle()
 
-                created.name shouldBe "Researcher"
-                created.toolIds shouldBe listOf("calculate")
+                    verifySuspend { dao.upsertAll(any()) }
+                }
             }
-            Then("it makes the agent retrievable by id") {
-                val repository = createRepository()
 
-                val created = repository.upsert(
-                    id = null,
-                    name = "Researcher",
-                    description = "",
-                    systemPrompt = "",
-                    toolIds = emptyList(),
-                    skillIds = emptyList(),
-                )
-                advanceUntilIdle()
+            When("an agent is saved") {
+                Then("it trims fields and deduplicates tool ids") {
+                    val repository = createRepository()
 
-                repository.byId(created.id).shouldNotBeNull()
+                    val created =
+                        repository.upsert(
+                            id = null,
+                            name = "  Researcher  ",
+                            description = "desc",
+                            systemPrompt = "prompt",
+                            toolIds = listOf("calculate", "calculate"),
+                            skillIds = emptyList(),
+                        )
+
+                    created.name shouldBe "Researcher"
+                    created.toolIds shouldBe listOf("calculate")
+                }
+                Then("it makes the agent retrievable by id") {
+                    val repository = createRepository()
+
+                    val created =
+                        repository.upsert(
+                            id = null,
+                            name = "Researcher",
+                            description = "",
+                            systemPrompt = "",
+                            toolIds = emptyList(),
+                            skillIds = emptyList(),
+                        )
+                    advanceUntilIdle()
+
+                    repository.byId(created.id).shouldNotBeNull()
+                }
             }
-        }
 
-        When("a skill is detached everywhere") {
-            Then("no agent references the skill anymore") {
-                val repository = createRepository()
+            When("a skill is detached everywhere") {
+                Then("no agent references the skill anymore") {
+                    val repository = createRepository()
 
-                // Seeded agent "Lami" carries skill-haiku-mode.
-                repository.detachSkillEverywhere("skill-haiku-mode")
-                advanceUntilIdle()
+                    // Seeded agent "Lami" carries skill-haiku-mode.
+                    repository.detachSkillEverywhere("skill-haiku-mode")
+                    advanceUntilIdle()
 
-                repository.agents.value.forEach { agent ->
-                    ("skill-haiku-mode" in agent.skillIds) shouldBe false
+                    repository.agents.value.forEach { agent ->
+                        ("skill-haiku-mode" in agent.skillIds) shouldBe false
+                    }
+                }
+            }
+
+            When("an agent is deleted") {
+                Then("it disappears from the repository") {
+                    val repository = createRepository()
+
+                    repository.delete("agent-lami")
+                    advanceUntilIdle()
+
+                    repository.byId("agent-lami") shouldBe null
                 }
             }
         }
-
-        When("an agent is deleted") {
-            Then("it disappears from the repository") {
-                val repository = createRepository()
-
-                repository.delete("agent-lami")
-                advanceUntilIdle()
-
-                repository.byId("agent-lami") shouldBe null
-            }
-        }
-    }
-})
+    })

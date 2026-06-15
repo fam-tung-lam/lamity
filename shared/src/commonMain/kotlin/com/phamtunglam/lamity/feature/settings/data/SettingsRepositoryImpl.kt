@@ -6,9 +6,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
-import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,23 +27,20 @@ import kotlinx.serialization.json.Json
  * atomic read-modify-write ([DataStore.edit] is serialized) so rapid successive
  * updates never overwrite each other.
  */
-class SettingsRepositoryImpl(
-    private val dataStore: DataStore<Preferences>,
-    scope: CoroutineScope,
-) : SettingsRepository {
-
+class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scope: CoroutineScope) :
+    SettingsRepository {
     private val log = Logger.withTag("SettingsRepository")
 
     private val loaded = CompletableDeferred<Unit>()
 
-    override val settings: StateFlow<AppSettings> = dataStore.data
-        .map { preferences -> preferences.toAppSettings() }
-        .catch { e ->
-            log.e(e) { "failed to observe settings" }
-            emit(AppSettings())
-        }
-        .onEach { if (!loaded.isCompleted) loaded.complete(Unit) }
-        .stateIn(scope, SharingStarted.Eagerly, AppSettings())
+    override val settings: StateFlow<AppSettings> =
+        dataStore.data
+            .map { preferences -> preferences.toAppSettings() }
+            .catch { e ->
+                log.e(e) { "failed to observe settings" }
+                emit(AppSettings())
+            }.onEach { if (!loaded.isCompleted) loaded.complete(Unit) }
+            .stateIn(scope, SharingStarted.Eagerly, AppSettings())
 
     override suspend fun awaitLoaded() = loaded.await()
 
@@ -65,17 +62,20 @@ private val WifiOnlyDownloadsKey = booleanPreferencesKey("wifi_only_downloads")
 private val toolMapSerializer = MapSerializer(String.serializer(), Boolean.serializer())
 private val json = Json { ignoreUnknownKeys = true }
 
-private fun Preferences.toAppSettings() = AppSettings(
-    themeMode = this[ThemeModeKey]
-        ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
-        ?: ThemeMode.SYSTEM,
-    toolEnabled = this[ToolEnabledKey]
-        ?.let { runCatching { json.decodeFromString(toolMapSerializer, it) }.getOrNull() }
-        ?: emptyMap(),
-    lastModelId = this[LastModelIdKey],
-    lastAgentId = this[LastAgentIdKey],
-    wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
-)
+private fun Preferences.toAppSettings() =
+    AppSettings(
+        themeMode =
+            this[ThemeModeKey]
+                ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
+                ?: ThemeMode.SYSTEM,
+        toolEnabled =
+            this[ToolEnabledKey]
+                ?.let { runCatching { json.decodeFromString(toolMapSerializer, it) }.getOrNull() }
+                ?: emptyMap(),
+        lastModelId = this[LastModelIdKey],
+        lastAgentId = this[LastAgentIdKey],
+        wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
+    )
 
 private fun MutablePreferences.writeAppSettings(settings: AppSettings) {
     this[ThemeModeKey] = settings.themeMode.name

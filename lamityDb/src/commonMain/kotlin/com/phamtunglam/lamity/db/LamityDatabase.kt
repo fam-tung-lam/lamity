@@ -49,8 +49,11 @@ abstract class LamityDatabase : RoomDatabase() {
     class DropSettingsTable : AutoMigrationSpec
 
     abstract fun modelsDao(): ModelsDao
+
     abstract fun agentsDao(): AgentsDao
+
     abstract fun skillsDao(): SkillsDao
+
     abstract fun conversationsDao(): ConversationsDao
 }
 

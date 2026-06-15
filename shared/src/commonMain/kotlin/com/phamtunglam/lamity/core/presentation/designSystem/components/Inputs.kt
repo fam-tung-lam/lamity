@@ -33,8 +33,9 @@ fun SimpleDropdown(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.first == selectedId }?.second
-        ?: options.firstOrNull()?.second.orEmpty()
+    val selectedLabel =
+        options.firstOrNull { it.first == selectedId }?.second
+            ?: options.firstOrNull()?.second.orEmpty()
     Box(modifier) {
         TextButton(onClick = { expanded = true }) {
             Column {

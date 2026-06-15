@@ -18,59 +18,59 @@ import dev.mokkery.verifySuspend
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 
-class SaveModelConfigUseCaseTest : BehaviorSpec({
+class SaveModelConfigUseCaseTest :
+    BehaviorSpec({
 
-    val models = mock<ModelsRepository>()
+        val models = mock<ModelsRepository>()
 
-    afterEach {
-        resetAnswers(models)
-        resetCalls(models)
-    }
+        afterEach {
+            resetAnswers(models)
+            resetCalls(models)
+        }
 
-    Given("a model in the catalog") {
-        When("a raw slider config is saved") {
-            Then("the values are snapped to their valid grid") {
-                every { models.byId("model-1") } returns fakeLlmModel()
-                var saved: ModelConfig? = null
-                everySuspend { models.updateConfig(any(), any()) } calls {
-                    (_: String, config: ModelConfig) ->
-                    saved = config
+        Given("a model in the catalog") {
+            When("a raw slider config is saved") {
+                Then("the values are snapped to their valid grid") {
+                    every { models.byId("model-1") } returns fakeLlmModel()
+                    var saved: ModelConfig? = null
+                    everySuspend { models.updateConfig(any(), any()) } calls { (_: String, config: ModelConfig) ->
+                        saved = config
+                    }
+
+                    SaveModelConfigUseCase(models)(
+                        modelId = "model-1",
+                        backend = LlmBackend.CPU,
+                        maxTokens = 1000f,
+                        topK = 39.6f,
+                        topP = 0.949f,
+                        temperature = 0.812f,
+                    )
+
+                    saved!!.backend shouldBe LlmBackend.CPU
+                    saved!!.maxTokens shouldBe 1024
+                    saved!!.topK shouldBe 40
+                    saved!!.topP shouldBe 0.95
+                    saved!!.temperature shouldBe 0.81
                 }
-
-                SaveModelConfigUseCase(models)(
-                    modelId = "model-1",
-                    backend = LlmBackend.CPU,
-                    maxTokens = 1000f,
-                    topK = 39.6f,
-                    topP = 0.949f,
-                    temperature = 0.812f,
-                )
-
-                saved!!.backend shouldBe LlmBackend.CPU
-                saved!!.maxTokens shouldBe 1024
-                saved!!.topK shouldBe 40
-                saved!!.topP shouldBe 0.95
-                saved!!.temperature shouldBe 0.81
             }
         }
-    }
 
-    Given("an unknown model id") {
-        When("a config is saved") {
-            Then("nothing is persisted") {
-                every { models.byId("missing") } returns null
+        Given("an unknown model id") {
+            When("a config is saved") {
+                Then("nothing is persisted") {
+                    every { models.byId("missing") } returns null
 
-                SaveModelConfigUseCase(models)(
-                    modelId = "missing",
-                    backend = LlmBackend.GPU,
-                    maxTokens = 2048f,
-                    topK = 40f,
-                    topP = 0.95f,
-                    temperature = 0.8f,
-                )
+                    SaveModelConfigUseCase(models)(
+                        modelId = "missing",
+                        backend = LlmBackend.GPU,
+                        maxTokens = 2048f,
+                        topK = 40f,
+                        topP = 0.95f,
+                        temperature = 0.8f,
+                    )
 
-                verifySuspend(exactly(0)) { models.updateConfig(any(), any()) }
+                    verifySuspend(exactly(0)) { models.updateConfig(any(), any()) }
+                }
             }
         }
-    }
-})
+    })

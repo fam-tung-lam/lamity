@@ -49,10 +49,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun HistoryScreen(
-    onOpenChat: () -> Unit,
-    viewModel: HistoryViewModel = koinViewModel(),
-) {
+fun HistoryScreen(onOpenChat: () -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
     val ui by viewModel.uiState.collectAsState()
 
     if (ui.rows.isEmpty()) {
@@ -92,7 +89,6 @@ private fun ConversationCard(
     onRename: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var deleteOpen by remember { mutableStateOf(false) }
 
@@ -115,41 +111,18 @@ private fun ConversationCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = null)
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.rename)) },
-                        onClick = { menuOpen = false; renameOpen = true },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.delete), color = MaterialTheme.colorScheme.error) },
-                        onClick = { menuOpen = false; deleteOpen = true },
-                    )
-                }
-            }
+            ConversationCardMenu(
+                onRename = { renameOpen = true },
+                onDelete = { deleteOpen = true },
+            )
         }
     }
 
     if (renameOpen) {
-        var title by remember { mutableStateOf(row.conversation.title) }
-        AlertDialog(
-            onDismissRequest = { renameOpen = false },
-            title = { Text(stringResource(Res.string.rename_conversation)) },
-            text = {
-                OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    onRename(title)
-                    renameOpen = false
-                }) { Text(stringResource(Res.string.save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { renameOpen = false }) { Text(stringResource(Res.string.cancel)) }
-            },
+        RenameConversationDialog(
+            initialTitle = row.conversation.title,
+            onRename = onRename,
+            onDismiss = { renameOpen = false },
         )
     }
 
@@ -162,4 +135,51 @@ private fun ConversationCard(
             onDismiss = { deleteOpen = false },
         )
     }
+}
+
+@Composable
+private fun ConversationCardMenu(onRename: () -> Unit, onDelete: () -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { menuOpen = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = null)
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.rename)) },
+                onClick = {
+                    menuOpen = false
+                    onRename()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.delete), color = MaterialTheme.colorScheme.error) },
+                onClick = {
+                    menuOpen = false
+                    onDelete()
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RenameConversationDialog(initialTitle: String, onRename: (String) -> Unit, onDismiss: () -> Unit) {
+    var title by remember { mutableStateOf(initialTitle) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.rename_conversation)) },
+        text = {
+            OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true)
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onRename(title)
+                onDismiss()
+            }) { Text(stringResource(Res.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
+        },
+    )
 }

@@ -18,7 +18,6 @@ import com.phamtunglam.lamity.logger.models.LamityLogSeverity
  * can implement it without depending on the backend.
  */
 object LamityLogger {
-
     /** Registered app writers, in registration order. */
     @VisibleForTesting
     internal val writers = mutableListOf<LamityLogWriter>()
@@ -36,24 +35,19 @@ object LamityLogger {
     }
 
     /** Logs [message] at verbose severity under [tag], optionally attaching [throwable]. */
-    fun v(tag: String, throwable: Throwable? = null, message: () -> String) =
-        log { Logger.v(throwable, tag, message) }
+    fun v(tag: String, throwable: Throwable? = null, message: () -> String) = log { Logger.v(throwable, tag, message) }
 
     /** Logs [message] at debug severity under [tag], optionally attaching [throwable]. */
-    fun d(tag: String, throwable: Throwable? = null, message: () -> String) =
-        log { Logger.d(throwable, tag, message) }
+    fun d(tag: String, throwable: Throwable? = null, message: () -> String) = log { Logger.d(throwable, tag, message) }
 
     /** Logs [message] at info severity under [tag], optionally attaching [throwable]. */
-    fun i(tag: String, throwable: Throwable? = null, message: () -> String) =
-        log { Logger.i(throwable, tag, message) }
+    fun i(tag: String, throwable: Throwable? = null, message: () -> String) = log { Logger.i(throwable, tag, message) }
 
     /** Logs [message] at warn severity under [tag], optionally attaching [throwable]. */
-    fun w(tag: String, throwable: Throwable? = null, message: () -> String) =
-        log { Logger.w(throwable, tag, message) }
+    fun w(tag: String, throwable: Throwable? = null, message: () -> String) = log { Logger.w(throwable, tag, message) }
 
     /** Logs [message] at error severity under [tag], optionally attaching [throwable]. */
-    fun e(tag: String, throwable: Throwable? = null, message: () -> String) =
-        log { Logger.e(throwable, tag, message) }
+    fun e(tag: String, throwable: Throwable? = null, message: () -> String) = log { Logger.e(throwable, tag, message) }
 
     /** Invokes [kermitLog] only while at least one writer is registered. */
     private inline fun log(kermitLog: () -> Unit) {

@@ -7,9 +7,10 @@ import com.phamtunglam.lamity.llm.ModelRuntime
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-val llmModule: Module = module {
-    single { ToolContext(get(), get(), get(), get()) }
-    single { ToolRegistry(get()) }
-    single { ToolDispatcher(get()) }
-    single { ModelRuntime(get()) }
-}
+val llmModule: Module =
+    module {
+        single { ToolContext(get(), get(), get(), get()) }
+        single { ToolRegistry(get()) }
+        single { ToolDispatcher(get()) }
+        single { ModelRuntime(get()) }
+    }

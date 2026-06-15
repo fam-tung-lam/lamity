@@ -13,12 +13,15 @@ interface NativeLlmBridge {
     var toolExecutor: ToolExecutor?
 
     fun initializeEngine(setup: EngineSetup, callback: EngineCallback)
+
     fun closeEngine()
 
     fun createConversation(setup: ConversationSetup, callback: ConversationCallback)
+
     fun closeConversation(handle: String)
 
     fun sendMessage(handle: String, text: String, listener: GenerationListener)
+
     fun cancelGeneration(handle: String)
 }
 
@@ -50,18 +53,23 @@ class ConversationSetup(
 
 interface EngineCallback {
     fun onEngineReady()
+
     fun onEngineError(message: String)
 }
 
 interface ConversationCallback {
     fun onConversationReady(handle: String)
+
     fun onConversationError(message: String)
 }
 
 interface GenerationListener {
     fun onChunk(text: String)
+
     /** Reasoning-channel delta (DeepSeek-R1 style); may never be called. */
     fun onThought(text: String)
+
     fun onGenerationDone()
+
     fun onGenerationError(message: String)
 }

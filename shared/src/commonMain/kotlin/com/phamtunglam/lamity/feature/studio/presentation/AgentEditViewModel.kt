@@ -36,11 +36,11 @@ class AgentEditViewModel(
     registry: ToolRegistry,
     private val saveAgent: SaveAgentUseCase,
 ) : ViewModel() {
-
     val availableTools: List<BuiltinTool> = registry.userSelectable
 
-    val availableSkills: StateFlow<List<Skill>> = skills.skills
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), skills.skills.value)
+    val availableSkills: StateFlow<List<Skill>> =
+        skills.skills
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), skills.skills.value)
 
     private val _uiState = MutableStateFlow(AgentEditUiState())
     val uiState: StateFlow<AgentEditUiState> = _uiState.asStateFlow()
@@ -49,48 +49,62 @@ class AgentEditViewModel(
         viewModelScope.launch {
             agents.awaitLoaded()
             agents.byId(agentId)?.let { agent ->
-                _uiState.value = AgentEditUiState(
-                    existingName = agent.name,
-                    name = agent.name,
-                    description = agent.description,
-                    systemPrompt = agent.systemPrompt,
-                    selectedToolIds = agent.toolIds,
-                    selectedSkillIds = agent.skillIds,
-                )
+                _uiState.value =
+                    AgentEditUiState(
+                        existingName = agent.name,
+                        name = agent.name,
+                        description = agent.description,
+                        systemPrompt = agent.systemPrompt,
+                        selectedToolIds = agent.toolIds,
+                        selectedSkillIds = agent.skillIds,
+                    )
             }
         }
     }
 
     fun setName(value: String) = _uiState.update { it.copy(name = value) }
+
     fun setDescription(value: String) = _uiState.update { it.copy(description = value) }
+
     fun setSystemPrompt(value: String) = _uiState.update { it.copy(systemPrompt = value) }
 
-    fun toggleTool(toolId: String) = _uiState.update {
-        it.copy(
-            selectedToolIds = if (toolId in it.selectedToolIds) it.selectedToolIds - toolId
-            else it.selectedToolIds + toolId,
-        )
-    }
+    fun toggleTool(toolId: String) =
+        _uiState.update {
+            it.copy(
+                selectedToolIds =
+                    if (toolId in it.selectedToolIds) {
+                        it.selectedToolIds - toolId
+                    } else {
+                        it.selectedToolIds + toolId
+                    },
+            )
+        }
 
-    fun toggleSkill(skillId: String) = _uiState.update {
-        it.copy(
-            selectedSkillIds = if (skillId in it.selectedSkillIds) it.selectedSkillIds - skillId
-            else it.selectedSkillIds + skillId,
-        )
-    }
+    fun toggleSkill(skillId: String) =
+        _uiState.update {
+            it.copy(
+                selectedSkillIds =
+                    if (skillId in it.selectedSkillIds) {
+                        it.selectedSkillIds - skillId
+                    } else {
+                        it.selectedSkillIds + skillId
+                    },
+            )
+        }
 
     fun save() {
         val s = _uiState.value
         if (!s.canSave) return
         viewModelScope.launch {
-            val agent = saveAgent(
-                id = agentId,
-                name = s.name,
-                description = s.description,
-                systemPrompt = s.systemPrompt,
-                toolIds = s.selectedToolIds,
-                skillIds = s.selectedSkillIds,
-            )
+            val agent =
+                saveAgent(
+                    id = agentId,
+                    name = s.name,
+                    description = s.description,
+                    systemPrompt = s.systemPrompt,
+                    toolIds = s.selectedToolIds,
+                    skillIds = s.selectedSkillIds,
+                )
             if (agent != null) _uiState.update { it.copy(saved = true) }
         }
     }

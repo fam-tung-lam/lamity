@@ -55,90 +55,117 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         // Theme (also switchable by the set_theme tool)
-        Column {
-            Text(stringResource(Res.string.theme), style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.padding(3.dp))
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                val modes = listOf(
+        ThemeSection(selected = settings.themeMode, onSelect = viewModel::setThemeMode)
+
+        // Language (also switchable by the set_language tool)
+        LanguageSection(currentBcp47 = localeState.current?.bcp47, onSelect = localeViewModel::onLocaleSelected)
+
+        DownloadsSection(wifiOnly = settings.wifiOnlyDownloads, onWifiOnlyChange = viewModel::setWifiOnlyDownloads)
+
+        AboutSection(
+            platform = ui.platformInfo.platform,
+            osVersion = ui.platformInfo.osVersion,
+            deviceModel = ui.platformInfo.deviceModel,
+            modelsDir = ui.modelsDir,
+        )
+    }
+}
+
+@Composable
+private fun ThemeSection(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+    Column {
+        Text(stringResource(Res.string.theme), style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.padding(3.dp))
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            val modes =
+                listOf(
                     ThemeMode.LIGHT to stringResource(Res.string.theme_light),
                     ThemeMode.DARK to stringResource(Res.string.theme_dark),
                     ThemeMode.SYSTEM to stringResource(Res.string.theme_system),
                 )
-                modes.forEachIndexed { index, (mode, label) ->
-                    SegmentedButton(
-                        selected = settings.themeMode == mode,
-                        onClick = { viewModel.setThemeMode(mode) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
-                    ) { Text(label) }
-                }
+            modes.forEachIndexed { index, (mode, label) ->
+                SegmentedButton(
+                    selected = selected == mode,
+                    onClick = { onSelect(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+                ) { Text(label) }
             }
         }
+    }
+}
 
-        // Language (also switchable by the set_language tool)
-        Column {
-            val languageLabel = stringResource(Res.string.language)
-            Text(languageLabel, style = MaterialTheme.typography.titleSmall)
-            val options = buildList {
+@Composable
+private fun LanguageSection(currentBcp47: String?, onSelect: (AppLocale?) -> Unit) {
+    Column {
+        val languageLabel = stringResource(Res.string.language)
+        Text(languageLabel, style = MaterialTheme.typography.titleSmall)
+        val options =
+            buildList {
                 add(null to stringResource(Res.string.language_system))
                 AppLocale.entries.forEach { locale -> add(locale.bcp47 to locale.displayName) }
             }
-            SimpleDropdown(
-                label = languageLabel,
-                options = options,
-                selectedId = localeState.current?.bcp47,
-                onSelect = { tag ->
-                    localeViewModel.onLocaleSelected(
-                        tag?.let { bcp47 -> AppLocale.entries.firstOrNull { it.bcp47 == bcp47 } },
-                    )
-                },
-            )
-        }
+        SimpleDropdown(
+            label = languageLabel,
+            options = options,
+            selectedId = currentBcp47,
+            onSelect = { tag ->
+                onSelect(tag?.let { bcp47 -> AppLocale.entries.firstOrNull { it.bcp47 == bcp47 } })
+            },
+        )
+    }
+}
 
-        // Downloads
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(Res.string.downloads_section), style = MaterialTheme.typography.titleSmall)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(Res.string.wifi_only), style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        stringResource(Res.string.wifi_only_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Switch(
-                    checked = settings.wifiOnlyDownloads,
-                    onCheckedChange = viewModel::setWifiOnlyDownloads,
+@Composable
+private fun DownloadsSection(wifiOnly: Boolean, onWifiOnlyChange: (Boolean) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(stringResource(Res.string.downloads_section), style = MaterialTheme.typography.titleSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.wifi_only), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(Res.string.wifi_only_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Switch(
+                checked = wifiOnly,
+                onCheckedChange = onWifiOnlyChange,
+            )
         }
+    }
+}
 
-        // About
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(Res.string.about), style = MaterialTheme.typography.titleSmall)
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        "Lamity AI ${LamityBuildConfig.appVersion} (${LamityBuildConfig.appVersionCode})",
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    Text(
-                        "${ui.platformInfo.platform} ${ui.platformInfo.osVersion} • " +
-                            ui.platformInfo.deviceModel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "On-device inference by Google LiteRT-LM. Models from the HuggingFace litert-community.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "Models dir: ${ui.modelsDir}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                }
+@Composable
+private fun AboutSection(
+    platform: String,
+    osVersion: String,
+    deviceModel: String,
+    modelsDir: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(Res.string.about), style = MaterialTheme.typography.titleSmall)
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "Lamity AI ${LamityBuildConfig.appVersion} (${LamityBuildConfig.appVersionCode})",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    "$platform $osVersion • $deviceModel",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "On-device inference by Google LiteRT-LM. Models from the HuggingFace litert-community.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Models dir: $modelsDir",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
             }
         }
     }

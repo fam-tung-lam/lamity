@@ -31,10 +31,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ChatScreen(
-    onGoToModels: () -> Unit,
-    viewModel: ChatViewModel = koinViewModel(),
-) {
+fun ChatScreen(onGoToModels: () -> Unit, viewModel: ChatViewModel = koinViewModel()) {
     val ui by viewModel.uiState.collectAsState()
     val state = ui.chat
 
@@ -51,8 +48,9 @@ fun ChatScreen(
         HorizontalDivider()
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            val showStreaming = state.isGenerating ||
-                state.streamingText.isNotEmpty() || state.streamingThought.isNotEmpty()
+            val showStreaming =
+                state.isGenerating ||
+                    state.streamingText.isNotEmpty() || state.streamingThought.isNotEmpty()
             if (state.messages.isEmpty() && !showStreaming) {
                 Column(
                     Modifier.fillMaxSize(),
@@ -65,7 +63,10 @@ fun ChatScreen(
                             Text(stringResource(Res.string.go_to_models))
                         }
                     } else {
-                        EmptyState(stringResource(Res.string.chat_empty_title), stringResource(Res.string.chat_empty_body))
+                        EmptyState(
+                            stringResource(Res.string.chat_empty_title),
+                            stringResource(Res.string.chat_empty_body),
+                        )
                     }
                 }
             } else {

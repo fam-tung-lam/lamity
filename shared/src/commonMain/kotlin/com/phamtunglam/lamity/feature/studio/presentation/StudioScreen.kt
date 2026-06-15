@@ -102,11 +102,7 @@ private fun Caption(text: String) {
 // ----------------------------------------------------------------- agents
 
 @Composable
-private fun AgentsTab(
-    ui: StudioUiState,
-    viewModel: StudioViewModel,
-    onEditAgent: (agentId: String?) -> Unit,
-) {
+private fun AgentsTab(ui: StudioUiState, viewModel: StudioViewModel, onEditAgent: (agentId: String?) -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             Caption(stringResource(Res.string.agents_caption))
@@ -154,7 +150,9 @@ private fun AgentCard(agent: Agent, onEdit: () -> Unit, onDelete: () -> Unit) {
                     )
                 }
                 Text(
-                    "${agent.toolIds.size} ${stringResource(Res.string.tools_count)} • ${agent.skillIds.size} ${stringResource(Res.string.skills_count)}",
+                    "${agent.toolIds.size} ${stringResource(
+                        Res.string.tools_count,
+                    )} • ${agent.skillIds.size} ${stringResource(Res.string.skills_count)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -186,11 +184,7 @@ private fun AgentCard(agent: Agent, onEdit: () -> Unit, onDelete: () -> Unit) {
 // ----------------------------------------------------------------- skills
 
 @Composable
-private fun SkillsTab(
-    ui: StudioUiState,
-    viewModel: StudioViewModel,
-    onEditSkill: (skillId: String?) -> Unit,
-) {
+private fun SkillsTab(ui: StudioUiState, viewModel: StudioViewModel, onEditSkill: (skillId: String?) -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             Caption(stringResource(Res.string.skills_caption))

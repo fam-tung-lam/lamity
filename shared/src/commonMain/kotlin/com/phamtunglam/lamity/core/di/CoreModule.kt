@@ -18,32 +18,36 @@ import okio.FileSystem
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-val coreModule: Module = module {
+val coreModule: Module =
+    module {
 
-    single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+        single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
-    // File system
-    single<FileSystem> { FileSystem.SYSTEM }
+        // File system
+        single<FileSystem> { FileSystem.SYSTEM }
 
-    // App-wide preferences DataStore (backs settings and localization)
-    single<DataStore<Preferences>> { createPreferenceDataStore(get<AppDirs>().dataDir) }
+        // App-wide preferences DataStore (backs settings and localization)
+        single<DataStore<Preferences>> { createPreferenceDataStore(get<AppDirs>().dataDir) }
 
-    // Logging
-    single(createdAtStart = true) {
-        LamityLogger.addWriter(PlatformLamityLogWriter)
+        // Logging
+        single(createdAtStart = true) {
+            LamityLogger.addWriter(PlatformLamityLogWriter)
 
-        // Initializes crash reporting and routes app error logs into it as
-        // captures by registering the bridge writer with the logging facade.
-        if (LamityBuildConfig.sentryDsn.isNotBlank()) {
-            LamityCrashReporter.init(
-                LamityCrashReporterConfig(
-                    dsn = LamityBuildConfig.sentryDsn,
-                    environment = LamityBuildConfig.buildType.environmentName,
-                    release = "${LamityBuildConfig.packageName}@${LamityBuildConfig.appVersion}+${LamityBuildConfig.appVersionCode}",
-                    debug = LamityBuildConfig.buildType == BuildType.DEBUG,
-                ),
-            )
-            LamityLogger.addWriter(CrashReportingLogWriter(reporter = LamityCrashReporter))
+            // Initializes crash reporting and routes app error logs into it as
+            // captures by registering the bridge writer with the logging facade.
+            if (LamityBuildConfig.sentryDsn.isNotBlank()) {
+                val release =
+                    "${LamityBuildConfig.packageName}@${LamityBuildConfig.appVersion}" +
+                        "+${LamityBuildConfig.appVersionCode}"
+                LamityCrashReporter.init(
+                    LamityCrashReporterConfig(
+                        dsn = LamityBuildConfig.sentryDsn,
+                        environment = LamityBuildConfig.buildType.environmentName,
+                        release = release,
+                        debug = LamityBuildConfig.buildType == BuildType.DEBUG,
+                    ),
+                )
+                LamityLogger.addWriter(CrashReportingLogWriter(reporter = LamityCrashReporter))
+            }
         }
     }
-}

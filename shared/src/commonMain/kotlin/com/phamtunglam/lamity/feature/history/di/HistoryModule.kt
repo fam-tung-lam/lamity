@@ -7,11 +7,12 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val historyModule: Module = module {
-    // Domain
-    factory { ObserveConversationSummariesUseCase(get(), get(), get()) }
-    factory { DeleteConversationUseCase(get(), get()) }
+val historyModule: Module =
+    module {
+        // Domain
+        factory { ObserveConversationSummariesUseCase(get(), get(), get()) }
+        factory { DeleteConversationUseCase(get(), get()) }
 
-    // Presentation
-    viewModel { HistoryViewModel(get(), get(), get(), get()) }
-}
+        // Presentation
+        viewModel { HistoryViewModel(get(), get(), get(), get()) }
+    }
