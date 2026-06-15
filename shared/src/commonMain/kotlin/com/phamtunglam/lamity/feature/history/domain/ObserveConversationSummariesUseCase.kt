@@ -1,35 +1,18 @@
 package com.phamtunglam.lamity.feature.history.domain
 
-import com.phamtunglam.lamity.feature.agents.data.AgentsRepository
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.chat.domain.Conversation
-import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 
-/** A conversation joined with the display names of its agent and model. */
-data class ConversationSummary(val conversation: Conversation, val agentName: String?, val modelName: String)
+/** A conversation prepared for the history list. */
+data class ConversationSummary(val conversation: Conversation)
 
-/** Streams conversations enriched with agent and model names for the history list. */
-class ObserveConversationSummariesUseCase(
-    private val conversations: ConversationsRepository,
-    private val agents: AgentsRepository,
-    private val models: ModelsRepository,
-) {
+/**
+ * Streams conversations for the history list. Conversations are decoupled from agents and models, so
+ * the summary is just the conversation itself (title + timestamps).
+ */
+class ObserveConversationSummariesUseCase(private val conversations: ConversationsRepository) {
     operator fun invoke(): Flow<List<ConversationSummary>> =
-        combine(
-            conversations.conversations,
-            agents.agents,
-            models.models,
-        ) { conversationList, agentList, modelList ->
-            conversationList.map { conversation ->
-                ConversationSummary(
-                    conversation = conversation,
-                    agentName = agentList.firstOrNull { it.id == conversation.agentId }?.name,
-                    modelName =
-                        modelList.firstOrNull { it.id == conversation.modelId }?.name
-                            ?: conversation.modelId,
-                )
-            }
-        }
+        conversations.conversations.map { list -> list.map { ConversationSummary(it) } }
 }

@@ -10,7 +10,7 @@ import org.koin.dsl.module
 val historyModule: Module =
     module {
         // Domain
-        factory { ObserveConversationSummariesUseCase(get(), get(), get()) }
+        factory { ObserveConversationSummariesUseCase(get()) }
         factory { DeleteConversationUseCase(get(), get()) }
 
         // Presentation

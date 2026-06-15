@@ -41,7 +41,7 @@ class SaveAgentUseCaseTest :
                             systemPrompt = "",
                             toolIds = emptyList(),
                             skillIds = emptyList(),
-                            modelId = null,
+                            modelId = "model-1",
                             modelConfig = null,
                         )
 
@@ -61,7 +61,7 @@ class SaveAgentUseCaseTest :
                             systemPrompt = "",
                             toolIds = emptyList(),
                             skillIds = emptyList(),
-                            modelId = null,
+                            modelId = "model-1",
                             modelConfig = null,
                         )
 

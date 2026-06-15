@@ -11,7 +11,6 @@ object SkillSeedData {
                 instructions =
                     "From now on, write every answer as exactly one haiku " +
                         "(three lines of 5, 7 and 5 syllables). Do not add anything outside the haiku.",
-                enabled = true,
                 createdAt = now,
                 updatedAt = now,
             ),
@@ -23,7 +22,6 @@ object SkillSeedData {
                     "When solving any math problem: 1) restate what is asked, " +
                         "2) solve in small numbered steps, 3) use the calculate tool to verify arithmetic, " +
                         "4) end with 'Answer: <result>' on its own line.",
-                enabled = true,
                 createdAt = now,
                 updatedAt = now,
             ),

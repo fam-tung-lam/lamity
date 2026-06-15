@@ -1,6 +1,5 @@
 package com.phamtunglam.lamity.unitTests.feature.skills.domain
 
-import com.phamtunglam.lamity.feature.agents.data.AgentsRepository
 import com.phamtunglam.lamity.feature.skills.data.SkillsRepository
 import com.phamtunglam.lamity.feature.skills.domain.DeleteSkillUseCase
 import dev.mokkery.answering.returns
@@ -15,25 +14,20 @@ class DeleteSkillUseCaseTest :
     BehaviorSpec({
 
         val skills = mock<SkillsRepository>()
-        val agents = mock<AgentsRepository>()
 
         afterEach {
-            resetAnswers(skills, agents)
-            resetCalls(skills, agents)
+            resetAnswers(skills)
+            resetCalls(skills)
         }
 
-        Given("a skill attached to agents") {
+        Given("a skill") {
             When("the skill is deleted") {
-                Then("it is removed and detached from every agent") {
+                Then("it is removed from the repository (agent links cascade in the database)") {
                     everySuspend { skills.delete("skill-1") } returns Unit
-                    everySuspend { agents.detachSkillEverywhere("skill-1") } returns Unit
 
-                    DeleteSkillUseCase(skills, agents)("skill-1")
+                    DeleteSkillUseCase(skills)("skill-1")
 
-                    verifySuspend {
-                        skills.delete("skill-1")
-                        agents.detachSkillEverywhere("skill-1")
-                    }
+                    verifySuspend { skills.delete("skill-1") }
                 }
             }
         }

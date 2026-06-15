@@ -18,7 +18,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,7 +61,6 @@ fun SkillsScreen(
                         SkillCard(
                             skill = skill,
                             onEdit = { onEditSkill(skill.id) },
-                            onSetEnabled = { viewModel.setSkillEnabled(skill.id, it) },
                             onDelete = { viewModel.deleteSkill(skill.id) },
                         )
                     }
@@ -89,12 +87,7 @@ private fun Caption(text: String) {
 }
 
 @Composable
-private fun SkillCard(
-    skill: Skill,
-    onEdit: () -> Unit,
-    onSetEnabled: (Boolean) -> Unit,
-    onDelete: () -> Unit,
-) {
+private fun SkillCard(skill: Skill, onEdit: () -> Unit, onDelete: () -> Unit) {
     var deleteOpen by remember { mutableStateOf(false) }
 
     Card(
@@ -115,10 +108,6 @@ private fun SkillCard(
                     )
                 }
             }
-            Switch(
-                checked = skill.enabled,
-                onCheckedChange = onSetEnabled,
-            )
             IconButton(onClick = { deleteOpen = true }) {
                 Icon(
                     Icons.Default.Delete,

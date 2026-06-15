@@ -39,7 +39,6 @@ import com.phamtunglam.lamity.shared.resources.agent_model
 import com.phamtunglam.lamity.shared.resources.agent_name
 import com.phamtunglam.lamity.shared.resources.attached_skills
 import com.phamtunglam.lamity.shared.resources.attached_tools
-import com.phamtunglam.lamity.shared.resources.disabled_suffix
 import com.phamtunglam.lamity.shared.resources.name_required
 import com.phamtunglam.lamity.shared.resources.new_agent
 import com.phamtunglam.lamity.shared.resources.save
@@ -243,11 +242,7 @@ private fun AttachedSkillsSection(skills: List<Skill>, selectedIds: List<String>
             FilterChip(
                 selected = skill.id in selectedIds,
                 onClick = { onToggle(skill.id) },
-                label = {
-                    Text(
-                        skill.name + if (!skill.enabled) " ${stringResource(Res.string.disabled_suffix)}" else "",
-                    )
-                },
+                label = { Text(skill.name) },
             )
         }
     }

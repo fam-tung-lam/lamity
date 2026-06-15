@@ -9,7 +9,6 @@ class SaveSkillUseCase(private val skills: SkillsRepository) {
         name: String,
         description: String,
         instructions: String,
-        enabled: Boolean,
     ): Skill? {
         if (name.isBlank()) return null
         return skills.upsert(
@@ -17,7 +16,6 @@ class SaveSkillUseCase(private val skills: SkillsRepository) {
             name = name,
             description = description,
             instructions = instructions,
-            enabled = enabled,
         )
     }
 }

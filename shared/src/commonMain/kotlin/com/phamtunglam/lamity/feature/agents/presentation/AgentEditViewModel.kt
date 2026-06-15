@@ -150,6 +150,7 @@ class AgentEditViewModel(
     fun save() {
         val s = _uiState.value
         if (!s.canSave) return
+        val modelId = s.modelId ?: return
         viewModelScope.launch {
             val agent =
                 saveAgent(
@@ -159,7 +160,7 @@ class AgentEditViewModel(
                     systemPrompt = s.systemPrompt,
                     toolIds = s.selectedToolIds,
                     skillIds = s.selectedSkillIds,
-                    modelId = s.modelId,
+                    modelId = modelId,
                     modelConfig = s.modelConfig,
                 )
             if (agent != null) _uiState.update { it.copy(saved = true) }

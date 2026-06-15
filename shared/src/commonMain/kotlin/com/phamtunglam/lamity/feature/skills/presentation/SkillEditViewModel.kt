@@ -15,7 +15,6 @@ data class SkillEditUiState(
     val name: String = "",
     val description: String = "",
     val instructions: String = "",
-    val enabled: Boolean = true,
     /** Set once the skill has been persisted; the UI navigates back on it. */
     val saved: Boolean = false,
 ) {
@@ -40,7 +39,6 @@ class SkillEditViewModel(
                         name = skill.name,
                         description = skill.description,
                         instructions = skill.instructions,
-                        enabled = skill.enabled,
                     )
             }
         }
@@ -52,8 +50,6 @@ class SkillEditViewModel(
 
     fun setInstructions(value: String) = _uiState.update { it.copy(instructions = value) }
 
-    fun setEnabled(value: Boolean) = _uiState.update { it.copy(enabled = value) }
-
     fun save() {
         val s = _uiState.value
         if (!s.canSave) return
@@ -64,7 +60,6 @@ class SkillEditViewModel(
                     name = s.name,
                     description = s.description,
                     instructions = s.instructions,
-                    enabled = s.enabled,
                 )
             if (skill != null) _uiState.update { it.copy(saved = true) }
         }

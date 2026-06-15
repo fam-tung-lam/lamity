@@ -8,7 +8,6 @@ RERUN_TASKS        = --rerun-tasks
 
 ANDROID_APP        = :androidApp
 SHARED             = :shared
-LAMITY_DB          = :lamityDb
 LAMITY_DOWNLOADER  = :lamityDownloader
 LAMITY_LLM         = :lamityLlm
 LAMITY_LOGGER      = :lamityLogger
@@ -19,7 +18,7 @@ LAMITY_CRASH       = :lamityCrashReporter
 # ============================================================================
 
 # KMP modules carry the Detekt plugin (applied to org.jetbrains.kotlin.multiplatform projects).
-LINT_KMP_CHECKS = $(SHARED):check $(LAMITY_DB):check $(LAMITY_DOWNLOADER):check \
+LINT_KMP_CHECKS = $(SHARED):check $(LAMITY_DOWNLOADER):check \
         $(LAMITY_LLM):check $(LAMITY_LOGGER):check $(LAMITY_CRASH):check
 
 # Keep `make lint` focused on static analysis: skip the slower unit-test tasks.
@@ -54,7 +53,7 @@ TEST_KMP_IOS = $(SHARED):iosSimulatorArm64Test $(LAMITY_DOWNLOADER):iosSimulator
 
 # Typecheck shared production code (commonMain) across every KMP module.
 test-typecheck-common:
-	$(GRADLE) $(SHARED):compileCommonMainKotlinMetadata $(LAMITY_DB):compileCommonMainKotlinMetadata \
+	$(GRADLE) $(SHARED):compileCommonMainKotlinMetadata \
         $(LAMITY_DOWNLOADER):compileCommonMainKotlinMetadata $(LAMITY_LLM):compileCommonMainKotlinMetadata \
         $(LAMITY_LOGGER):compileCommonMainKotlinMetadata $(LAMITY_CRASH):compileCommonMainKotlinMetadata $(RERUN_TASKS)
 
@@ -140,11 +139,6 @@ test-llm-android:
 test-llm-ios:
 	$(GRADLE) $(LAMITY_LLM):iosSimulatorArm64Test $(RERUN)
 
-# lamityDb has no unit tests (no host-test/commonTest sources);
-# only the commonMain typecheck applies.
-test-db-common:
-	$(GRADLE) $(LAMITY_DB):compileCommonMainKotlinMetadata $(RERUN_TASKS)
-
 # androidApp is an Android application module — JVM unit tests only.
 test-app:
 	$(GRADLE) $(ANDROID_APP):testDebugUnitTest $(RERUN)
@@ -157,4 +151,4 @@ test-app:
         test-logger test-logger-common test-logger-android test-logger-ios \
         test-crash test-crash-common test-crash-android test-crash-ios \
         test-llm test-llm-common test-llm-android test-llm-ios \
-        test-db-common test-app
+        test-app

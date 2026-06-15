@@ -144,18 +144,14 @@ private fun ChatCustomizeHost(ui: ChatUiState, viewModel: ChatViewModel, onDismi
     ChatCustomizeSheet(
         agents = ui.agents,
         models = ui.models,
-        skills = ui.skills,
-        tools = viewModel.tools,
         selectedAgentId = state.agentId,
         selectedModelId = state.modelId,
-        customToolIds = state.customToolIds,
-        customSkillIds = state.customSkillIds,
         customSystemPrompt = state.customSystemPrompt,
+        runtimeConfig = state.runtimeConfig,
         onSelectAgent = viewModel::selectAgent,
         onSelectModel = viewModel::selectModel,
         onSetSystemPrompt = viewModel::setCustomSystemPrompt,
-        onToggleTool = viewModel::toggleCustomTool,
-        onToggleSkill = viewModel::toggleCustomSkill,
+        onSetConfig = viewModel::setRuntimeConfig,
         onDismiss = onDismiss,
     )
 }

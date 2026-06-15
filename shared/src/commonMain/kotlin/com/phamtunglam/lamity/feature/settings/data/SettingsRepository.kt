@@ -17,11 +17,6 @@ interface SettingsRepository {
 
     suspend fun setWifiOnlyDownloads(enabled: Boolean) = update { it.copy(wifiOnlyDownloads = enabled) }
 
-    fun isToolEnabled(toolId: String): Boolean = value.toolEnabled[toolId] ?: true
-
-    suspend fun setToolEnabled(toolId: String, enabled: Boolean) =
-        update { it.copy(toolEnabled = it.toolEnabled + (toolId to enabled)) }
-
     suspend fun setLastSelection(modelId: String?, agentId: String?) =
         update { it.copy(lastModelId = modelId, lastAgentId = agentId) }
 }

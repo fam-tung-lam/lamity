@@ -23,7 +23,6 @@ import com.phamtunglam.lamity.core.presentation.navigation.AgentsKey
 import com.phamtunglam.lamity.core.presentation.navigation.ChatKey
 import com.phamtunglam.lamity.core.presentation.navigation.ChatsKey
 import com.phamtunglam.lamity.core.presentation.navigation.HomeKey
-import com.phamtunglam.lamity.core.presentation.navigation.ModelConfigKey
 import com.phamtunglam.lamity.core.presentation.navigation.ModelsKey
 import com.phamtunglam.lamity.core.presentation.navigation.SettingsKey
 import com.phamtunglam.lamity.core.presentation.navigation.SkillEditKey
@@ -37,7 +36,6 @@ import com.phamtunglam.lamity.feature.history.presentation.ChatsScreen
 import com.phamtunglam.lamity.feature.home.presentation.HomeScreen
 import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnvironment
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
-import com.phamtunglam.lamity.feature.models.presentation.ModelConfigScreen
 import com.phamtunglam.lamity.feature.models.presentation.ModelsScreen
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
@@ -122,7 +120,6 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>) {
                 entry<ModelsKey> {
                     ModelsScreen(
                         onOpenChat = { open(ChatKey) },
-                        onConfigureModel = { modelId -> open(ModelConfigKey(modelId)) },
                         onBack = ::pop,
                     )
                 }
@@ -134,9 +131,6 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>) {
                 }
                 entry<SkillEditKey> { key ->
                     SkillEditScreen(skillId = key.skillId, onBack = ::pop)
-                }
-                entry<ModelConfigKey> { key ->
-                    ModelConfigScreen(modelId = key.modelId, onBack = ::pop)
                 }
             },
     )

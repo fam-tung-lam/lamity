@@ -45,7 +45,6 @@ import com.phamtunglam.lamity.shared.resources.delete_conversation_q
 import com.phamtunglam.lamity.shared.resources.history_empty_body
 import com.phamtunglam.lamity.shared.resources.history_empty_title
 import com.phamtunglam.lamity.shared.resources.new_chat
-import com.phamtunglam.lamity.shared.resources.no_agent
 import com.phamtunglam.lamity.shared.resources.rename
 import com.phamtunglam.lamity.shared.resources.rename_conversation
 import com.phamtunglam.lamity.shared.resources.save
@@ -125,7 +124,7 @@ private fun ConversationCard(
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    "${row.agentName ?: stringResource(Res.string.no_agent)} • ${row.modelName} • ${row.updatedAtText}",
+                    row.updatedAtText,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

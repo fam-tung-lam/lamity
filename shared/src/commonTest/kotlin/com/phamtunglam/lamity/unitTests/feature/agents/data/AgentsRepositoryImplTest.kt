@@ -1,7 +1,11 @@
 package com.phamtunglam.lamity.unitTests.feature.agents.data
 
-import com.phamtunglam.lamity.db.daos.AgentsDao
-import com.phamtunglam.lamity.db.entities.AgentEntity
+import com.phamtunglam.lamity.core.data.db.daos.AgentsDao
+import com.phamtunglam.lamity.core.data.db.entities.AgentConfigEntity
+import com.phamtunglam.lamity.core.data.db.entities.AgentEntity
+import com.phamtunglam.lamity.core.data.db.entities.SkillEntity
+import com.phamtunglam.lamity.core.data.db.entities.ToolEntity
+import com.phamtunglam.lamity.core.data.db.relations.AgentWithRelations
 import com.phamtunglam.lamity.feature.agents.data.AgentsRepository
 import com.phamtunglam.lamity.feature.agents.data.AgentsRepositoryImpl
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend
@@ -16,9 +20,7 @@ import dev.mokkery.matcher.any
 import dev.mokkery.mock
 import dev.mokkery.resetAnswers
 import dev.mokkery.resetCalls
-import dev.mokkery.verifySuspend
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,42 +35,36 @@ class AgentsRepositoryImplTest :
             resetCalls(dao)
         }
 
-        // The database is the single source of truth: the mocked DAO is backed by
-        // a StateFlow that writes update and the repository observes.
+        // The database is the single source of truth: the mocked DAO is backed by a StateFlow of
+        // relation graphs that upsertGraph writes and the repository observes.
         suspend fun createRepository(): AgentsRepository {
-            val backing = MutableStateFlow<List<AgentEntity>>(emptyList())
-            every { dao.observeAll() } returns backing
-            everySuspend { dao.getAll() } calls { backing.value }
-            everySuspend { dao.upsert(any()) } calls { (entity: AgentEntity) ->
-                backing.value = backing.value.filterNot { it.id == entity.id } + entity
-            }
-            everySuspend { dao.upsertAll(any()) } calls { (entities: List<AgentEntity>) ->
-                val ids = entities.map { it.id }.toSet()
-                backing.value = backing.value.filterNot { it.id in ids } + entities
+            val backing = MutableStateFlow<List<AgentWithRelations>>(emptyList())
+            every { dao.observeAllWithRelations() } returns backing
+            everySuspend { dao.getAllWithRelations() } calls { backing.value }
+            everySuspend { dao.upsertGraph(any(), any(), any(), any()) } calls { args ->
+                val agent = args.arg<AgentEntity>(0)
+                val config = args.arg<AgentConfigEntity?>(1)
+                val skillIds = args.arg<List<String>>(2)
+                val toolIds = args.arg<List<String>>(3)
+                val row =
+                    AgentWithRelations(
+                        agent = agent,
+                        model = null,
+                        config = config,
+                        skills = skillIds.map { SkillEntity(it, "", "", "", 0, 0) },
+                        tools = toolIds.map { ToolEntity(it, "", "") },
+                    )
+                backing.value = backing.value.filterNot { it.agent.id == agent.id } + row
             }
             everySuspend { dao.delete(any()) } calls { (id: String) ->
-                backing.value = backing.value.filterNot { it.id == id }
+                backing.value = backing.value.filterNot { it.agent.id == id }
             }
             val repository = AgentsRepositoryImpl(dao, detachedTestScope())
             repository.awaitLoaded()
             return repository
         }
 
-        Given("an empty agents table") {
-            When("the repository loads") {
-                Then("it seeds the sample agents") {
-                    val repository = createRepository()
-
-                    repository.agents.value.shouldHaveSize(2)
-                }
-                Then("it persists the seeded agents") {
-                    createRepository()
-                    advanceUntilIdle()
-
-                    verifySuspend { dao.upsertAll(any()) }
-                }
-            }
-
+        Given("an agents table") {
             When("an agent is saved") {
                 Then("it trims fields and deduplicates tool ids") {
                     val repository = createRepository()
@@ -81,7 +77,7 @@ class AgentsRepositoryImplTest :
                             systemPrompt = "prompt",
                             toolIds = listOf("calculate", "calculate"),
                             skillIds = emptyList(),
-                            modelId = null,
+                            modelId = "model-1",
                             modelConfig = null,
                         )
 
@@ -99,7 +95,7 @@ class AgentsRepositoryImplTest :
                             systemPrompt = "",
                             toolIds = emptyList(),
                             skillIds = emptyList(),
-                            modelId = null,
+                            modelId = "model-1",
                             modelConfig = null,
                         )
                     advanceUntilIdle()
@@ -136,28 +132,26 @@ class AgentsRepositoryImplTest :
                 }
             }
 
-            When("a skill is detached everywhere") {
-                Then("no agent references the skill anymore") {
-                    val repository = createRepository()
-
-                    // Seeded agent "Lami" carries skill-haiku-mode.
-                    repository.detachSkillEverywhere("skill-haiku-mode")
-                    advanceUntilIdle()
-
-                    repository.agents.value.forEach { agent ->
-                        ("skill-haiku-mode" in agent.skillIds) shouldBe false
-                    }
-                }
-            }
-
             When("an agent is deleted") {
                 Then("it disappears from the repository") {
                     val repository = createRepository()
-
-                    repository.delete("agent-lami")
+                    val created =
+                        repository.upsert(
+                            id = null,
+                            name = "Researcher",
+                            description = "",
+                            systemPrompt = "",
+                            toolIds = emptyList(),
+                            skillIds = emptyList(),
+                            modelId = "model-1",
+                            modelConfig = null,
+                        )
                     advanceUntilIdle()
 
-                    repository.byId("agent-lami") shouldBe null
+                    repository.delete(created.id)
+                    advanceUntilIdle()
+
+                    repository.byId(created.id) shouldBe null
                 }
             }
         }

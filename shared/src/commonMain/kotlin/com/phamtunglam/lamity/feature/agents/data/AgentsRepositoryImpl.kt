@@ -1,27 +1,29 @@
 package com.phamtunglam.lamity.feature.agents.data
 
 import co.touchlab.kermit.Logger
+import com.phamtunglam.lamity.core.data.db.daos.AgentsDao
+import com.phamtunglam.lamity.core.data.db.entities.AgentEntity
+import com.phamtunglam.lamity.core.data.db.mappers.toAgentConfigEntity
+import com.phamtunglam.lamity.core.data.db.mappers.toModelConfig
+import com.phamtunglam.lamity.core.data.db.relations.AgentWithRelations
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.db.daos.AgentsDao
-import com.phamtunglam.lamity.db.entities.AgentEntity
 import com.phamtunglam.lamity.feature.agents.domain.Agent
-import com.phamtunglam.lamity.feature.agents.domain.AgentSeedData
 import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
 
-/** Agents live in Room; the database is the single source of truth. */
+/**
+ * Agents live in Room; the database is the single source of truth (seeded by DatabaseSeeder). An
+ * agent's model, config override, skills and tools are persisted relationally and read back as a
+ * single [AgentWithRelations] graph.
+ */
 class AgentsRepositoryImpl(private val dao: AgentsDao, scope: CoroutineScope) : AgentsRepository {
     private val log = Logger.withTag("AgentsRepository")
 
@@ -29,27 +31,13 @@ class AgentsRepositoryImpl(private val dao: AgentsDao, scope: CoroutineScope) : 
 
     override val agents: StateFlow<List<Agent>> =
         dao
-            .observeAll()
+            .observeAllWithRelations()
             .map { rows -> rows.map { it.toDomain() } }
             .catch { e ->
                 log.e(e) { "failed to observe agents" }
                 emit(emptyList())
-            }.stateIn(scope, SharingStarted.Eagerly, emptyList())
-
-    init {
-        scope.launch {
-            val seeded =
-                runCatching {
-                    if (dao.getAll().isEmpty()) {
-                        dao.upsertAll(AgentSeedData.sampleAgents(epochMillis()).map { it.toEntity() })
-                    }
-                    true
-                }.onFailure { log.e(it) { "failed to seed agents" } }.getOrDefault(false)
-            // Loaded once the flow reflects the stored (or just-seeded) agents.
-            if (seeded) agents.first { it.isNotEmpty() }
-            loaded.complete(Unit)
-        }
-    }
+            }.onEach { if (!loaded.isCompleted) loaded.complete(Unit) }
+            .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     override suspend fun awaitLoaded() = loaded.await()
 
@@ -62,84 +50,65 @@ class AgentsRepositoryImpl(private val dao: AgentsDao, scope: CoroutineScope) : 
         systemPrompt: String,
         toolIds: List<String>,
         skillIds: List<String>,
-        modelId: String?,
+        modelId: String,
         modelConfig: ModelConfig?,
     ): Agent {
         val now = epochMillis()
         val existing = byId(id)
         val agent =
-            (existing ?: Agent(id = "agent-${newId().take(8)}", name = "", createdAt = now))
-                .copy(
-                    name = name.trim(),
-                    description = description.trim(),
-                    systemPrompt = systemPrompt.trim(),
-                    toolIds = toolIds.distinct(),
-                    skillIds = skillIds.distinct(),
-                    modelId = modelId,
-                    modelConfig = modelConfig,
-                    updatedAt = now,
-                )
-        runCatching { dao.upsert(agent.toEntity()) }
-            .onFailure { log.e(it) { "failed to persist agent ${agent.id}" } }
+            Agent(
+                id = existing?.id ?: "agent-${newId().take(8)}",
+                name = name.trim(),
+                description = description.trim(),
+                systemPrompt = systemPrompt.trim(),
+                toolIds = toolIds.distinct(),
+                skillIds = skillIds.distinct(),
+                modelId = modelId,
+                modelConfig = modelConfig,
+                createdAt = existing?.createdAt ?: now,
+                updatedAt = now,
+            )
+        runCatching {
+            dao.upsertGraph(
+                agent = agent.toAgentEntity(),
+                config = agent.toAgentConfigEntity(),
+                skillIds = agent.skillIds,
+                toolIds = agent.toolIds,
+            )
+        }.onFailure { log.e(it) { "failed to persist agent ${agent.id}" } }
         return agent
     }
 
     override suspend fun delete(agentId: String) {
+        // Config and skill/tool junction rows cascade-delete with the agent.
         runCatching { dao.delete(agentId) }
             .onFailure { log.e(it) { "failed to delete agent $agentId" } }
     }
-
-    override suspend fun detachSkillEverywhere(skillId: String) {
-        runCatching {
-            val affected =
-                dao
-                    .getAll()
-                    .map { it.toDomain() }
-                    .filter { skillId in it.skillIds }
-                    .map { it.copy(skillIds = it.skillIds - skillId).toEntity() }
-            if (affected.isNotEmpty()) dao.upsertAll(affected)
-        }.onFailure { log.e(it) { "failed to detach skill $skillId" } }
-    }
 }
 
-private val stringListSerializer = ListSerializer(String.serializer())
-private val json = Json { ignoreUnknownKeys = true }
-
-internal fun decodeStringList(text: String): List<String> =
-    runCatching { json.decodeFromString(stringListSerializer, text) }.getOrDefault(emptyList())
-
-internal fun encodeStringList(values: List<String>): String = json.encodeToString(stringListSerializer, values)
-
-private fun decodeModelConfig(text: String?): ModelConfig? =
-    text?.let { runCatching { json.decodeFromString(ModelConfig.serializer(), it) }.getOrNull() }
-
-private fun encodeModelConfig(config: ModelConfig?): String? =
-    config?.let { json.encodeToString(ModelConfig.serializer(), it) }
-
-private fun AgentEntity.toDomain() =
+internal fun AgentWithRelations.toDomain() =
     Agent(
-        id = id,
-        name = name,
-        description = description,
-        systemPrompt = systemPrompt,
-        toolIds = decodeStringList(toolIdsJson),
-        skillIds = decodeStringList(skillIdsJson),
-        modelId = modelId,
-        modelConfig = decodeModelConfig(modelConfigJson),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
+        id = agent.id,
+        name = agent.name,
+        description = agent.description,
+        systemPrompt = agent.systemPrompt,
+        toolIds = tools.map { it.id },
+        skillIds = skills.map { it.id },
+        modelId = agent.modelId,
+        modelConfig = config?.toModelConfig(),
+        createdAt = agent.createdAt,
+        updatedAt = agent.updatedAt,
     )
 
-private fun Agent.toEntity() =
+internal fun Agent.toAgentEntity() =
     AgentEntity(
         id = id,
         name = name,
         description = description,
         systemPrompt = systemPrompt,
-        toolIdsJson = encodeStringList(toolIds),
-        skillIdsJson = encodeStringList(skillIds),
         modelId = modelId,
-        modelConfigJson = encodeModelConfig(modelConfig),
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
+
+internal fun Agent.toAgentConfigEntity() = modelConfig?.toAgentConfigEntity(id)

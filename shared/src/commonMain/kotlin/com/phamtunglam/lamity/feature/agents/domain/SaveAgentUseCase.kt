@@ -13,7 +13,7 @@ class SaveAgentUseCase(private val agents: AgentsRepository) {
         systemPrompt: String,
         toolIds: List<String>,
         skillIds: List<String>,
-        modelId: String?,
+        modelId: String,
         modelConfig: ModelConfig?,
     ): Agent? {
         if (name.isBlank()) return null

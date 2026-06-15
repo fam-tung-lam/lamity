@@ -1,13 +1,11 @@
 package com.phamtunglam.lamity.feature.models.data
 
 import co.touchlab.kermit.Logger
+import com.phamtunglam.lamity.core.data.db.daos.ModelsDao
+import com.phamtunglam.lamity.core.data.db.entities.ModelEntity
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.db.daos.ModelsDao
-import com.phamtunglam.lamity.db.entities.ModelEntity
-import com.phamtunglam.lamity.feature.models.domain.LlmBackend
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelCatalog
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,10 +16,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * The model catalog: seed metadata merged with what the database remembers
- * (user-tweaked configs, custom models). The database is the single source
- * of truth for everything user-mutable; only rows that diverge from the seed
- * are ever written.
+ * The model catalog: built-in seed metadata plus any custom models the user added (which live in the
+ * `models` table). Models hold no persisted inference config — catalog defaults come from the seed,
+ * and per-agent / agent-less config lives elsewhere. The full catalog is also materialized into the
+ * `models` table at first launch (see DatabaseSeeder) so agents can reference models relationally.
  */
 class ModelsRepositoryImpl(private val dao: ModelsDao, scope: CoroutineScope) : ModelsRepository {
     private val log = Logger.withTag("ModelsRepository")
@@ -42,12 +40,6 @@ class ModelsRepositoryImpl(private val dao: ModelsDao, scope: CoroutineScope) : 
 
     override fun byId(id: String?): LlmModel? = id?.let { i -> models.value.firstOrNull { it.id == i } }
 
-    override suspend fun updateConfig(modelId: String, config: ModelConfig) {
-        val model = byId(modelId) ?: return
-        runCatching { dao.upsert(model.copy(config = config).toEntity()) }
-            .onFailure { log.e(it) { "failed to persist config for $modelId" } }
-    }
-
     override suspend fun addCustomModel(name: String, url: String, requiresAuth: Boolean): LlmModel {
         val cleanUrl = url.trim()
         val fileName =
@@ -65,7 +57,7 @@ class ModelsRepositoryImpl(private val dao: ModelsDao, scope: CoroutineScope) : 
                 isCustom = true,
                 requiresAuth = requiresAuth,
             )
-        runCatching { dao.upsert(model.toEntity()) }
+        runCatching { dao.upsert(model.toModelEntity()) }
             .onFailure { log.e(it) { "failed to persist custom model" } }
         return model
     }
@@ -76,15 +68,12 @@ class ModelsRepositoryImpl(private val dao: ModelsDao, scope: CoroutineScope) : 
             .onFailure { log.e(it) { "failed to delete model $modelId" } }
     }
 
-    /** Seed catalog metadata always wins, but user-tweaked config and custom models survive. */
-    private fun mergeWithSeed(stored: List<LlmModel>): List<LlmModel> {
-        val storedById = stored.associateBy { it.id }
-        val seeded =
-            ModelCatalog.seed.map { seed ->
-                storedById[seed.id]?.let { seed.copy(config = it.config) } ?: seed
-            }
-        return seeded + stored.filter { it.isCustom }
-    }
+    /**
+     * The built-in catalog (with its seed-defined default configs) plus any custom models the user
+     * persisted. Stored catalog rows are pure metadata, so the seed is authoritative for them.
+     */
+    private fun mergeWithSeed(stored: List<LlmModel>): List<LlmModel> =
+        ModelCatalog.seed + stored.filter { it.isCustom }
 }
 
 internal fun ModelEntity.toDomain() =
@@ -100,18 +89,9 @@ internal fun ModelEntity.toDomain() =
         supportsThinking = supportsThinking,
         supportsTools = supportsTools,
         learnMoreUrl = learnMoreUrl,
-        config = ModelConfig(backendOf(backend), maxTokens, topK, topP, temperature),
-        defaultConfig =
-            ModelConfig(
-                backendOf(defaultBackend),
-                defaultMaxTokens,
-                defaultTopK,
-                defaultTopP,
-                defaultTemperature,
-            ),
     )
 
-internal fun LlmModel.toEntity() =
+internal fun LlmModel.toModelEntity() =
     ModelEntity(
         id = id,
         name = name,
@@ -124,16 +104,4 @@ internal fun LlmModel.toEntity() =
         supportsThinking = supportsThinking,
         supportsTools = supportsTools,
         learnMoreUrl = learnMoreUrl,
-        backend = config.backend.name,
-        maxTokens = config.maxTokens,
-        topK = config.topK,
-        topP = config.topP,
-        temperature = config.temperature,
-        defaultBackend = defaultConfig.backend.name,
-        defaultMaxTokens = defaultConfig.maxTokens,
-        defaultTopK = defaultConfig.topK,
-        defaultTopP = defaultConfig.topP,
-        defaultTemperature = defaultConfig.temperature,
     )
-
-private fun backendOf(name: String): LlmBackend = runCatching { LlmBackend.valueOf(name) }.getOrDefault(LlmBackend.GPU)

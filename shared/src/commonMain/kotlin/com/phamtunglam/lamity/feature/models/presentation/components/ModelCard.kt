@@ -19,7 +19,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +35,6 @@ import com.phamtunglam.lamity.feature.models.domain.ModelWithStatus
 import com.phamtunglam.lamity.feature.models.presentation.ModelsViewModel
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.chat_action
-import com.phamtunglam.lamity.shared.resources.configure
 import com.phamtunglam.lamity.shared.resources.confirm_delete_title
 import com.phamtunglam.lamity.shared.resources.delete
 import com.phamtunglam.lamity.shared.resources.delete_model_file_q
@@ -48,12 +46,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** One catalog entry: metadata, transfer state and the actions it allows. */
 @Composable
-internal fun ModelCard(
-    row: ModelWithStatus,
-    viewModel: ModelsViewModel,
-    onOpenChat: () -> Unit,
-    onConfigureModel: (modelId: String) -> Unit,
-) {
+internal fun ModelCard(row: ModelWithStatus, viewModel: ModelsViewModel, onOpenChat: () -> Unit) {
     val model = row.model
     var confirmDeleteFile by remember { mutableStateOf(false) }
 
@@ -71,7 +64,6 @@ internal fun ModelCard(
                 row = row,
                 viewModel = viewModel,
                 onOpenChat = onOpenChat,
-                onConfigureModel = onConfigureModel,
                 onDeleteFileRequest = { confirmDeleteFile = true },
             )
         }
@@ -123,7 +115,6 @@ private fun ModelCardActions(
     row: ModelWithStatus,
     viewModel: ModelsViewModel,
     onOpenChat: () -> Unit,
-    onConfigureModel: (modelId: String) -> Unit,
     onDeleteFileRequest: () -> Unit,
 ) {
     val model = row.model
@@ -134,10 +125,6 @@ private fun ModelCardActions(
                     viewModel.selectForChat(model)
                     onOpenChat()
                 }) { Text(stringResource(Res.string.chat_action)) }
-                Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { onConfigureModel(model.id) }) {
-                    Text(stringResource(Res.string.configure))
-                }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onDeleteFileRequest) {
                     Icon(

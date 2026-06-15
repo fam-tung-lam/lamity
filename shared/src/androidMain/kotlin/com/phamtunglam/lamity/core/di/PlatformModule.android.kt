@@ -2,10 +2,10 @@ package com.phamtunglam.lamity.core.di
 
 import android.os.Build
 import androidx.room3.RoomDatabase
+import com.phamtunglam.lamity.core.data.db.LamityDatabase
+import com.phamtunglam.lamity.core.data.db.lamityDatabaseBuilder
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.core.domain.platform.PlatformInfo
-import com.phamtunglam.lamity.db.LamityDatabase
-import com.phamtunglam.lamity.db.lamityDatabaseBuilder
 import com.phamtunglam.lamity.downloader.AndroidDownloader
 import com.phamtunglam.lamity.downloader.Downloader
 import org.koin.android.ext.koin.androidContext

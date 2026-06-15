@@ -19,12 +19,9 @@ interface AgentsRepository {
         systemPrompt: String,
         toolIds: List<String>,
         skillIds: List<String>,
-        modelId: String?,
+        modelId: String,
         modelConfig: ModelConfig?,
     ): Agent
 
     suspend fun delete(agentId: String)
-
-    /** Drop references to a deleted skill from every agent. */
-    suspend fun detachSkillEverywhere(skillId: String)
 }

@@ -20,10 +20,6 @@ class SkillsViewModel(private val skills: SkillsRepository, private val deleteSk
             .map { SkillsUiState(it) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SkillsUiState())
 
-    fun setSkillEnabled(skillId: String, enabled: Boolean) {
-        viewModelScope.launch { skills.setEnabled(skillId, enabled) }
-    }
-
     fun deleteSkill(skillId: String) {
         viewModelScope.launch { deleteSkillUseCase(skillId) }
     }

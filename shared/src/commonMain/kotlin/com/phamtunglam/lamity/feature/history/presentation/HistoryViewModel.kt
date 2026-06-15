@@ -14,12 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class ConversationRowUiState(
-    val conversation: Conversation,
-    val agentName: String?,
-    val modelName: String,
-    val updatedAtText: String,
-)
+data class ConversationRowUiState(val conversation: Conversation, val updatedAtText: String)
 
 data class HistoryUiState(val rows: List<ConversationRowUiState> = emptyList())
 
@@ -37,8 +32,6 @@ class HistoryViewModel(
                         summaries.map { summary ->
                             ConversationRowUiState(
                                 conversation = summary.conversation,
-                                agentName = summary.agentName,
-                                modelName = summary.modelName,
                                 updatedAtText = formatDateTime(summary.conversation.updatedAt),
                             )
                         },

@@ -28,5 +28,5 @@ val toolsModule: Module =
         }
 
         // Presentation
-        viewModel { ToolsViewModel(get(), get()) }
+        viewModel { ToolsViewModel(get()) }
     }

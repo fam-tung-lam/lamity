@@ -16,7 +16,7 @@ val skillsModule: Module =
         single<SkillsRepository> { SkillsRepositoryImpl(get(), get()) }
 
         // Domain
-        factory { DeleteSkillUseCase(get(), get()) }
+        factory { DeleteSkillUseCase(get()) }
         factory { SaveSkillUseCase(get()) }
 
         // Presentation

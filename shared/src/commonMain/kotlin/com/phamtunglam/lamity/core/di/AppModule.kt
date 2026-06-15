@@ -1,5 +1,6 @@
 package com.phamtunglam.lamity.core.di
 
+import com.phamtunglam.lamity.core.di.db.dbModule
 import com.phamtunglam.lamity.feature.agents.di.agentsModule
 import com.phamtunglam.lamity.feature.chat.di.chatModule
 import com.phamtunglam.lamity.feature.history.di.historyModule

@@ -16,10 +16,7 @@ interface SkillsRepository {
         name: String,
         description: String,
         instructions: String,
-        enabled: Boolean,
     ): Skill
-
-    suspend fun setEnabled(skillId: String, enabled: Boolean)
 
     suspend fun delete(skillId: String)
 }

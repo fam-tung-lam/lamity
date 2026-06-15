@@ -41,9 +41,6 @@ data class AgentEditKey(val agentId: String?) : NavKey
 @Serializable
 data class SkillEditKey(val skillId: String?) : NavKey
 
-@Serializable
-data class ModelConfigKey(val modelId: String) : NavKey
-
 /**
  * Back-stack state restoration needs every [NavKey] subtype registered for
  * polymorphic serialization (required by rememberNavBackStack on non-Android
@@ -64,7 +61,6 @@ val navSavedStateConfiguration: SavedStateConfiguration =
                     subclass(SettingsKey::class)
                     subclass(AgentEditKey::class)
                     subclass(SkillEditKey::class)
-                    subclass(ModelConfigKey::class)
                 }
             }
     }

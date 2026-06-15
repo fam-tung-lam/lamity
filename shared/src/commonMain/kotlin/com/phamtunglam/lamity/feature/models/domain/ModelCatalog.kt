@@ -19,7 +19,6 @@ object ModelCatalog {
                 requiresAuth = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct",
                 config = ModelConfig(LlmBackend.GPU, 4096, 20, 0.8, 0.7),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 20, 0.8, 0.7),
             ),
             LlmModel(
                 id = "gemma3-1b-it-int4",
@@ -35,7 +34,6 @@ object ModelCatalog {
                 requiresAuth = true,
                 learnMoreUrl = "https://huggingface.co/litert-community/Gemma3-1B-IT",
                 config = ModelConfig(LlmBackend.GPU, 1024, 64, 0.95, 1.0),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 1024, 64, 0.95, 1.0),
             ),
             LlmModel(
                 id = "gemma-4-e2b-it",
@@ -51,7 +49,6 @@ object ModelCatalog {
                 requiresAuth = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm",
                 config = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
             ),
             LlmModel(
                 id = "gemma-4-e4b-it",
@@ -67,7 +64,6 @@ object ModelCatalog {
                 requiresAuth = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
                 config = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
             ),
             LlmModel(
                 id = "gemma-4-12b-it",
@@ -84,7 +80,6 @@ object ModelCatalog {
                 requiresAuth = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/gemma-4-12B-it-litert-lm",
                 config = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
             ),
             LlmModel(
                 id = "deepseek-r1-distill-qwen-1.5b-q8",
@@ -103,7 +98,6 @@ object ModelCatalog {
                 supportsTools = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B",
                 config = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
-                defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
             ),
             LlmModel(
                 id = "functiongemma-270m-mobile-actions",
@@ -119,7 +113,6 @@ object ModelCatalog {
                 requiresAuth = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/functiongemma-270m-ft-mobile-actions",
                 config = ModelConfig(LlmBackend.CPU, 1024, 64, 0.95, 0.0),
-                defaultConfig = ModelConfig(LlmBackend.CPU, 1024, 64, 0.95, 0.0),
             ),
         )
 }

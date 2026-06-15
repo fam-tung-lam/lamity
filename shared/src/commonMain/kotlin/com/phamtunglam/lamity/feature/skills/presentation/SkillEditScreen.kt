@@ -2,7 +2,6 @@ package com.phamtunglam.lamity.feature.skills.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,19 +9,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.shared.resources.Res
-import com.phamtunglam.lamity.shared.resources.enabled
 import com.phamtunglam.lamity.shared.resources.name_required
 import com.phamtunglam.lamity.shared.resources.new_skill
 import com.phamtunglam.lamity.shared.resources.save
@@ -83,10 +79,6 @@ fun SkillEditScreen(
                 minLines = 6,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(Res.string.enabled), Modifier.weight(1f))
-                Switch(checked = ui.enabled, onCheckedChange = viewModel::setEnabled)
-            }
             Button(
                 onClick = viewModel::save,
                 enabled = ui.canSave,

@@ -21,25 +21,19 @@ internal fun fakeLlmModel(
     sizeBytes = sizeBytes,
 )
 
-internal fun fakeConversation(
-    id: String = "conv-1",
-    title: String = "First chat",
-    agentId: String? = null,
-    modelId: String = "model-1",
-    updatedAt: Long = 2,
-) = Conversation(
-    id = id,
-    title = title,
-    agentId = agentId,
-    modelId = modelId,
-    createdAt = 1,
-    updatedAt = updatedAt,
-)
+internal fun fakeConversation(id: String = "conv-1", title: String = "First chat", updatedAt: Long = 2) =
+    Conversation(
+        id = id,
+        title = title,
+        createdAt = 1,
+        updatedAt = updatedAt,
+    )
 
-internal fun fakeAgent(id: String = "agent-1", name: String = "Researcher") =
+internal fun fakeAgent(id: String = "agent-1", name: String = "Researcher", modelId: String = "model-1") =
     Agent(
         id = id,
         name = name,
+        modelId = modelId,
     )
 
 /** Scope sharing the test's virtual-time dispatcher, for scope-taking SUTs. */

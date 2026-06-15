@@ -30,6 +30,9 @@ data class LlmModel(
     /** Whether the model can use tools / skills; gates the agent-wizard steps. */
     val supportsTools: Boolean = true,
     val learnMoreUrl: String = "",
+    /**
+     * Catalog default inference config for this model. Read-only and never persisted per model — it
+     * seeds the agent-config override and the in-memory config used for an agent-less chat.
+     */
     val config: ModelConfig = ModelConfig(),
-    val defaultConfig: ModelConfig = ModelConfig(),
 )

@@ -27,14 +27,9 @@ private class FakePreferencesDataStore(initial: Preferences) : DataStore<Prefere
     }
 }
 
-private fun storedPreferences(
-    themeMode: String? = null,
-    toolEnabledJson: String? = null,
-    lastModelId: String? = null,
-): Preferences =
+private fun storedPreferences(themeMode: String? = null, lastModelId: String? = null): Preferences =
     mutablePreferencesOf().apply {
         themeMode?.let { this[stringPreferencesKey("theme_mode")] = it }
-        toolEnabledJson?.let { this[stringPreferencesKey("tool_enabled")] = it }
         lastModelId?.let { this[stringPreferencesKey("last_model_id")] = it }
     }
 
@@ -56,23 +51,12 @@ class SettingsRepositoryImplTest :
                         createRepository(
                             storedPreferences(
                                 themeMode = "DARK",
-                                toolEnabledJson = """{"calculate":false}""",
                                 lastModelId = "m1",
                             ),
                         )
 
                     repository.value.themeMode shouldBe ThemeMode.DARK
-                    repository.value.toolEnabled shouldBe mapOf("calculate" to false)
                     repository.value.lastModelId shouldBe "m1"
-                }
-                Then("it treats tools without a stored toggle as enabled") {
-                    val repository =
-                        createRepository(
-                            storedPreferences(toolEnabledJson = """{"calculate":false}"""),
-                        )
-
-                    repository.isToolEnabled("calculate") shouldBe false
-                    repository.isToolEnabled("unknown_tool") shouldBe true
                 }
             }
         }

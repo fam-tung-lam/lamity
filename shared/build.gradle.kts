@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.mokkery)
     alias(libs.plugins.sentryKmpPlugin)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
 }
 
 // Links the Shared framework against Sentry Cocoa (resolved by Xcode from the
@@ -71,7 +73,11 @@ kotlin {
             api(projects.lamityDownloader)
             implementation(projects.lamityCrashReporter)
             implementation(projects.lamityLogger)
-            implementation(projects.lamityDb)
+
+            // Room is hosted directly in :shared (merged from the former :lamityDb module) so
+            // entities can reference lamityLlm types (e.g. Role) and feature domain types.
+            api(libs.room3.runtime)
+            implementation(libs.sqlite.bundled)
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -116,6 +122,15 @@ compose.resources {
     packageOfResClass = "com.phamtunglam.lamity.shared.resources"
 }
 
+room3 {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+
+    // Room compiler runs per Kotlin target via KSP.
+    add("kspAndroid", libs.room3.compiler)
+    add("kspIosArm64", libs.room3.compiler)
+    add("kspIosSimulatorArm64", libs.room3.compiler)
 }

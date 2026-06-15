@@ -1,7 +1,6 @@
 package com.phamtunglam.lamity.feature.models.data
 
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import kotlinx.coroutines.flow.StateFlow
 
 interface ModelsRepository {
@@ -11,8 +10,6 @@ interface ModelsRepository {
     suspend fun awaitLoaded()
 
     fun byId(id: String?): LlmModel?
-
-    suspend fun updateConfig(modelId: String, config: ModelConfig)
 
     suspend fun addCustomModel(name: String, url: String, requiresAuth: Boolean): LlmModel
 

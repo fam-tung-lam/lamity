@@ -11,6 +11,7 @@ import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
+import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.skills.data.SkillsRepository
 import com.phamtunglam.lamity.feature.skills.domain.Skill
@@ -30,9 +31,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -43,11 +42,13 @@ data class ChatSessionState(
     val conversationId: String? = null,
     val agentId: String? = null,
     val modelId: String? = null,
-    /** Per-chat tool ids when running without an agent; null = all enabled tools. */
-    val customToolIds: List<String>? = null,
-    /** Per-chat skill ids when running without an agent; null = none. */
-    val customSkillIds: List<String>? = null,
-    /** Per-chat system prompt when running without an agent. */
+    /**
+     * Effective inference config in use. For an agent it is derived from the agent (its override or
+     * its model's catalog default); for an agent-less chat it is the model's catalog default, freely
+     * adjustable in the customize sheet but never persisted.
+     */
+    val runtimeConfig: ModelConfig = ModelConfig(),
+    /** Per-chat system prompt when running without an agent (in-memory only). */
     val customSystemPrompt: String? = null,
     val messages: List<ChatMessage> = emptyList(),
     val streamingText: String = "",
@@ -62,6 +63,11 @@ data class ChatSessionState(
  * Orchestrates chats: sessions, streaming, tool events, history persistence.
  * Lives for the whole process so chat state survives navigation; ViewModels
  * are thin observers of [state].
+ *
+ * Model/agent selection is live app state (restored from settings), not stored on the conversation.
+ * Tools and skills are sourced exclusively from the selected agent — an agent-less chat runs a plain
+ * model with an optional per-chat system prompt and no tools or skills. Inference config is the
+ * agent's when one is selected, otherwise an in-memory default that the user can tweak per session.
  */
 @Suppress("TooManyFunctions") // Cohesive chat orchestrator; splitting would scatter related logic.
 class ChatSessionManager(
@@ -111,6 +117,7 @@ class ChatSessionManager(
                     ),
                 )
             }
+            _state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
             // Warm the engine for the restored selection once everything has loaded.
             prepareSession()
         }
@@ -123,17 +130,20 @@ class ChatSessionManager(
                 _state.update { it.copy(messages = it.messages + message) }
             }
         }
-        // Re-warm when a config change affects the engine or conversation: the active model's saved
-        // config, or the set of globally enabled tools.
+        // Re-warm when agents change; refresh a selected agent's config in case it was just edited.
+        scope.launch {
+            agents.agents
+                .drop(1)
+                .collect {
+                    if (agents.byId(_state.value.agentId) != null) {
+                        _state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
+                    }
+                    prepareSession()
+                }
+        }
+        // Re-warm when the catalog changes (e.g. a custom model was added/removed).
         scope.launch {
             models.models
-                .drop(1)
-                .collect { prepareSession() }
-        }
-        scope.launch {
-            settings.settings
-                .map { it.toolEnabled }
-                .distinctUntilChanged()
                 .drop(1)
                 .collect { prepareSession() }
         }
@@ -145,6 +155,7 @@ class ChatSessionManager(
         if (modelId == _state.value.modelId) return
         stopGeneration()
         _state.update { it.copy(modelId = modelId, error = null) }
+        _state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
         persistSelection()
         prepareSession()
     }
@@ -153,6 +164,7 @@ class ChatSessionManager(
         if (agentId == _state.value.agentId) return
         stopGeneration()
         _state.update { it.copy(agentId = agentId, error = null) }
+        _state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
         persistSelection()
         prepareSession()
     }
@@ -162,25 +174,26 @@ class ChatSessionManager(
         prepareSession()
     }
 
-    fun toggleCustomTool(toolId: String) {
-        _state.update {
-            val current = it.customToolIds ?: selectableTools.map { tool -> tool.id }
-            it.copy(customToolIds = if (toolId in current) current - toolId else current + toolId)
-        }
-        prepareSession()
-    }
-
-    fun toggleCustomSkill(skillId: String) {
-        _state.update {
-            val current = it.customSkillIds ?: emptyList()
-            it.copy(customSkillIds = if (skillId in current) current - skillId else current + skillId)
-        }
+    /** Adjusts the in-memory config for an agent-less chat (not persisted). */
+    fun setRuntimeConfig(config: ModelConfig) {
+        if (config == _state.value.runtimeConfig) return
+        _state.update { it.copy(runtimeConfig = config) }
         prepareSession()
     }
 
     private fun persistSelection() {
         val s = _state.value
         scope.launch { settings.setLastSelection(s.modelId, s.agentId) }
+    }
+
+    /** The effective config for the current selection: the agent's, or the chat model's catalog default. */
+    private fun resolveDefaultConfig(): ModelConfig {
+        val agent = agents.byId(_state.value.agentId)
+        return if (agent != null) {
+            agent.modelConfig ?: models.byId(agent.modelId)?.config ?: ModelConfig()
+        } else {
+            models.byId(_state.value.modelId)?.config ?: ModelConfig()
+        }
     }
 
     // ----------------------------------------------------------- preparation
@@ -217,18 +230,13 @@ class ChatSessionManager(
         val agent = agents.byId(_state.value.agentId)
         val model = resolveModel(agent) ?: return
         if (!downloads.isDownloaded(model)) return
-        val effectiveModel = loadEngineWithFallback(model) ?: return
-        ensureSession(effectiveModel, agent, _state.value.conversationId)
+        val config = loadEngineWithFallback(model, _state.value.runtimeConfig) ?: return
+        ensureSession(model, config, agent, _state.value.conversationId)
     }
 
-    /** The model to run for [agent] (its own model + config override) or the chat-selected model. */
-    private fun resolveModel(agent: Agent?): LlmModel? {
-        if (agent?.modelId != null) {
-            val base = models.byId(agent.modelId) ?: return null
-            return agent.modelConfig?.let { base.copy(config = it) } ?: base
-        }
-        return models.byId(_state.value.modelId)
-    }
+    /** The model to run: the agent's own model, or the chat-selected model when agent-less. */
+    private fun resolveModel(agent: Agent?): LlmModel? =
+        if (agent != null) models.byId(agent.modelId) else models.byId(_state.value.modelId)
 
     // ----------------------------------------------------------- lifecycle
 
@@ -253,21 +261,16 @@ class ChatSessionManager(
         stopGeneration()
         scope.launch {
             val messages = conversations.loadMessages(conversationId)
+            // The model/agent selection and config stay as-is; only the thread loads.
             _state.update {
                 it.copy(
                     conversationId = conversation.id,
-                    agentId = conversation.agentId.takeIf { id -> agents.byId(id) != null },
-                    modelId = models.byId(conversation.modelId)?.id ?: it.modelId,
-                    customToolIds = conversation.customToolIds,
-                    customSkillIds = conversation.customSkillIds,
-                    customSystemPrompt = conversation.customSystemPrompt,
                     messages = messages,
                     streamingText = "",
                     streamingThought = "",
                     error = null,
                 )
             }
-            persistSelection()
             prepareSession()
         }
     }
@@ -330,27 +333,18 @@ class ChatSessionManager(
     }
 
     private suspend fun runGeneration(agent: Agent?, model: LlmModel, text: String) {
-        val effectiveModel = loadEngineWithFallback(model) ?: return
+        val config = loadEngineWithFallback(model, _state.value.runtimeConfig) ?: return
 
-        // Conversation row (history) exists before the first token. Persist per-chat customization
-        // for an agent-less chat so it survives reopen.
+        // Conversation row (history) exists before the first token.
         val conversationId =
             _state.value.conversationId ?: run {
-                val s = _state.value
-                val created =
-                    conversations.create(
-                        agentId = agent?.id,
-                        modelId = effectiveModel.id,
-                        customToolIds = if (agent == null) s.customToolIds else null,
-                        customSkillIds = if (agent == null) s.customSkillIds else null,
-                        customSystemPrompt = if (agent == null) s.customSystemPrompt else null,
-                    )
+                val created = conversations.create()
                 _state.update { it.copy(conversationId = created.id) }
                 created.id
             }
         conversations.ensureTitle(conversationId, text)
 
-        ensureSession(effectiveModel, agent, conversationId).getOrElse {
+        ensureSession(model, config, agent, conversationId).getOrElse {
             _state.update { s -> s.copy(error = ChatError.Raw(it.message ?: "Could not start conversation")) }
             return
         }
@@ -366,52 +360,52 @@ class ChatSessionManager(
         conversations.appendMessage(userMessage)
         _state.update { it.copy(messages = it.messages + userMessage) }
 
-        streamAndPersist(effectiveModel, agent, conversationId, text)
+        streamAndPersist(model, config, conversationId, text)
     }
 
-    private suspend fun ensureEngineFor(model: LlmModel): Result<Unit> {
-        val engineKey = "${model.id}|${model.config.backend.name}|${model.config.maxTokens}"
+    private suspend fun ensureEngineFor(model: LlmModel, config: ModelConfig): Result<Unit> {
+        val engineKey = "${model.id}|${config.backend.name}|${config.maxTokens}"
         val engineConfig =
             EngineConfig(
                 modelPath = downloads.modelPath(model),
-                backend = if (model.config.backend == LlmBackend.GPU) Backend.Gpu() else Backend.Cpu(),
-                maxNumTokens = model.config.maxTokens,
+                backend = if (config.backend == LlmBackend.GPU) Backend.Gpu() else Backend.Cpu(),
+                maxNumTokens = config.maxTokens,
                 cacheDir = dirs.cacheDir,
             )
         return runtime.ensureEngine(model.id, engineKey, engineConfig)
     }
 
     /**
-     * Loads the engine for [model], transparently retrying once on the CPU backend when a GPU load
-     * fails with a recoverable native error (see [shouldFallBackToCpu] — e.g. the Gemma 4 E-series
-     * `llm_litert_compiled_model_executor` failures). A successful CPU fallback is persisted and a
-     * [ChatNotice.SWITCHED_TO_CPU] notice is shown. Returns the effective model to use for the
-     * conversation, or null after setting [ChatSessionState.error] on failure.
+     * Loads the engine for [model] with [config], transparently retrying once on the CPU backend when
+     * a GPU load fails with a recoverable native error (see [shouldFallBackToCpu] — e.g. the Gemma 4
+     * E-series `llm_litert_compiled_model_executor` failures). A successful CPU fallback updates the
+     * in-memory [ChatSessionState.runtimeConfig] (never persisted) and shows a
+     * [ChatNotice.SWITCHED_TO_CPU]. Returns the effective config to use, or null after setting
+     * [ChatSessionState.error] on failure.
      */
-    private suspend fun loadEngineWithFallback(model: LlmModel): LlmModel? {
-        val first = ensureEngineFor(model)
-        if (first.isSuccess) return model
+    private suspend fun loadEngineWithFallback(model: LlmModel, config: ModelConfig): ModelConfig? {
+        val first = ensureEngineFor(model, config)
+        if (first.isSuccess) return config
 
         val cause = first.exceptionOrNull()
-        if (!shouldFallBackToCpu(model.config.backend, cause?.message)) {
+        if (!shouldFallBackToCpu(config.backend, cause?.message)) {
             _state.update { it.copy(error = loadError(cause?.message)) }
             return null
         }
 
         log.w { "GPU load failed for ${model.id}; retrying on CPU: ${cause?.message}" }
-        val cpuModel = model.copy(config = model.config.copy(backend = LlmBackend.CPU))
-        if (ensureEngineFor(cpuModel).isFailure) {
+        val cpuConfig = config.copy(backend = LlmBackend.CPU)
+        if (ensureEngineFor(model, cpuConfig).isFailure) {
             _state.update { it.copy(error = ChatError.Known(ChatErrorKind.MODEL_UNSUPPORTED_ON_DEVICE)) }
             return null
         }
-        models.updateConfig(model.id, cpuModel.config)
-        _state.update { it.copy(notice = ChatNotice.SWITCHED_TO_CPU, error = null) }
-        return cpuModel
+        _state.update { it.copy(runtimeConfig = cpuConfig, notice = ChatNotice.SWITCHED_TO_CPU, error = null) }
+        return cpuConfig
     }
 
     private suspend fun streamAndPersist(
         model: LlmModel,
-        agent: Agent?,
+        config: ModelConfig,
         conversationId: String,
         text: String,
     ) {
@@ -443,7 +437,7 @@ class ChatSessionManager(
                     is GenEvent.Error -> {
                         completed = true
                         finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
-                        handleGenerationError(model, hadOutput = charCount > 0, message = event.message)
+                        handleGenerationError(model, config, hadOutput = charCount > 0, message = event.message)
                     }
                 }
             }
@@ -453,24 +447,12 @@ class ChatSessionManager(
             if (!completed) {
                 withContext(NonCancellable) {
                     finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
-                    touchConversation(conversationId, agent, model)
+                    conversations.touch(conversationId)
                 }
             }
             throw e
         }
-        touchConversation(conversationId, agent, model)
-    }
-
-    private suspend fun touchConversation(conversationId: String, agent: Agent?, model: LlmModel) {
-        val s = _state.value
-        conversations.touch(
-            id = conversationId,
-            agentId = agent?.id,
-            modelId = model.id,
-            customToolIds = if (agent == null) s.customToolIds else null,
-            customSkillIds = if (agent == null) s.customSkillIds else null,
-            customSystemPrompt = if (agent == null) s.customSystemPrompt else null,
-        )
+        conversations.touch(conversationId)
     }
 
     private suspend fun finishAssistantMessage(
@@ -506,15 +488,25 @@ class ChatSessionManager(
 
     /**
      * Surfaces a generation failure. When a GPU model fails before producing any output with a
-     * recoverable native error, the model is transparently switched to CPU (persisted) and a
+     * recoverable native error, the config is transparently switched to CPU (in-memory only) and a
      * [ChatNotice.SWITCHED_TO_CPU] is shown so the next send runs on CPU; otherwise the error is
      * mapped to a user-facing [ChatError].
      */
-    private suspend fun handleGenerationError(model: LlmModel, hadOutput: Boolean, message: String) {
-        if (!hadOutput && shouldFallBackToCpu(model.config.backend, message)) {
+    private fun handleGenerationError(
+        model: LlmModel,
+        config: ModelConfig,
+        hadOutput: Boolean,
+        message: String,
+    ) {
+        if (!hadOutput && shouldFallBackToCpu(config.backend, message)) {
             log.w { "GPU generation failed for ${model.id}; switching to CPU: $message" }
-            models.updateConfig(model.id, model.config.copy(backend = LlmBackend.CPU))
-            _state.update { it.copy(notice = ChatNotice.SWITCHED_TO_CPU, error = null) }
+            _state.update {
+                it.copy(
+                    runtimeConfig = config.copy(backend = LlmBackend.CPU),
+                    notice = ChatNotice.SWITCHED_TO_CPU,
+                    error = null,
+                )
+            }
             return
         }
         _state.update { it.copy(error = loadError(message)) }
@@ -522,30 +514,36 @@ class ChatSessionManager(
 
     // ----------------------------------------------------------- session
 
-    private suspend fun ensureSession(model: LlmModel, agent: Agent?, conversationId: String?): Result<Unit> =
+    private suspend fun ensureSession(
+        model: LlmModel,
+        config: ModelConfig,
+        agent: Agent?,
+        conversationId: String?,
+    ): Result<Unit> =
         sessionMutex.withLock {
             val skillsForAgent = effectiveSkills(agent)
             val toolIds = effectiveToolIds(agent, skillsForAgent)
             val systemPrompt = buildSystemPrompt(agent, skillsForAgent)
-            val signature = sessionSignatureOf(model, agent, conversationId, toolIds, skillsForAgent, systemPrompt)
+            val signature =
+                sessionSignatureOf(model, config, agent, conversationId, toolIds, skillsForAgent, systemPrompt)
             if (sessionHandle != null && sessionSignature == signature) return@withLock Result.success(Unit)
 
             closeSession()
 
             val history = _state.value.messages.filter { it.role != MessageRole.TOOL }
-            val config =
+            val conversationConfig =
                 ConversationConfig(
                     systemMessage = systemPrompt?.let { Message.system(it) },
                     initialMessages = historyMessages(history),
                     tools = sessionTools(toolIds, skillsForAgent),
                     samplerConfig =
                         SamplerConfig(
-                            topK = model.config.topK,
-                            topP = model.config.topP,
-                            temperature = model.config.temperature,
+                            topK = config.topK,
+                            topP = config.topP,
+                            temperature = config.temperature,
                         ),
                 )
-            runtime.createConversation(config).map { handle ->
+            runtime.createConversation(conversationConfig).map { handle ->
                 sessionHandle = handle
                 sessionSignature = signature
             }
@@ -557,24 +555,18 @@ class ChatSessionManager(
         sessionSignature = null
     }
 
+    /** Skills attached to the active agent; an agent-less chat has none. */
     private fun effectiveSkills(agent: Agent?): List<Skill> {
-        val ids = if (agent != null) agent.skillIds else _state.value.customSkillIds.orEmpty()
-        return ids.mapNotNull { skills.byId(it) }.filter { it.enabled }
+        val ids = agent?.skillIds ?: return emptyList()
+        return ids.mapNotNull { skills.byId(it) }
     }
 
+    /** Tools attached to the active agent (plus load_skill when it has skills); none without an agent. */
     private fun effectiveToolIds(agent: Agent?, skillsForAgent: List<Skill>): List<String> {
-        val base =
-            when {
-                agent != null -> agent.toolIds
-
-                // No agent: per-chat custom selection, else all globally enabled tools.
-                _state.value.customToolIds != null -> _state.value.customToolIds.orEmpty()
-
-                else -> selectableTools.map { it.id }
-            }
+        if (agent == null) return emptyList()
         val enabled =
-            base.filter { id ->
-                settings.isToolEnabled(id) && selectableTools.any { it.id == id } && id != LoadSkillTool.ID
+            agent.toolIds.filter { id ->
+                selectableTools.any { it.id == id } && id != LoadSkillTool.ID
             }
         return if (skillsForAgent.isNotEmpty()) enabled + LoadSkillTool.ID else enabled
     }
@@ -604,6 +596,7 @@ class ChatSessionManager(
     @Suppress("LongParameterList") // All inputs that distinguish one native session from another.
     private fun sessionSignatureOf(
         model: LlmModel,
+        config: ModelConfig,
         agent: Agent?,
         conversationId: String?,
         toolIds: List<String>,
@@ -613,8 +606,8 @@ class ChatSessionManager(
         buildString {
             append(conversationId)
             append('|').append(model.id)
-            append('|').append(model.config.backend).append(model.config.maxTokens)
-            append('|').append(model.config.topK).append(model.config.topP).append(model.config.temperature)
+            append('|').append(config.backend).append(config.maxTokens)
+            append('|').append(config.topK).append(config.topP).append(config.temperature)
             append('|').append(agent?.id).append(':').append(agent?.updatedAt)
             append('|').append(toolIds.sorted().joinToString(","))
             append('|').append(skillsForAgent.joinToString(",") { "${it.id}:${it.updatedAt}" })

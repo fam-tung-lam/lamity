@@ -17,9 +17,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
 
 /**
  * Settings live in the app-wide preferences DataStore, the single source of
@@ -54,13 +51,9 @@ class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scop
 }
 
 private val ThemeModeKey = stringPreferencesKey("theme_mode")
-private val ToolEnabledKey = stringPreferencesKey("tool_enabled")
 private val LastModelIdKey = stringPreferencesKey("last_model_id")
 private val LastAgentIdKey = stringPreferencesKey("last_agent_id")
 private val WifiOnlyDownloadsKey = booleanPreferencesKey("wifi_only_downloads")
-
-private val toolMapSerializer = MapSerializer(String.serializer(), Boolean.serializer())
-private val json = Json { ignoreUnknownKeys = true }
 
 private fun Preferences.toAppSettings() =
     AppSettings(
@@ -68,10 +61,6 @@ private fun Preferences.toAppSettings() =
             this[ThemeModeKey]
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
-        toolEnabled =
-            this[ToolEnabledKey]
-                ?.let { runCatching { json.decodeFromString(toolMapSerializer, it) }.getOrNull() }
-                ?: emptyMap(),
         lastModelId = this[LastModelIdKey],
         lastAgentId = this[LastAgentIdKey],
         wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
@@ -79,7 +68,6 @@ private fun Preferences.toAppSettings() =
 
 private fun MutablePreferences.writeAppSettings(settings: AppSettings) {
     this[ThemeModeKey] = settings.themeMode.name
-    this[ToolEnabledKey] = json.encodeToString(toolMapSerializer, settings.toolEnabled)
     settings.lastModelId.let { if (it == null) remove(LastModelIdKey) else this[LastModelIdKey] = it }
     settings.lastAgentId.let { if (it == null) remove(LastAgentIdKey) else this[LastAgentIdKey] = it }
     this[WifiOnlyDownloadsKey] = settings.wifiOnlyDownloads

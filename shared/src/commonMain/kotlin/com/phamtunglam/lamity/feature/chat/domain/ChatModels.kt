@@ -21,18 +21,14 @@ data class ChatMessage(
     val createdAt: Long,
 )
 
+/**
+ * A conversation is a pure message thread. What it runs with (agent, model, an agent-less system
+ * prompt) is the live app selection, never stored here.
+ */
 @Serializable
 data class Conversation(
     val id: String,
     val title: String,
-    val agentId: String? = null,
-    val modelId: String,
-    /** Tool ids for an agent-less customized chat; null = defaults (all enabled tools). */
-    val customToolIds: List<String>? = null,
-    /** Skill ids for an agent-less customized chat; null = none. */
-    val customSkillIds: List<String>? = null,
-    /** System prompt for an agent-less customized chat; null = none. */
-    val customSystemPrompt: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
 )

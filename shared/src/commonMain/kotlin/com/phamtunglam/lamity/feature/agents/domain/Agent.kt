@@ -12,9 +12,9 @@ data class Agent(
     val systemPrompt: String = "",
     val toolIds: List<String> = emptyList(),
     val skillIds: List<String> = emptyList(),
-    /** Model this agent runs on; null inherits the chat-selected model. */
-    val modelId: String? = null,
-    /** Inference config override; null inherits the model's saved config. */
+    /** Model this agent runs on. */
+    val modelId: String,
+    /** Inference config override; null inherits the model's catalog-default config. */
     val modelConfig: ModelConfig? = null,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
