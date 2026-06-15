@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDropdown
+import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.feature.localization.domain.AppLocale
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
@@ -32,6 +33,7 @@ import com.phamtunglam.lamity.shared.resources.about
 import com.phamtunglam.lamity.shared.resources.downloads_section
 import com.phamtunglam.lamity.shared.resources.language
 import com.phamtunglam.lamity.shared.resources.language_system
+import com.phamtunglam.lamity.shared.resources.settings_title
 import com.phamtunglam.lamity.shared.resources.theme
 import com.phamtunglam.lamity.shared.resources.theme_dark
 import com.phamtunglam.lamity.shared.resources.theme_light
@@ -43,6 +45,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingsScreen(
+    onBack: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
     localeViewModel: LocalizationViewModel = koinViewModel(),
 ) {
@@ -50,24 +53,26 @@ fun SettingsScreen(
     val settings = ui.settings
     val localeState by localeViewModel.state.collectAsState()
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        // Theme (also switchable by the set_theme tool)
-        ThemeSection(selected = settings.themeMode, onSelect = viewModel::setThemeMode)
+    SubScreenScaffold(title = stringResource(Res.string.settings_title), onBack = onBack) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            // Theme (also switchable by the set_theme tool)
+            ThemeSection(selected = settings.themeMode, onSelect = viewModel::setThemeMode)
 
-        // Language (also switchable by the set_language tool)
-        LanguageSection(currentBcp47 = localeState.current?.bcp47, onSelect = localeViewModel::onLocaleSelected)
+            // Language (also switchable by the set_language tool)
+            LanguageSection(currentBcp47 = localeState.current?.bcp47, onSelect = localeViewModel::onLocaleSelected)
 
-        DownloadsSection(wifiOnly = settings.wifiOnlyDownloads, onWifiOnlyChange = viewModel::setWifiOnlyDownloads)
+            DownloadsSection(wifiOnly = settings.wifiOnlyDownloads, onWifiOnlyChange = viewModel::setWifiOnlyDownloads)
 
-        AboutSection(
-            platform = ui.platformInfo.platform,
-            osVersion = ui.platformInfo.osVersion,
-            deviceModel = ui.platformInfo.deviceModel,
-            modelsDir = ui.modelsDir,
-        )
+            AboutSection(
+                platform = ui.platformInfo.platform,
+                osVersion = ui.platformInfo.osVersion,
+                deviceModel = ui.platformInfo.deviceModel,
+                modelsDir = ui.modelsDir,
+            )
+        }
     }
 }
 

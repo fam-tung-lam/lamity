@@ -5,6 +5,43 @@
     <string name="tab_studio">Estudio</string>
     <string name="tab_settings">Ajustes</string>
 
+    <!-- Home -->
+    <string name="settings_title">Ajustes</string>
+    <string name="chats_title">Chats</string>
+    <string name="models_title">Modelos</string>
+    <string name="card_agents">Agentes</string>
+    <string name="card_agents_desc">Personajes con su propio modelo, herramientas y habilidades</string>
+    <string name="card_skills">Habilidades</string>
+    <string name="card_skills_desc">Instrucciones reutilizables cargadas bajo demanda</string>
+    <string name="card_tools">Herramientas</string>
+    <string name="card_tools_desc">Capacidades integradas que el modelo puede invocar</string>
+    <string name="card_chats">Chats</string>
+    <string name="card_chats_desc">Tus conversaciones guardadas</string>
+    <string name="card_models">Modelos</string>
+    <string name="card_models_desc">Descarga y configura modelos en el dispositivo</string>
+    <string name="open_settings">Abrir ajustes</string>
+    <string name="agents_count">agentes</string>
+    <string name="chats_count">chats</string>
+    <string name="models_count">modelos</string>
+
+    <!-- Agent wizard -->
+    <string name="step_basics">Básico</string>
+    <string name="step_model">Modelo</string>
+    <string name="step_config">Configuración</string>
+    <string name="step_skills">Habilidades</string>
+    <string name="step_tools">Herramientas</string>
+    <string name="wizard_next">Siguiente</string>
+    <string name="wizard_back">Atrás</string>
+    <string name="agent_model">Modelo</string>
+    <string name="model_pick_required">Selecciona un modelo</string>
+    <string name="model_no_tools">Este modelo no admite herramientas ni habilidades.</string>
+
+    <!-- Chat customization -->
+    <string name="customize">Personalizar</string>
+    <string name="customize_chat">Personalizar chat</string>
+    <string name="custom_system_prompt">Mensaje de sistema para este chat</string>
+    <string name="done">Listo</string>
+
     <string name="chat_placeholder">Mensaje…</string>
     <string name="chat_empty_title">Empieza a chatear</string>
     <string name="chat_empty_body">Elige un agente y un modelo descargado, y saluda. Las llamadas a herramientas aparecen en línea.</string>

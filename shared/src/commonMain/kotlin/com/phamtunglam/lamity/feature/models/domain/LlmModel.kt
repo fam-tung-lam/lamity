@@ -27,6 +27,8 @@ data class LlmModel(
     val requiresAuth: Boolean = false,
     val isCustom: Boolean = false,
     val supportsThinking: Boolean = false,
+    /** Whether the model can use tools / skills; gates the agent-wizard steps. */
+    val supportsTools: Boolean = true,
     val learnMoreUrl: String = "",
     val config: ModelConfig = ModelConfig(),
     val defaultConfig: ModelConfig = ModelConfig(),

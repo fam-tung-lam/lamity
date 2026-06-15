@@ -1,5 +1,6 @@
 package com.phamtunglam.lamity.db.entities
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 
@@ -18,6 +19,8 @@ data class ModelEntity(
     val requiresAuth: Boolean,
     val isCustom: Boolean,
     val supportsThinking: Boolean,
+    /** Whether the model is exposed tools / skills (gates the agent-wizard steps). */
+    @ColumnInfo(defaultValue = "1") val supportsTools: Boolean,
     val learnMoreUrl: String,
     val backend: String,
     val maxTokens: Int,

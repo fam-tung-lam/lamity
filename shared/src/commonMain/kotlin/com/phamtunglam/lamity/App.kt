@@ -1,27 +1,15 @@
 package com.phamtunglam.lamity
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -31,33 +19,31 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.AppTheme
 import com.phamtunglam.lamity.core.presentation.navigation.AgentEditKey
+import com.phamtunglam.lamity.core.presentation.navigation.AgentsKey
 import com.phamtunglam.lamity.core.presentation.navigation.ChatKey
-import com.phamtunglam.lamity.core.presentation.navigation.HistoryKey
+import com.phamtunglam.lamity.core.presentation.navigation.ChatsKey
+import com.phamtunglam.lamity.core.presentation.navigation.HomeKey
 import com.phamtunglam.lamity.core.presentation.navigation.ModelConfigKey
 import com.phamtunglam.lamity.core.presentation.navigation.ModelsKey
 import com.phamtunglam.lamity.core.presentation.navigation.SettingsKey
 import com.phamtunglam.lamity.core.presentation.navigation.SkillEditKey
-import com.phamtunglam.lamity.core.presentation.navigation.StudioKey
-import com.phamtunglam.lamity.core.presentation.navigation.TabKey
+import com.phamtunglam.lamity.core.presentation.navigation.SkillsKey
+import com.phamtunglam.lamity.core.presentation.navigation.ToolsKey
 import com.phamtunglam.lamity.core.presentation.navigation.navSavedStateConfiguration
+import com.phamtunglam.lamity.feature.agents.presentation.AgentEditScreen
+import com.phamtunglam.lamity.feature.agents.presentation.AgentsScreen
 import com.phamtunglam.lamity.feature.chat.presentation.ChatScreen
-import com.phamtunglam.lamity.feature.history.presentation.HistoryScreen
+import com.phamtunglam.lamity.feature.history.presentation.ChatsScreen
+import com.phamtunglam.lamity.feature.home.presentation.HomeScreen
 import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnvironment
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
 import com.phamtunglam.lamity.feature.models.presentation.ModelConfigScreen
 import com.phamtunglam.lamity.feature.models.presentation.ModelsScreen
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
-import com.phamtunglam.lamity.feature.studio.presentation.AgentEditScreen
-import com.phamtunglam.lamity.feature.studio.presentation.SkillEditScreen
-import com.phamtunglam.lamity.feature.studio.presentation.StudioScreen
-import com.phamtunglam.lamity.shared.resources.Res
-import com.phamtunglam.lamity.shared.resources.tab_chat
-import com.phamtunglam.lamity.shared.resources.tab_history
-import com.phamtunglam.lamity.shared.resources.tab_models
-import com.phamtunglam.lamity.shared.resources.tab_settings
-import com.phamtunglam.lamity.shared.resources.tab_studio
-import org.jetbrains.compose.resources.stringResource
+import com.phamtunglam.lamity.feature.skills.presentation.SkillEditScreen
+import com.phamtunglam.lamity.feature.skills.presentation.SkillsScreen
+import com.phamtunglam.lamity.feature.tools.presentation.ToolsScreen
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,49 +54,35 @@ fun App() {
     val localeViewModel = koinViewModel<LocalizationViewModel>()
     val localeState by localeViewModel.state.collectAsState()
 
+    val focusManager = LocalFocusManager.current
+
     AppLocaleEnvironment(locale = localeState.current) {
         AppTheme(settings.themeMode) {
-            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                val backStack = rememberNavBackStack(navSavedStateConfiguration, ChatKey)
-
-                fun switchTab(tab: TabKey) {
-                    backStack.clear()
-                    backStack.add(tab)
-                }
-
-                Scaffold(
-                    bottomBar = { AppBottomBar(backStack, ::switchTab) },
-                ) { padding ->
-                    Box(Modifier.fillMaxSize().padding(padding)) {
-                        AppNavDisplay(
-                            backStack = backStack,
-                            onSwitchTab = ::switchTab,
-                        )
-                    }
-                }
+            Surface(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        // Tapping outside any focused input (empty/non-interactive areas) dismisses the
+                        // keyboard. Clickable children consume the tap first, so this only fires on blank space.
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = { focusManager.clearFocus() })
+                        },
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                val backStack = rememberNavBackStack(navSavedStateConfiguration, HomeKey)
+                AppNavDisplay(backStack)
             }
         }
     }
 }
 
 @Composable
-private fun AppBottomBar(backStack: NavBackStack<NavKey>, onSwitchTab: (TabKey) -> Unit) {
-    if (backStack.size != 1) return
-    NavigationBar {
-        val current = backStack.firstOrNull()
-        TabItem(current, ChatKey, stringResource(Res.string.tab_chat), Icons.AutoMirrored.Filled.Send, onSwitchTab)
-        TabItem(current, ModelsKey, stringResource(Res.string.tab_models), Icons.Default.Home, onSwitchTab)
-        TabItem(current, HistoryKey, stringResource(Res.string.tab_history), Icons.Default.DateRange, onSwitchTab)
-        TabItem(current, StudioKey, stringResource(Res.string.tab_studio), Icons.Default.Build, onSwitchTab)
-        TabItem(current, SettingsKey, stringResource(Res.string.tab_settings), Icons.Default.Settings, onSwitchTab)
-    }
-}
-
-@Composable
-private fun AppNavDisplay(backStack: NavBackStack<NavKey>, onSwitchTab: (TabKey) -> Unit) {
+private fun AppNavDisplay(backStack: NavBackStack<NavKey>) {
     fun pop() {
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
     }
+
+    fun open(key: NavKey) = backStack.add(key)
 
     NavDisplay(
         backStack = backStack,
@@ -122,26 +94,40 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>, onSwitchTab: (TabKey)
             ),
         entryProvider =
             entryProvider {
+                entry<HomeKey> {
+                    HomeScreen(
+                        onOpenAgents = { open(AgentsKey) },
+                        onOpenSkills = { open(SkillsKey) },
+                        onOpenTools = { open(ToolsKey) },
+                        onOpenChats = { open(ChatsKey) },
+                        onOpenModels = { open(ModelsKey) },
+                        onOpenSettings = { open(SettingsKey) },
+                    )
+                }
+                entry<ChatsKey> {
+                    ChatsScreen(onOpenChat = { open(ChatKey) }, onBack = ::pop)
+                }
                 entry<ChatKey> {
-                    ChatScreen(onGoToModels = { onSwitchTab(ModelsKey) })
+                    ChatScreen(onBack = ::pop, onGoToModels = { open(ModelsKey) })
+                }
+                entry<AgentsKey> {
+                    AgentsScreen(onEditAgent = { agentId -> open(AgentEditKey(agentId)) }, onBack = ::pop)
+                }
+                entry<SkillsKey> {
+                    SkillsScreen(onEditSkill = { skillId -> open(SkillEditKey(skillId)) }, onBack = ::pop)
+                }
+                entry<ToolsKey> {
+                    ToolsScreen(onBack = ::pop)
                 }
                 entry<ModelsKey> {
                     ModelsScreen(
-                        onOpenChat = { onSwitchTab(ChatKey) },
-                        onConfigureModel = { modelId -> backStack.add(ModelConfigKey(modelId)) },
-                    )
-                }
-                entry<HistoryKey> {
-                    HistoryScreen(onOpenChat = { onSwitchTab(ChatKey) })
-                }
-                entry<StudioKey> {
-                    StudioScreen(
-                        onEditAgent = { agentId -> backStack.add(AgentEditKey(agentId)) },
-                        onEditSkill = { skillId -> backStack.add(SkillEditKey(skillId)) },
+                        onOpenChat = { open(ChatKey) },
+                        onConfigureModel = { modelId -> open(ModelConfigKey(modelId)) },
+                        onBack = ::pop,
                     )
                 }
                 entry<SettingsKey> {
-                    SettingsScreen()
+                    SettingsScreen(onBack = ::pop)
                 }
                 entry<AgentEditKey> { key ->
                     AgentEditScreen(agentId = key.agentId, onBack = ::pop)
@@ -153,21 +139,5 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>, onSwitchTab: (TabKey)
                     ModelConfigScreen(modelId = key.modelId, onBack = ::pop)
                 }
             },
-    )
-}
-
-@Composable
-private fun RowScope.TabItem(
-    current: NavKey?,
-    tab: TabKey,
-    label: String,
-    icon: ImageVector,
-    onSelect: (TabKey) -> Unit,
-) {
-    NavigationBarItem(
-        selected = current == tab,
-        onClick = { onSelect(tab) },
-        icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label) },
     )
 }

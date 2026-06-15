@@ -1,8 +1,8 @@
 package com.phamtunglam.lamity.fixtures
 
+import com.phamtunglam.lamity.feature.agents.domain.Agent
 import com.phamtunglam.lamity.feature.chat.domain.Conversation
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.studio.domain.Agent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext

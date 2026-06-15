@@ -7,24 +7,32 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 
-/** Root destinations shown in the bottom navigation bar. */
+/** Root: the home screen of cards. */
 @Serializable
-sealed interface TabKey : NavKey
+data object HomeKey : NavKey
+
+/** The active chat conversation (pushed from Chats / Models / new-chat). */
+@Serializable
+data object ChatKey : NavKey
+
+/** Home-card destinations. */
+@Serializable
+data object ChatsKey : NavKey
 
 @Serializable
-data object ChatKey : TabKey
+data object AgentsKey : NavKey
 
 @Serializable
-data object ModelsKey : TabKey
+data object SkillsKey : NavKey
 
 @Serializable
-data object HistoryKey : TabKey
+data object ToolsKey : NavKey
 
 @Serializable
-data object StudioKey : TabKey
+data object ModelsKey : NavKey
 
 @Serializable
-data object SettingsKey : TabKey
+data object SettingsKey : NavKey
 
 /** Pushed editor destinations. */
 @Serializable
@@ -46,10 +54,13 @@ val navSavedStateConfiguration: SavedStateConfiguration =
         serializersModule =
             SerializersModule {
                 polymorphic(NavKey::class) {
+                    subclass(HomeKey::class)
                     subclass(ChatKey::class)
+                    subclass(ChatsKey::class)
+                    subclass(AgentsKey::class)
+                    subclass(SkillsKey::class)
+                    subclass(ToolsKey::class)
                     subclass(ModelsKey::class)
-                    subclass(HistoryKey::class)
-                    subclass(StudioKey::class)
                     subclass(SettingsKey::class)
                     subclass(AgentEditKey::class)
                     subclass(SkillEditKey::class)

@@ -5,6 +5,43 @@
     <string name="tab_studio">Studio</string>
     <string name="tab_settings">Cài đặt</string>
 
+    <!-- Home -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="chats_title">Trò chuyện</string>
+    <string name="models_title">Mô hình</string>
+    <string name="card_agents">Tác nhân</string>
+    <string name="card_agents_desc">Nhân vật với mô hình, công cụ và kỹ năng riêng</string>
+    <string name="card_skills">Kỹ năng</string>
+    <string name="card_skills_desc">Hướng dẫn tái sử dụng, tải khi cần</string>
+    <string name="card_tools">Công cụ</string>
+    <string name="card_tools_desc">Khả năng tích hợp mà mô hình có thể gọi</string>
+    <string name="card_chats">Trò chuyện</string>
+    <string name="card_chats_desc">Các cuộc trò chuyện đã lưu</string>
+    <string name="card_models">Mô hình</string>
+    <string name="card_models_desc">Tải và cấu hình mô hình trên thiết bị</string>
+    <string name="open_settings">Mở cài đặt</string>
+    <string name="agents_count">tác nhân</string>
+    <string name="chats_count">cuộc trò chuyện</string>
+    <string name="models_count">mô hình</string>
+
+    <!-- Agent wizard -->
+    <string name="step_basics">Cơ bản</string>
+    <string name="step_model">Mô hình</string>
+    <string name="step_config">Cấu hình</string>
+    <string name="step_skills">Kỹ năng</string>
+    <string name="step_tools">Công cụ</string>
+    <string name="wizard_next">Tiếp</string>
+    <string name="wizard_back">Quay lại</string>
+    <string name="agent_model">Mô hình</string>
+    <string name="model_pick_required">Chọn một mô hình</string>
+    <string name="model_no_tools">Mô hình này không hỗ trợ công cụ hoặc kỹ năng.</string>
+
+    <!-- Chat customization -->
+    <string name="customize">Tùy chỉnh</string>
+    <string name="customize_chat">Tùy chỉnh trò chuyện</string>
+    <string name="custom_system_prompt">Lời nhắc hệ thống cho cuộc trò chuyện này</string>
+    <string name="done">Xong</string>
+
     <string name="chat_placeholder">Nhắn tin…</string>
     <string name="chat_empty_title">Bắt đầu trò chuyện</string>
     <string name="chat_empty_body">Chọn một agent và một mô hình đã tải, rồi gửi lời chào. Các lệnh gọi công cụ hiển thị ngay trong hội thoại.</string>

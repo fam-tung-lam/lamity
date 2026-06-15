@@ -27,6 +27,12 @@ data class Conversation(
     val title: String,
     val agentId: String? = null,
     val modelId: String,
+    /** Tool ids for an agent-less customized chat; null = defaults (all enabled tools). */
+    val customToolIds: List<String>? = null,
+    /** Skill ids for an agent-less customized chat; null = none. */
+    val customSkillIds: List<String>? = null,
+    /** System prompt for an agent-less customized chat; null = none. */
+    val customSystemPrompt: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
 )

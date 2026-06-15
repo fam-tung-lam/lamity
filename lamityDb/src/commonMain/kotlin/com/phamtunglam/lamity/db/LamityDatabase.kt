@@ -30,12 +30,14 @@ const val LAMITY_DB_FILE_NAME = "lamity.db"
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // settings.wifiOnlyDownloads added
         AutoMigration(from = 2, to = 3, spec = LamityDatabase.DropSettingsHfToken::class), // settings.hfToken removed
         AutoMigration(from = 3, to = 4, spec = LamityDatabase.DropSettingsTable::class), // settings moved to DataStore
+        // models.supportsTools + agents.model{Id,ConfigJson} + conversations.custom* added
+        AutoMigration(from = 4, to = 5),
     ],
 )
 @ConstructedBy(LamityDatabaseConstructor::class)

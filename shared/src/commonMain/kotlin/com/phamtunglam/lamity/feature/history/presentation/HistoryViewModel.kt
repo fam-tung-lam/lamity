@@ -45,8 +45,11 @@ class HistoryViewModel(
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
 
-    /** Opens [conversationId] in the chat session; the caller navigates to the chat tab. */
+    /** Opens [conversationId] in the chat session; the caller navigates to the chat screen. */
     fun open(conversationId: String) = chat.openConversation(conversationId)
+
+    /** Starts a fresh chat; the caller navigates to the chat screen. */
+    fun newChat() = chat.newChat()
 
     fun rename(conversationId: String, title: String) {
         viewModelScope.launch { conversations.rename(conversationId, title) }

@@ -1,5 +1,40 @@
 <resources>
-    <!-- Navigation tabs -->
+    <!-- Home -->
+    <string name="home_title">Lamity AI</string>
+    <string name="settings_title">Settings</string>
+    <string name="chats_title">Chats</string>
+    <string name="models_title">Models</string>
+    <string name="card_agents">Agents</string>
+    <string name="card_agents_desc">Personas with their own model, tools and skills</string>
+    <string name="card_skills">Skills</string>
+    <string name="card_skills_desc">Reusable instructions loaded on demand</string>
+    <string name="card_tools">Tools</string>
+    <string name="card_tools_desc">Built-in capabilities the model can call</string>
+    <string name="card_chats">Chats</string>
+    <string name="card_chats_desc">Your saved conversations</string>
+    <string name="card_models">Models</string>
+    <string name="card_models_desc">Download and configure on-device models</string>
+    <string name="open_settings">Open settings</string>
+
+    <!-- Agent wizard -->
+    <string name="step_basics">Basics</string>
+    <string name="step_model">Model</string>
+    <string name="step_config">Config</string>
+    <string name="step_skills">Skills</string>
+    <string name="step_tools">Tools</string>
+    <string name="wizard_next">Next</string>
+    <string name="wizard_back">Back</string>
+    <string name="agent_model">Model</string>
+    <string name="model_pick_required">Select a model</string>
+    <string name="model_no_tools">This model does not support tools or skills.</string>
+
+    <!-- Chat customization -->
+    <string name="customize">Customize</string>
+    <string name="customize_chat">Customize chat</string>
+    <string name="custom_system_prompt">System prompt for this chat</string>
+    <string name="done">Done</string>
+
+    <!-- Navigation labels -->
     <string name="tab_chat">Chat</string>
     <string name="tab_models">Models</string>
     <string name="tab_history">History</string>
@@ -92,6 +127,9 @@
     <string name="name_required">Name is required</string>
     <string name="tools_count">tools</string>
     <string name="skills_count">skills</string>
+    <string name="agents_count">agents</string>
+    <string name="chats_count">chats</string>
+    <string name="models_count">models</string>
 
     <!-- Settings -->
     <string name="theme">Theme</string>

@@ -21,10 +21,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.feature.models.presentation.components.AddCustomModelDialog
 import com.phamtunglam.lamity.feature.models.presentation.components.ModelCard
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.add_custom_model
+import com.phamtunglam.lamity.shared.resources.models_title
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -32,32 +34,35 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ModelsScreen(
     onOpenChat: () -> Unit,
     onConfigureModel: (modelId: String) -> Unit,
+    onBack: () -> Unit,
     viewModel: ModelsViewModel = koinViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            contentPadding = PaddingValues(12.dp, 12.dp, 12.dp, 96.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            items(ui.rows, key = { it.model.id }) { row ->
-                ModelCard(
-                    row = row,
-                    viewModel = viewModel,
-                    onOpenChat = onOpenChat,
-                    onConfigureModel = onConfigureModel,
-                )
+    SubScreenScaffold(title = stringResource(Res.string.models_title), onBack = onBack) {
+        Box(Modifier.fillMaxSize()) {
+            LazyColumn(
+                contentPadding = PaddingValues(12.dp, 12.dp, 12.dp, 96.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(ui.rows, key = { it.model.id }) { row ->
+                    ModelCard(
+                        row = row,
+                        viewModel = viewModel,
+                        onOpenChat = onOpenChat,
+                        onConfigureModel = onConfigureModel,
+                    )
+                }
             }
+            ExtendedFloatingActionButton(
+                onClick = { showAddDialog = true },
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(Res.string.add_custom_model)) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            )
         }
-        ExtendedFloatingActionButton(
-            onClick = { showAddDialog = true },
-            icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text(stringResource(Res.string.add_custom_model)) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
     }
 
     if (showAddDialog) {

@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 
 /** Conversations and messages live in Room; the database is the single source of truth. */
 class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: CoroutineScope) : ConversationsRepository {
@@ -38,7 +41,13 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
 
     override fun byId(id: String?): Conversation? = id?.let { i -> conversations.value.firstOrNull { it.id == i } }
 
-    override suspend fun create(agentId: String?, modelId: String): Conversation {
+    override suspend fun create(
+        agentId: String?,
+        modelId: String,
+        customToolIds: List<String>?,
+        customSkillIds: List<String>?,
+        customSystemPrompt: String?,
+    ): Conversation {
         val now = epochMillis()
         val conversation =
             Conversation(
@@ -46,6 +55,9 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
                 title = "",
                 agentId = agentId,
                 modelId = modelId,
+                customToolIds = customToolIds,
+                customSkillIds = customSkillIds,
+                customSystemPrompt = customSystemPrompt,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -74,10 +86,26 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
             .onFailure { log.e(it) { "failed to title conversation $id" } }
     }
 
-    override suspend fun touch(id: String, agentId: String?, modelId: String) {
+    override suspend fun touch(
+        id: String,
+        agentId: String?,
+        modelId: String,
+        customToolIds: List<String>?,
+        customSkillIds: List<String>?,
+        customSystemPrompt: String?,
+    ) {
         val current = runCatching { dao.byId(id) }.getOrNull() ?: return
         runCatching {
-            dao.upsert(current.copy(agentId = agentId, modelId = modelId, updatedAt = epochMillis()))
+            dao.upsert(
+                current.copy(
+                    agentId = agentId,
+                    modelId = modelId,
+                    customToolIdsJson = customToolIds?.let { encodeStringList(it) },
+                    customSkillIdsJson = customSkillIds?.let { encodeStringList(it) },
+                    customSystemPrompt = customSystemPrompt,
+                    updatedAt = epochMillis(),
+                ),
+            )
         }.onFailure { log.e(it) { "failed to touch conversation $id" } }
     }
 
@@ -99,12 +127,23 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
     }
 }
 
+private val stringListSerializer = ListSerializer(String.serializer())
+private val json = Json { ignoreUnknownKeys = true }
+
+private fun decodeStringList(text: String?): List<String>? =
+    text?.let { runCatching { json.decodeFromString(stringListSerializer, it) }.getOrNull() }
+
+private fun encodeStringList(values: List<String>): String = json.encodeToString(stringListSerializer, values)
+
 private fun ConversationEntity.toDomain() =
     Conversation(
         id = id,
         title = title,
         agentId = agentId,
         modelId = modelId,
+        customToolIds = decodeStringList(customToolIdsJson),
+        customSkillIds = decodeStringList(customSkillIdsJson),
+        customSystemPrompt = customSystemPrompt,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
@@ -115,6 +154,9 @@ private fun Conversation.toEntity() =
         title = title,
         agentId = agentId,
         modelId = modelId,
+        customToolIdsJson = customToolIds?.let { encodeStringList(it) },
+        customSkillIdsJson = customSkillIds?.let { encodeStringList(it) },
+        customSystemPrompt = customSystemPrompt,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )

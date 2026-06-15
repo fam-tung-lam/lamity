@@ -4,18 +4,18 @@ import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.core.domain.tools.AppTool
-import com.phamtunglam.lamity.core.domain.tools.LoadSkillTool
+import com.phamtunglam.lamity.feature.agents.data.AgentsRepository
+import com.phamtunglam.lamity.feature.agents.domain.Agent
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.feature.studio.data.AgentsRepository
-import com.phamtunglam.lamity.feature.studio.data.SkillsRepository
-import com.phamtunglam.lamity.feature.studio.domain.Agent
-import com.phamtunglam.lamity.feature.studio.domain.Skill
+import com.phamtunglam.lamity.feature.skills.data.SkillsRepository
+import com.phamtunglam.lamity.feature.skills.domain.Skill
+import com.phamtunglam.lamity.feature.tools.domain.AppTool
+import com.phamtunglam.lamity.feature.tools.domain.LoadSkillTool
 import com.phamtunglam.lamity.llm.model.Backend
 import com.phamtunglam.lamity.llm.model.ConversationConfig
 import com.phamtunglam.lamity.llm.model.EngineConfig
@@ -30,14 +30,25 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 data class ChatSessionState(
     val conversationId: String? = null,
     val agentId: String? = null,
     val modelId: String? = null,
+    /** Per-chat tool ids when running without an agent; null = all enabled tools. */
+    val customToolIds: List<String>? = null,
+    /** Per-chat skill ids when running without an agent; null = none. */
+    val customSkillIds: List<String>? = null,
+    /** Per-chat system prompt when running without an agent. */
+    val customSystemPrompt: String? = null,
     val messages: List<ChatMessage> = emptyList(),
     val streamingText: String = "",
     val streamingThought: String = "",
@@ -78,6 +89,11 @@ class ChatSessionManager(
     private var sessionSignature: String? = null
     private var generateJob: Job? = null
 
+    /** Serializes native session lifecycle so prepare and generate never race on [sessionHandle]. */
+    private val sessionMutex = Mutex()
+    private var prepareJob: Job? = null
+    private var preparePending = false
+
     init {
         scope.launch {
             settings.awaitLoaded()
@@ -95,6 +111,8 @@ class ChatSessionManager(
                     ),
                 )
             }
+            // Warm the engine for the restored selection once everything has loaded.
+            prepareSession()
         }
         scope.launch {
             runtime.engineState.collect { es -> _state.update { it.copy(engine = es) } }
@@ -105,6 +123,20 @@ class ChatSessionManager(
                 _state.update { it.copy(messages = it.messages + message) }
             }
         }
+        // Re-warm when a config change affects the engine or conversation: the active model's saved
+        // config, or the set of globally enabled tools.
+        scope.launch {
+            models.models
+                .drop(1)
+                .collect { prepareSession() }
+        }
+        scope.launch {
+            settings.settings
+                .map { it.toolEnabled }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { prepareSession() }
+        }
     }
 
     // ----------------------------------------------------------- selection
@@ -114,6 +146,7 @@ class ChatSessionManager(
         stopGeneration()
         _state.update { it.copy(modelId = modelId, error = null) }
         persistSelection()
+        prepareSession()
     }
 
     fun selectAgent(agentId: String?) {
@@ -121,6 +154,28 @@ class ChatSessionManager(
         stopGeneration()
         _state.update { it.copy(agentId = agentId, error = null) }
         persistSelection()
+        prepareSession()
+    }
+
+    fun setCustomSystemPrompt(prompt: String) {
+        _state.update { it.copy(customSystemPrompt = prompt.ifBlank { null }) }
+        prepareSession()
+    }
+
+    fun toggleCustomTool(toolId: String) {
+        _state.update {
+            val current = it.customToolIds ?: selectableTools.map { tool -> tool.id }
+            it.copy(customToolIds = if (toolId in current) current - toolId else current + toolId)
+        }
+        prepareSession()
+    }
+
+    fun toggleCustomSkill(skillId: String) {
+        _state.update {
+            val current = it.customSkillIds ?: emptyList()
+            it.copy(customSkillIds = if (skillId in current) current - skillId else current + skillId)
+        }
+        prepareSession()
     }
 
     private fun persistSelection() {
@@ -128,11 +183,57 @@ class ChatSessionManager(
         scope.launch { settings.setLastSelection(s.modelId, s.agentId) }
     }
 
+    // ----------------------------------------------------------- preparation
+
+    /**
+     * Eagerly loads the engine and (re)builds the native conversation for the current selection so
+     * the first message streams without an upfront load. Idempotent — [ModelRuntime.ensureEngine]
+     * and [ensureSession] dedupe by key/signature — and a no-op while generating. Coalesces rapid
+     * calls and re-runs once if the selection changed mid-load.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    fun prepareSession() {
+        if (prepareJob?.isActive == true) {
+            preparePending = true
+            return
+        }
+        prepareJob =
+            scope.launch {
+                do {
+                    preparePending = false
+                    try {
+                        doPrepare()
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        log.e(e) { "session prepare failed" }
+                    }
+                } while (preparePending)
+            }
+    }
+
+    private suspend fun doPrepare() {
+        if (_state.value.isGenerating) return
+        val agent = agents.byId(_state.value.agentId)
+        val model = resolveModel(agent) ?: return
+        if (!downloads.isDownloaded(model)) return
+        val effectiveModel = loadEngineWithFallback(model) ?: return
+        ensureSession(effectiveModel, agent, _state.value.conversationId)
+    }
+
+    /** The model to run for [agent] (its own model + config override) or the chat-selected model. */
+    private fun resolveModel(agent: Agent?): LlmModel? {
+        if (agent?.modelId != null) {
+            val base = models.byId(agent.modelId) ?: return null
+            return agent.modelConfig?.let { base.copy(config = it) } ?: base
+        }
+        return models.byId(_state.value.modelId)
+    }
+
     // ----------------------------------------------------------- lifecycle
 
     fun newChat() {
         stopGeneration()
-        closeSession()
         _state.update {
             it.copy(
                 conversationId = null,
@@ -142,12 +243,14 @@ class ChatSessionManager(
                 error = null,
             )
         }
+        // The native conversation is rebuilt by prepare/send: the empty history + null id give a
+        // different session signature, so ensureSession discards the old one.
+        prepareSession()
     }
 
     fun openConversation(conversationId: String) {
         val conversation = conversations.byId(conversationId) ?: return
         stopGeneration()
-        closeSession()
         scope.launch {
             val messages = conversations.loadMessages(conversationId)
             _state.update {
@@ -155,6 +258,9 @@ class ChatSessionManager(
                     conversationId = conversation.id,
                     agentId = conversation.agentId.takeIf { id -> agents.byId(id) != null },
                     modelId = models.byId(conversation.modelId)?.id ?: it.modelId,
+                    customToolIds = conversation.customToolIds,
+                    customSkillIds = conversation.customSkillIds,
+                    customSystemPrompt = conversation.customSystemPrompt,
                     messages = messages,
                     streamingText = "",
                     streamingThought = "",
@@ -162,6 +268,7 @@ class ChatSessionManager(
                 )
             }
             persistSelection()
+            prepareSession()
         }
     }
 
@@ -180,7 +287,8 @@ class ChatSessionManager(
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || _state.value.isGenerating) return
-        val model = models.byId(_state.value.modelId)
+        val agent = agents.byId(_state.value.agentId)
+        val model = resolveModel(agent)
         if (model == null) {
             _state.update { it.copy(error = ChatError.Raw("Select a model first")) }
             return
@@ -202,7 +310,7 @@ class ChatSessionManager(
                     )
                 }
                 try {
-                    runGeneration(model, trimmed)
+                    runGeneration(agent, model, trimmed)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
@@ -210,6 +318,8 @@ class ChatSessionManager(
                     _state.update { it.copy(error = ChatError.Raw(e.message ?: "Generation failed")) }
                 } finally {
                     _state.update { it.copy(isGenerating = false) }
+                    // Re-warm for the next turn (cheap: engine + session dedupe).
+                    prepareSession()
                 }
             }
     }
@@ -219,15 +329,22 @@ class ChatSessionManager(
         generateJob = null
     }
 
-    private suspend fun runGeneration(model: LlmModel, text: String) {
-        val agent = agents.byId(_state.value.agentId)
-
+    private suspend fun runGeneration(agent: Agent?, model: LlmModel, text: String) {
         val effectiveModel = loadEngineWithFallback(model) ?: return
 
-        // Conversation row (history) exists before the first token.
+        // Conversation row (history) exists before the first token. Persist per-chat customization
+        // for an agent-less chat so it survives reopen.
         val conversationId =
             _state.value.conversationId ?: run {
-                val created = conversations.create(agent?.id, effectiveModel.id)
+                val s = _state.value
+                val created =
+                    conversations.create(
+                        agentId = agent?.id,
+                        modelId = effectiveModel.id,
+                        customToolIds = if (agent == null) s.customToolIds else null,
+                        customSkillIds = if (agent == null) s.customSkillIds else null,
+                        customSystemPrompt = if (agent == null) s.customSystemPrompt else null,
+                    )
                 _state.update { it.copy(conversationId = created.id) }
                 created.id
             }
@@ -336,12 +453,24 @@ class ChatSessionManager(
             if (!completed) {
                 withContext(NonCancellable) {
                     finishAssistantMessage(conversationId, startedAt, firstTokenAt, charCount)
-                    conversations.touch(conversationId, agent?.id, model.id)
+                    touchConversation(conversationId, agent, model)
                 }
             }
             throw e
         }
-        conversations.touch(conversationId, agent?.id, model.id)
+        touchConversation(conversationId, agent, model)
+    }
+
+    private suspend fun touchConversation(conversationId: String, agent: Agent?, model: LlmModel) {
+        val s = _state.value
+        conversations.touch(
+            id = conversationId,
+            agentId = agent?.id,
+            modelId = model.id,
+            customToolIds = if (agent == null) s.customToolIds else null,
+            customSkillIds = if (agent == null) s.customSkillIds else null,
+            customSystemPrompt = if (agent == null) s.customSystemPrompt else null,
+        )
     }
 
     private suspend fun finishAssistantMessage(
@@ -393,32 +522,34 @@ class ChatSessionManager(
 
     // ----------------------------------------------------------- session
 
-    private suspend fun ensureSession(model: LlmModel, agent: Agent?, conversationId: String): Result<Unit> {
-        val skillsForAgent = effectiveSkills(agent)
-        val toolIds = effectiveToolIds(agent, skillsForAgent)
-        val signature = sessionSignatureOf(model, agent, conversationId, toolIds, skillsForAgent)
-        if (sessionHandle != null && sessionSignature == signature) return Result.success(Unit)
+    private suspend fun ensureSession(model: LlmModel, agent: Agent?, conversationId: String?): Result<Unit> =
+        sessionMutex.withLock {
+            val skillsForAgent = effectiveSkills(agent)
+            val toolIds = effectiveToolIds(agent, skillsForAgent)
+            val systemPrompt = buildSystemPrompt(agent, skillsForAgent)
+            val signature = sessionSignatureOf(model, agent, conversationId, toolIds, skillsForAgent, systemPrompt)
+            if (sessionHandle != null && sessionSignature == signature) return@withLock Result.success(Unit)
 
-        closeSession()
+            closeSession()
 
-        val history = _state.value.messages.filter { it.role != MessageRole.TOOL }
-        val config =
-            ConversationConfig(
-                systemMessage = buildSystemPrompt(agent, skillsForAgent)?.let { Message.system(it) },
-                initialMessages = historyMessages(history),
-                tools = sessionTools(toolIds, skillsForAgent),
-                samplerConfig =
-                    SamplerConfig(
-                        topK = model.config.topK,
-                        topP = model.config.topP,
-                        temperature = model.config.temperature,
-                    ),
-            )
-        return runtime.createConversation(config).map { handle ->
-            sessionHandle = handle
-            sessionSignature = signature
+            val history = _state.value.messages.filter { it.role != MessageRole.TOOL }
+            val config =
+                ConversationConfig(
+                    systemMessage = systemPrompt?.let { Message.system(it) },
+                    initialMessages = historyMessages(history),
+                    tools = sessionTools(toolIds, skillsForAgent),
+                    samplerConfig =
+                        SamplerConfig(
+                            topK = model.config.topK,
+                            topP = model.config.topP,
+                            temperature = model.config.temperature,
+                        ),
+                )
+            runtime.createConversation(config).map { handle ->
+                sessionHandle = handle
+                sessionSignature = signature
+            }
         }
-    }
 
     private fun closeSession() {
         sessionHandle?.let { runtime.closeConversation(it) }
@@ -426,17 +557,21 @@ class ChatSessionManager(
         sessionSignature = null
     }
 
-    private fun effectiveSkills(agent: Agent?): List<Skill> =
-        agent
-            ?.skillIds
-            .orEmpty()
-            .mapNotNull { skills.byId(it) }
-            .filter { it.enabled }
+    private fun effectiveSkills(agent: Agent?): List<Skill> {
+        val ids = if (agent != null) agent.skillIds else _state.value.customSkillIds.orEmpty()
+        return ids.mapNotNull { skills.byId(it) }.filter { it.enabled }
+    }
 
     private fun effectiveToolIds(agent: Agent?, skillsForAgent: List<Skill>): List<String> {
         val base =
-            agent?.toolIds
-                ?: selectableTools.map { it.id } // no agent: all globally enabled tools
+            when {
+                agent != null -> agent.toolIds
+
+                // No agent: per-chat custom selection, else all globally enabled tools.
+                _state.value.customToolIds != null -> _state.value.customToolIds.orEmpty()
+
+                else -> selectableTools.map { it.id }
+            }
         val enabled =
             base.filter { id ->
                 settings.isToolEnabled(id) && selectableTools.any { it.id == id } && id != LoadSkillTool.ID
@@ -466,12 +601,14 @@ class ChatSessionManager(
             }
         }
 
+    @Suppress("LongParameterList") // All inputs that distinguish one native session from another.
     private fun sessionSignatureOf(
         model: LlmModel,
         agent: Agent?,
-        conversationId: String,
+        conversationId: String?,
         toolIds: List<String>,
         skillsForAgent: List<Skill>,
+        systemPrompt: String?,
     ): String =
         buildString {
             append(conversationId)
@@ -481,11 +618,13 @@ class ChatSessionManager(
             append('|').append(agent?.id).append(':').append(agent?.updatedAt)
             append('|').append(toolIds.sorted().joinToString(","))
             append('|').append(skillsForAgent.joinToString(",") { "${it.id}:${it.updatedAt}" })
+            append('|').append(systemPrompt?.hashCode() ?: 0)
         }
 
     private fun buildSystemPrompt(agent: Agent?, skillsForAgent: List<Skill>): String? {
         val parts = mutableListOf<String>()
-        agent?.systemPrompt?.takeIf { it.isNotBlank() }?.let { parts += it.trim() }
+        val basePrompt = if (agent != null) agent.systemPrompt else _state.value.customSystemPrompt
+        basePrompt?.takeIf { it.isNotBlank() }?.let { parts += it.trim() }
         if (skillsForAgent.isNotEmpty()) {
             parts +=
                 buildString {

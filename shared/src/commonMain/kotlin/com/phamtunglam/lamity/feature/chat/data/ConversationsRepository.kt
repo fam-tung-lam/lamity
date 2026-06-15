@@ -13,14 +13,27 @@ interface ConversationsRepository {
 
     fun byId(id: String?): Conversation?
 
-    suspend fun create(agentId: String?, modelId: String): Conversation
+    suspend fun create(
+        agentId: String?,
+        modelId: String,
+        customToolIds: List<String>? = null,
+        customSkillIds: List<String>? = null,
+        customSystemPrompt: String? = null,
+    ): Conversation
 
     suspend fun rename(id: String, title: String)
 
     /** Sets the title from the first user message if it has not been named yet. */
     suspend fun ensureTitle(id: String, candidate: String)
 
-    suspend fun touch(id: String, agentId: String?, modelId: String)
+    suspend fun touch(
+        id: String,
+        agentId: String?,
+        modelId: String,
+        customToolIds: List<String>? = null,
+        customSkillIds: List<String>? = null,
+        customSystemPrompt: String? = null,
+    )
 
     suspend fun delete(id: String)
 

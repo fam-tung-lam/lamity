@@ -100,6 +100,7 @@ object ModelCatalog {
                 sizeBytes = 1_833_451_520,
                 requiresAuth = false,
                 supportsThinking = true,
+                supportsTools = false,
                 learnMoreUrl = "https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B",
                 config = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),
                 defaultConfig = ModelConfig(LlmBackend.GPU, 4096, 64, 0.95, 1.0),

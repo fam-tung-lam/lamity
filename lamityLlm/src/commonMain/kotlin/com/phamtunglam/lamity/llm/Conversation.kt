@@ -120,8 +120,7 @@ class Conversation internal constructor(
     }
 
     /** Number of tokens currently in the conversation KV cache. */
-    suspend fun getTokenCount(): Int =
-        withContext(Dispatchers.Default) { runtime.getTokenCount(requireHandle()) }
+    suspend fun getTokenCount(): Int = withContext(Dispatchers.Default) { runtime.getTokenCount(requireHandle()) }
 
     /** Benchmark information for this conversation (requires a benchmark-enabled engine). */
     suspend fun getBenchmarkInfo(): BenchmarkInfo =
