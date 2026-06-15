@@ -11,9 +11,12 @@ import kotlinx.serialization.modules.subclass
 @Serializable
 data object HomeKey : NavKey
 
-/** The active chat conversation (pushed from Chats / Models / new-chat). */
+/**
+ * The active chat (pushed from Chats / Models / new-chat). [conversationId] selects an existing
+ * conversation thread to open; null starts a fresh chat with the restored model/agent selection.
+ */
 @Serializable
-data object ChatKey : NavKey
+data class ChatKey(val conversationId: String? = null) : NavKey
 
 /** Home-card destinations. */
 @Serializable

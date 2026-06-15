@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phamtunglam.lamity.core.domain.platform.formatDateTime
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
-import com.phamtunglam.lamity.feature.chat.domain.ChatSessionManager
 import com.phamtunglam.lamity.feature.chat.domain.Conversation
 import com.phamtunglam.lamity.feature.history.domain.DeleteConversationUseCase
 import com.phamtunglam.lamity.feature.history.domain.ObserveConversationSummariesUseCase
@@ -22,7 +21,6 @@ class HistoryViewModel(
     observeConversationSummaries: ObserveConversationSummariesUseCase,
     private val deleteConversation: DeleteConversationUseCase,
     private val conversations: ConversationsRepository,
-    private val chat: ChatSessionManager,
 ) : ViewModel() {
     val uiState: StateFlow<HistoryUiState> =
         observeConversationSummaries()
@@ -37,12 +35,6 @@ class HistoryViewModel(
                         },
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
-
-    /** Opens [conversationId] in the chat session; the caller navigates to the chat screen. */
-    fun open(conversationId: String) = chat.openConversation(conversationId)
-
-    /** Starts a fresh chat; the caller navigates to the chat screen. */
-    fun newChat() = chat.newChat()
 
     fun rename(conversationId: String, title: String) {
         viewModelScope.launch { conversations.rename(conversationId, title) }

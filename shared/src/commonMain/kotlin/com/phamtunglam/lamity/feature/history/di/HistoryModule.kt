@@ -11,8 +11,8 @@ val historyModule: Module =
     module {
         // Domain
         factory { ObserveConversationSummariesUseCase(get()) }
-        factory { DeleteConversationUseCase(get(), get()) }
+        factory { DeleteConversationUseCase(get()) }
 
         // Presentation
-        viewModel { HistoryViewModel(get(), get(), get(), get()) }
+        viewModel { HistoryViewModel(get(), get(), get()) }
     }

@@ -52,7 +52,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ChatsScreen(onOpenChat: () -> Unit, onBack: () -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
+fun ChatsScreen(onOpenChat: (String?) -> Unit, onBack: () -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
     val ui by viewModel.uiState.collectAsState()
 
     SubScreenScaffold(title = stringResource(Res.string.chats_title), onBack = onBack) {
@@ -77,10 +77,7 @@ fun ChatsScreen(onOpenChat: () -> Unit, onBack: () -> Unit, viewModel: HistoryVi
                     items(ui.rows, key = { it.conversation.id }) { row ->
                         ConversationCard(
                             row = row,
-                            onOpen = {
-                                viewModel.open(row.conversation.id)
-                                onOpenChat()
-                            },
+                            onOpen = { onOpenChat(row.conversation.id) },
                             onRename = { viewModel.rename(row.conversation.id, it) },
                             onDelete = { viewModel.delete(row.conversation.id) },
                         )
@@ -88,10 +85,7 @@ fun ChatsScreen(onOpenChat: () -> Unit, onBack: () -> Unit, viewModel: HistoryVi
                 }
             }
             ExtendedFloatingActionButton(
-                onClick = {
-                    viewModel.newChat()
-                    onOpenChat()
-                },
+                onClick = { onOpenChat(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.new_chat)) },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),

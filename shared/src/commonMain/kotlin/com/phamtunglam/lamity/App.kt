@@ -103,10 +103,14 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>) {
                     )
                 }
                 entry<ChatsKey> {
-                    ChatsScreen(onOpenChat = { open(ChatKey) }, onBack = ::pop)
+                    ChatsScreen(onOpenChat = { conversationId -> open(ChatKey(conversationId)) }, onBack = ::pop)
                 }
-                entry<ChatKey> {
-                    ChatScreen(onBack = ::pop, onGoToModels = { open(ModelsKey) })
+                entry<ChatKey> { key ->
+                    ChatScreen(
+                        conversationId = key.conversationId,
+                        onBack = ::pop,
+                        onGoToModels = { open(ModelsKey) },
+                    )
                 }
                 entry<AgentsKey> {
                     AgentsScreen(onEditAgent = { agentId -> open(AgentEditKey(agentId)) }, onBack = ::pop)
@@ -119,7 +123,7 @@ private fun AppNavDisplay(backStack: NavBackStack<NavKey>) {
                 }
                 entry<ModelsKey> {
                     ModelsScreen(
-                        onOpenChat = { open(ChatKey) },
+                        onOpenChat = { open(ChatKey()) },
                         onBack = ::pop,
                     )
                 }

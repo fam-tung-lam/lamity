@@ -1,7 +1,6 @@
 package com.phamtunglam.lamity.feature.models.domain
 
 import com.phamtunglam.lamity.core.LamityBuildConfig
-import com.phamtunglam.lamity.feature.models.data.ModelDownloadManager
 import com.phamtunglam.lamity.feature.models.data.ModelsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -17,14 +16,14 @@ data class ModelWithStatus(
 /** Streams the model catalog enriched with download status for the models list. */
 class ObserveModelsWithStatusUseCase(
     private val models: ModelsRepository,
-    private val downloads: ModelDownloadManager,
+    private val observeStatuses: ObserveModelStatusesUseCase,
     /** HuggingFace token injected at build time; blank means gated models need one. */
     private val hfToken: String = LamityBuildConfig.hfToken,
 ) {
-    operator fun invoke(): Flow<List<ModelWithStatus>> =
+    operator fun invoke(refresh: Flow<Unit>): Flow<List<ModelWithStatus>> =
         combine(
             models.models,
-            downloads.statuses,
+            observeStatuses(refresh),
         ) { modelList, statuses ->
             modelList.map { model ->
                 ModelWithStatus(

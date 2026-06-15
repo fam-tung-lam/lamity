@@ -47,10 +47,16 @@ import com.phamtunglam.lamity.shared.resources.no_model_title
 import com.phamtunglam.lamity.shared.resources.tab_chat
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(onBack: () -> Unit, onGoToModels: () -> Unit, viewModel: ChatViewModel = koinViewModel()) {
+fun ChatScreen(
+    conversationId: String?,
+    onBack: () -> Unit,
+    onGoToModels: () -> Unit,
+    viewModel: ChatViewModel = koinViewModel { parametersOf(conversationId) },
+) {
     val ui by viewModel.uiState.collectAsState()
     val state = ui.chat
     var showSheet by remember { mutableStateOf(false) }
