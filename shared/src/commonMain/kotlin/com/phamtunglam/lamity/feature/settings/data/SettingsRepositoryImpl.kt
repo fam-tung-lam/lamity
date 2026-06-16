@@ -6,9 +6,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 
+private const val TAG = "SettingsRepository"
+
 /**
  * Settings live in the app-wide preferences DataStore, the single source of
  * truth. Reads observe the stored preferences reactively; writes go through an
@@ -26,15 +28,13 @@ import kotlinx.coroutines.flow.stateIn
  */
 class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scope: CoroutineScope) :
     SettingsRepository {
-    private val log = Logger.withTag("SettingsRepository")
-
     private val loaded = CompletableDeferred<Unit>()
 
     override val settings: StateFlow<AppSettings> =
         dataStore.data
             .map { preferences -> preferences.toAppSettings() }
             .catch { e ->
-                log.e(e) { "failed to observe settings" }
+                LamityLogger.e(TAG, e) { "failed to observe settings" }
                 emit(AppSettings())
             }.onEach { if (!loaded.isCompleted) loaded.complete(Unit) }
             .stateIn(scope, SharingStarted.Eagerly, AppSettings())
@@ -46,7 +46,7 @@ class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scop
             dataStore.edit { preferences ->
                 preferences.writeAppSettings(transform(preferences.toAppSettings()))
             }
-        }.onFailure { log.e(it) { "failed to persist settings" } }
+        }.onFailure { LamityLogger.e(TAG, it) { "failed to persist settings" } }
     }
 }
 

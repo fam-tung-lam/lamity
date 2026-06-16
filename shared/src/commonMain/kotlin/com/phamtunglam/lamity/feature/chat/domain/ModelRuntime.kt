@@ -1,11 +1,11 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.llm.Conversation
 import com.phamtunglam.lamity.llm.Engine
 import com.phamtunglam.lamity.llm.model.ConversationConfig
 import com.phamtunglam.lamity.llm.model.EngineConfig
 import com.phamtunglam.lamity.llm.model.Message
+import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,13 +21,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 
+private const val TAG = "ModelRuntime"
+
 /**
  * Developer-friendly facade over the lamityLlm [Engine]/[Conversation] API: owns the loaded engine,
  * serializes load/unload, tracks engine state, and exposes generation as a [Flow] of [GenEvent].
  * Consumers that want the full LiteRT-LM surface can use [Engine] directly.
  */
 class ModelRuntime(private val dispatcher: CoroutineDispatcher = Dispatchers.Default) {
-    private val log = Logger.withTag("ModelRuntime")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _engineState = MutableStateFlow<EngineState>(EngineState.Idle)
@@ -49,7 +50,9 @@ class ModelRuntime(private val dispatcher: CoroutineDispatcher = Dispatchers.Def
                 return Result.success(Unit)
             }
             disposeEngineLocked()
-            log.i { "loading engine for $modelId (${config.backend.name}, ${config.maxNumTokens} tokens)" }
+            LamityLogger.i(TAG) {
+                "loading engine for $modelId (${config.backend.name}, ${config.maxNumTokens} tokens)"
+            }
             _engineState.value = EngineState.Loading(modelId)
             return try {
                 val created = Engine(config)
@@ -59,7 +62,7 @@ class ModelRuntime(private val dispatcher: CoroutineDispatcher = Dispatchers.Def
                 _engineState.value = EngineState.Ready(modelId, key)
                 Result.success(Unit)
             } catch (t: Throwable) {
-                log.e { "engine load failed for $modelId: ${t.message}" }
+                LamityLogger.e(TAG) { "engine load failed for $modelId: ${t.message}" }
                 _engineState.value = EngineState.Error(modelId, t.message ?: t.toString())
                 Result.failure(t)
             }
@@ -87,7 +90,7 @@ class ModelRuntime(private val dispatcher: CoroutineDispatcher = Dispatchers.Def
             conversations[handle] = conversation
             Result.success(handle)
         } catch (t: Throwable) {
-            log.e { "createConversation failed: ${t.message}" }
+            LamityLogger.e(TAG) { "createConversation failed: ${t.message}" }
             Result.failure(t)
         }
     }

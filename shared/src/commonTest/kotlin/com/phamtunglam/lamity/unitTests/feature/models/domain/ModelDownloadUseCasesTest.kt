@@ -1,7 +1,5 @@
 package com.phamtunglam.lamity.unitTests.feature.models.domain
 
-import co.touchlab.kermit.Logger
-import co.touchlab.kermit.platformLogWriter
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadException
@@ -35,15 +33,6 @@ class ModelDownloadUseCasesTest :
         val downloader = mock<Downloader>()
 
         var lastRequest: DownloadRequest? = null
-
-        beforeSpec {
-            // Logcat is unavailable on JVM host tests; route Kermit logs nowhere.
-            Logger.setLogWriters(listOf())
-        }
-
-        afterSpec {
-            Logger.setLogWriters(platformLogWriter())
-        }
 
         beforeEach {
             every { settings.value } returns AppSettings()

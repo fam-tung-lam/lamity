@@ -29,7 +29,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.kermit)
+            // Kermit is an internal implementation detail: lamityLogger's public API
+            // exposes no Kermit types, so consumers must not depend on it transitively.
+            implementation(libs.kermit)
             implementation(libs.androidx.annotation)
         }
         commonTest.dependencies {

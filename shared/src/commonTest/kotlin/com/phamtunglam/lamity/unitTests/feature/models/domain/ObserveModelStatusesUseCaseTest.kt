@@ -1,7 +1,5 @@
 package com.phamtunglam.lamity.unitTests.feature.models.domain
 
-import co.touchlab.kermit.Logger
-import co.touchlab.kermit.platformLogWriter
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadProgress
@@ -36,14 +34,6 @@ class ObserveModelStatusesUseCaseTest :
         var fileSystem = FakeFileSystem()
         val downloader = mock<Downloader>()
         val models = mock<ModelsRepository>()
-
-        beforeSpec {
-            Logger.setLogWriters(listOf())
-        }
-
-        afterSpec {
-            Logger.setLogWriters(platformLogWriter())
-        }
 
         beforeEach {
             fileSystem = FakeFileSystem()

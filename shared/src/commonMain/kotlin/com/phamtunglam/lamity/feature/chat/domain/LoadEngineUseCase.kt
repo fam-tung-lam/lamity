@@ -1,6 +1,5 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.feature.models.data.ModelFiles
 import com.phamtunglam.lamity.feature.models.domain.LlmBackend
@@ -8,6 +7,7 @@ import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import com.phamtunglam.lamity.llm.model.Backend
 import com.phamtunglam.lamity.llm.model.EngineConfig
+import com.phamtunglam.lamity.logger.LamityLogger
 
 /** Outcome of loading the native engine for a chat turn. */
 sealed interface EngineLoad {
@@ -21,6 +21,8 @@ sealed interface EngineLoad {
     data class Failed(val error: ChatError) : EngineLoad
 }
 
+private const val TAG = "LoadEngineUseCase"
+
 /**
  * Loads the engine for [model] with the given config, transparently retrying once on the CPU backend
  * when a GPU load fails with a recoverable native error (see [shouldFallBackToCpu] — e.g. the Gemma 4
@@ -32,8 +34,6 @@ class LoadEngineUseCase(
     private val modelFiles: ModelFiles,
     private val dirs: AppDirs,
 ) {
-    private val log = Logger.withTag("LoadEngineUseCase")
-
     suspend operator fun invoke(model: LlmModel, config: ModelConfig): EngineLoad {
         val first = ensureEngine(model, config)
         if (first.isSuccess) return EngineLoad.Ready(config)
@@ -43,7 +43,7 @@ class LoadEngineUseCase(
             return EngineLoad.Failed(loadError(cause?.message))
         }
 
-        log.w { "GPU load failed for ${model.id}; retrying on CPU: ${cause?.message}" }
+        LamityLogger.w(TAG) { "GPU load failed for ${model.id}; retrying on CPU: ${cause?.message}" }
         val cpuConfig = config.copy(backend = LlmBackend.CPU)
         if (ensureEngine(model, cpuConfig).isFailure) {
             return EngineLoad.Failed(ChatError.Known(ChatErrorKind.MODEL_UNSUPPORTED_ON_DEVICE))

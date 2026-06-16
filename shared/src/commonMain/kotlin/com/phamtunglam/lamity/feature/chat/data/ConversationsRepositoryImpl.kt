@@ -1,6 +1,5 @@
 package com.phamtunglam.lamity.feature.chat.data
 
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.data.db.daos.ConversationsDao
 import com.phamtunglam.lamity.core.data.db.entities.ConversationEntity
 import com.phamtunglam.lamity.core.data.db.entities.MessageEntity
@@ -10,6 +9,7 @@ import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
 import com.phamtunglam.lamity.feature.chat.domain.Conversation
 import com.phamtunglam.lamity.feature.chat.domain.MessageRole
 import com.phamtunglam.lamity.llm.model.Role
+import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,10 +19,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 
+private const val TAG = "ConversationsRepository"
+
 /** Conversations and messages live in Room; the database is the single source of truth. */
 class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: CoroutineScope) : ConversationsRepository {
-    private val log = Logger.withTag("ConversationsRepository")
-
     private val loaded = CompletableDeferred<Unit>()
 
     override val conversations: StateFlow<List<Conversation>> =
@@ -30,7 +30,7 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
             .observeAll()
             .map { rows -> rows.map { it.toDomain() } }
             .catch { e ->
-                log.e(e) { "failed to observe conversations" }
+                LamityLogger.e(TAG, e) { "failed to observe conversations" }
                 emit(emptyList())
             }.onEach { if (!loaded.isCompleted) loaded.complete(Unit) }
             .stateIn(scope, SharingStarted.Eagerly, emptyList())
@@ -43,7 +43,7 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
         val now = epochMillis()
         val conversation = Conversation(id = newId(), title = "", createdAt = now, updatedAt = now)
         runCatching { dao.upsert(conversation.toEntity()) }
-            .onFailure { log.e(it) { "failed to persist conversation ${conversation.id}" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to persist conversation ${conversation.id}" } }
         return conversation
     }
 
@@ -51,7 +51,7 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
         // Read the row from the database so renames never race the flow cache.
         val current = runCatching { dao.byId(id) }.getOrNull() ?: return
         runCatching { dao.upsert(current.copy(title = title.trim())) }
-            .onFailure { log.e(it) { "failed to rename conversation $id" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to rename conversation $id" } }
     }
 
     override suspend fun ensureTitle(id: String, candidate: String) {
@@ -64,19 +64,19 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
                 .take(48)
                 .ifBlank { "New chat" }
         runCatching { dao.upsert(current.copy(title = title)) }
-            .onFailure { log.e(it) { "failed to title conversation $id" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to title conversation $id" } }
     }
 
     override suspend fun touch(id: String) {
         val current = runCatching { dao.byId(id) }.getOrNull() ?: return
         runCatching { dao.upsert(current.copy(updatedAt = epochMillis())) }
-            .onFailure { log.e(it) { "failed to touch conversation $id" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to touch conversation $id" } }
     }
 
     override suspend fun delete(id: String) {
         // Messages cascade-delete via the FK on MessageEntity.conversationId.
         runCatching { dao.delete(id) }
-            .onFailure { log.e(it) { "failed to delete conversation $id" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to delete conversation $id" } }
     }
 
     override suspend fun loadMessages(conversationId: String): List<ChatMessage> =
@@ -87,12 +87,12 @@ class ConversationsRepositoryImpl(private val dao: ConversationsDao, scope: Coro
                 ?.sortedBy { it.createdAt }
                 ?.map { it.toDomain() }
                 .orEmpty()
-        }.onFailure { log.e(it) { "failed to load messages for $conversationId" } }
+        }.onFailure { LamityLogger.e(TAG, it) { "failed to load messages for $conversationId" } }
             .getOrDefault(emptyList())
 
     override suspend fun appendMessage(message: ChatMessage) {
         runCatching { dao.upsertMessage(message.toEntity()) }
-            .onFailure { log.e(it) { "failed to persist message ${message.id}" } }
+            .onFailure { LamityLogger.e(TAG, it) { "failed to persist message ${message.id}" } }
     }
 }
 

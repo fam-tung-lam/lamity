@@ -1,11 +1,13 @@
 package com.phamtunglam.lamity.feature.models.data
 
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
+import com.phamtunglam.lamity.logger.LamityLogger
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+
+private const val TAG = "ModelFiles"
 
 /**
  * Resolves the on-disk location of downloaded model files and answers presence checks. Stateless and
@@ -13,11 +15,9 @@ import okio.Path.Companion.toPath
  * chat engine loader and the models screen depend on it independently of any screen lifecycle.
  */
 class ModelFiles(private val dirs: AppDirs, private val fileSystem: FileSystem) {
-    private val log = Logger.withTag("ModelFiles")
-
     init {
         runCatching { fileSystem.createDirectories(dirs.modelsDir.toPath()) }
-            .onFailure { log.w(it) { "Failed to create models directory ${dirs.modelsDir}" } }
+            .onFailure { LamityLogger.w(TAG, it) { "Failed to create models directory ${dirs.modelsDir}" } }
     }
 
     private fun modelFile(model: LlmModel): Path = dirs.modelsDir.toPath() / model.fileName
@@ -29,6 +29,6 @@ class ModelFiles(private val dirs: AppDirs, private val fileSystem: FileSystem) 
     /** Deletes the downloaded file if present. */
     fun delete(model: LlmModel) {
         runCatching { fileSystem.delete(modelFile(model)) }
-            .onFailure { log.w(it) { "Failed to delete ${model.id}" } }
+            .onFailure { LamityLogger.w(TAG, it) { "Failed to delete ${model.id}" } }
     }
 }

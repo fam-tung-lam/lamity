@@ -2,7 +2,6 @@ package com.phamtunglam.lamity.feature.chat.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
@@ -28,6 +27,7 @@ import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.skills.domain.BuiltinSkills
 import com.phamtunglam.lamity.feature.skills.domain.Skill
 import com.phamtunglam.lamity.feature.tools.domain.AppTool
+import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -57,6 +57,8 @@ data class ChatUiState(
     val skills: List<Skill> = emptyList(),
 )
 
+private const val TAG = "ChatViewModel"
+
 /**
  * Orchestrates the chat screen for its lifetime: sessions, streaming, tool events and history
  * persistence, all on [viewModelScope]. Created when the chat opens (optionally for [conversationId])
@@ -78,8 +80,6 @@ class ChatViewModel(
     private val tools: List<AppTool>,
     observeStatuses: ObserveModelStatusesUseCase,
 ) : ViewModel() {
-    private val log = Logger.withTag("ChatViewModel")
-
     /** Built-in skills shown as toggles in the settings sheet; a fixed code-defined set. */
     private val skills: List<Skill> = BuiltinSkills.all
 
@@ -232,7 +232,7 @@ class ChatViewModel(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Throwable) {
-                        log.e(e) { "session prepare failed" }
+                        LamityLogger.e(TAG, e) { "session prepare failed" }
                     }
                 } while (preparePending)
             }
@@ -319,7 +319,7 @@ class ChatViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    log.e(e) { "generation failed" }
+                    LamityLogger.e(TAG, e) { "generation failed" }
                     state.update { it.copy(error = ChatError.Raw(e.message ?: "Generation failed")) }
                 } finally {
                     state.update { it.copy(isGenerating = false) }
@@ -487,7 +487,7 @@ class ChatViewModel(
         message: String,
     ) {
         if (!hadOutput && shouldFallBackToCpu(config.backend, message)) {
-            log.w { "GPU generation failed for ${model.id}; switching to CPU: $message" }
+            LamityLogger.w(TAG) { "GPU generation failed for ${model.id}; switching to CPU: $message" }
             state.update {
                 it.copy(
                     runtimeConfig = config.copy(backend = LlmBackend.CPU),
