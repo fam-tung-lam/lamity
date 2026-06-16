@@ -1,9 +1,8 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import com.phamtunglam.lamity.feature.agents.domain.Agent
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelConfig
-import com.phamtunglam.lamity.feature.skills.data.SkillsRepository
+import com.phamtunglam.lamity.feature.skills.domain.BuiltinSkills
 import com.phamtunglam.lamity.feature.skills.domain.Skill
 import com.phamtunglam.lamity.feature.tools.domain.AppTool
 import com.phamtunglam.lamity.feature.tools.domain.LoadSkillTool
@@ -14,13 +13,12 @@ import com.phamtunglam.lamity.llm.tool.Tool
 
 /**
  * Builds the native conversation config for a chat session and a signature that distinguishes one
- * session from another. Tools and skills are sourced exclusively from the selected agent — an
- * agent-less chat runs a plain model with an optional per-chat system prompt and no tools or skills.
+ * session from another. Tools and skills are the built-ins enabled for this chat (default all), but
+ * a model that does not support tools runs as a plain model with neither — only its system prompt.
  */
 class ChatSessionFactory(
-    private val skills: SkillsRepository,
-    /** User-selectable built-in tools (everything except the per-session load_skill). */
-    private val selectableTools: List<AppTool>,
+    /** All built-in tools (everything except the per-session load_skill). */
+    private val allTools: List<AppTool>,
 ) {
     /** A built session: its [config] and the [signature] that identifies it for dedupe. */
     data class Built(val signature: String, val config: ConversationConfig)
@@ -29,22 +27,23 @@ class ChatSessionFactory(
     fun build(
         model: LlmModel,
         config: ModelConfig,
-        agent: Agent?,
+        enabledToolIds: Set<String>,
+        enabledSkillIds: Set<String>,
         conversationId: String?,
         customSystemPrompt: String?,
         history: List<ChatMessage>,
         onToolInvoked: (toolName: String, argsJson: String, resultJson: String) -> Unit,
     ): Built {
-        val skillsForAgent = effectiveSkills(agent)
-        val toolIds = effectiveToolIds(agent, skillsForAgent)
-        val systemPrompt = buildSystemPrompt(agent, customSystemPrompt, skillsForAgent)
-        val signature =
-            sessionSignatureOf(model, config, agent, conversationId, toolIds, skillsForAgent, systemPrompt)
+        val skills = effectiveSkills(model, enabledSkillIds)
+        val tools = effectiveTools(model, enabledToolIds)
+        val systemPrompt = buildSystemPrompt(customSystemPrompt, skills)
+        val toolIds = tools.map { it.id } + if (skills.isNotEmpty()) listOf(LoadSkillTool.ID) else emptyList()
+        val signature = sessionSignatureOf(model, config, conversationId, toolIds, skills, systemPrompt)
         val conversationConfig =
             ConversationConfig(
                 systemMessage = systemPrompt?.let { Message.system(it) },
                 initialMessages = historyMessages(history.filter { it.role != MessageRole.TOOL }),
-                tools = sessionTools(toolIds, skillsForAgent, onToolInvoked),
+                tools = sessionTools(tools, skills, onToolInvoked),
                 samplerConfig =
                     SamplerConfig(
                         topK = config.topK,
@@ -55,45 +54,35 @@ class ChatSessionFactory(
         return Built(signature, conversationConfig)
     }
 
-    /** Skills attached to the active agent; an agent-less chat has none. */
-    private fun effectiveSkills(agent: Agent?): List<Skill> {
-        val ids = agent?.skillIds ?: return emptyList()
-        return ids.mapNotNull { skills.byId(it) }
+    /** Enabled built-in skills; none when the model can't use tools (skills need load_skill). */
+    private fun effectiveSkills(model: LlmModel, enabledSkillIds: Set<String>): List<Skill> {
+        if (!model.supportsTools) return emptyList()
+        return BuiltinSkills.all.filter { it.id in enabledSkillIds }
     }
 
-    /** Tools attached to the active agent (plus load_skill when it has skills); none without an agent. */
-    private fun effectiveToolIds(agent: Agent?, skillsForAgent: List<Skill>): List<String> {
-        if (agent == null) return emptyList()
-        val enabled =
-            agent.toolIds.filter { id ->
-                selectableTools.any { it.id == id } && id != LoadSkillTool.ID
-            }
-        return if (skillsForAgent.isNotEmpty()) enabled + LoadSkillTool.ID else enabled
+    /** Enabled built-in tools; none when the model can't use tools. */
+    private fun effectiveTools(model: LlmModel, enabledToolIds: Set<String>): List<AppTool> {
+        if (!model.supportsTools) return emptyList()
+        return allTools.filter { it.id in enabledToolIds }
     }
 
     /**
-     * Builds the executable tools for this session in [toolIds] order, wiring each one's invocation
-     * sink to [onToolInvoked]. load_skill is created here with the session's [skillsForAgent].
+     * Builds the executable tools for this session: the enabled built-ins plus load_skill (created
+     * here with this session's [skills]) when there are any skills. Each tool's invocation sink is
+     * wired to [onToolInvoked].
      */
     private fun sessionTools(
-        toolIds: List<String>,
-        skillsForAgent: List<Skill>,
+        tools: List<AppTool>,
+        skills: List<Skill>,
         onToolInvoked: (String, String, String) -> Unit,
     ): List<Tool> =
         buildList {
-            toolIds.forEach { id ->
-                when (id) {
-                    LoadSkillTool.ID -> {
-                        add(LoadSkillTool(skillsForAgent).apply { onInvoked = onToolInvoked })
-                    }
-
-                    else -> {
-                        selectableTools.firstOrNull { it.id == id }?.let { tool ->
-                            tool.onInvoked = onToolInvoked
-                            add(tool)
-                        }
-                    }
-                }
+            tools.forEach { tool ->
+                tool.onInvoked = onToolInvoked
+                add(tool)
+            }
+            if (skills.isNotEmpty()) {
+                add(LoadSkillTool(skills).apply { onInvoked = onToolInvoked })
             }
         }
 
@@ -101,10 +90,9 @@ class ChatSessionFactory(
     private fun sessionSignatureOf(
         model: LlmModel,
         config: ModelConfig,
-        agent: Agent?,
         conversationId: String?,
         toolIds: List<String>,
-        skillsForAgent: List<Skill>,
+        skills: List<Skill>,
         systemPrompt: String?,
     ): String =
         buildString {
@@ -112,17 +100,15 @@ class ChatSessionFactory(
             append('|').append(model.id)
             append('|').append(config.backend).append(config.maxTokens)
             append('|').append(config.topK).append(config.topP).append(config.temperature)
-            append('|').append(agent?.id).append(':').append(agent?.updatedAt)
             append('|').append(toolIds.sorted().joinToString(","))
-            append('|').append(skillsForAgent.joinToString(",") { "${it.id}:${it.updatedAt}" })
+            append('|').append(skills.joinToString(",") { it.id })
             append('|').append(systemPrompt?.hashCode() ?: 0)
         }
 
-    private fun buildSystemPrompt(agent: Agent?, customSystemPrompt: String?, skillsForAgent: List<Skill>): String? {
+    private fun buildSystemPrompt(customSystemPrompt: String?, skills: List<Skill>): String? {
         val parts = mutableListOf<String>()
-        val basePrompt = if (agent != null) agent.systemPrompt else customSystemPrompt
-        basePrompt?.takeIf { it.isNotBlank() }?.let { parts += it.trim() }
-        if (skillsForAgent.isNotEmpty()) {
+        customSystemPrompt?.takeIf { it.isNotBlank() }?.let { parts += it.trim() }
+        if (skills.isNotEmpty()) {
             parts +=
                 buildString {
                     appendLine("# Skills")
@@ -130,7 +116,7 @@ class ChatSessionFactory(
                         "You have the following optional skills. Before applying a skill, " +
                             "call the load_skill tool with its exact name to get its full instructions.",
                     )
-                    for (skill in skillsForAgent) {
+                    for (skill in skills) {
                         appendLine("- ${skill.name}: ${skill.description.ifBlank { "(no description)" }}")
                     }
                 }.trim()

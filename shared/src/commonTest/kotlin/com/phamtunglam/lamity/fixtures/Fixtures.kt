@@ -1,6 +1,5 @@
 package com.phamtunglam.lamity.fixtures
 
-import com.phamtunglam.lamity.feature.agents.domain.Agent
 import com.phamtunglam.lamity.feature.chat.domain.Conversation
 import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import kotlinx.coroutines.CoroutineScope
@@ -27,13 +26,6 @@ internal fun fakeConversation(id: String = "conv-1", title: String = "First chat
         title = title,
         createdAt = 1,
         updatedAt = updatedAt,
-    )
-
-internal fun fakeAgent(id: String = "agent-1", name: String = "Researcher", modelId: String = "model-1") =
-    Agent(
-        id = id,
-        name = name,
-        modelId = modelId,
     )
 
 /** Scope sharing the test's virtual-time dispatcher, for scope-taking SUTs. */

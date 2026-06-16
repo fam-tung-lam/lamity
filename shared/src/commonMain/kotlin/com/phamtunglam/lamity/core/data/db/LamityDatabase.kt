@@ -6,22 +6,12 @@ import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.room3.TypeConverters
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.phamtunglam.lamity.core.data.db.converters.BackendConverter
 import com.phamtunglam.lamity.core.data.db.converters.RoleConverter
-import com.phamtunglam.lamity.core.data.db.daos.AgentsDao
 import com.phamtunglam.lamity.core.data.db.daos.ConversationsDao
 import com.phamtunglam.lamity.core.data.db.daos.ModelsDao
-import com.phamtunglam.lamity.core.data.db.daos.SkillsDao
-import com.phamtunglam.lamity.core.data.db.daos.ToolsDao
-import com.phamtunglam.lamity.core.data.db.entities.AgentConfigEntity
-import com.phamtunglam.lamity.core.data.db.entities.AgentEntity
-import com.phamtunglam.lamity.core.data.db.entities.AgentSkillCrossRef
-import com.phamtunglam.lamity.core.data.db.entities.AgentToolCrossRef
 import com.phamtunglam.lamity.core.data.db.entities.ConversationEntity
 import com.phamtunglam.lamity.core.data.db.entities.MessageEntity
 import com.phamtunglam.lamity.core.data.db.entities.ModelEntity
-import com.phamtunglam.lamity.core.data.db.entities.SkillEntity
-import com.phamtunglam.lamity.core.data.db.entities.ToolEntity
 import kotlinx.coroutines.Dispatchers
 
 const val LAMITY_DB_FILE_NAME = "lamity.db"
@@ -29,30 +19,19 @@ const val LAMITY_DB_FILE_NAME = "lamity.db"
 @Database(
     entities = [
         ModelEntity::class,
-        AgentEntity::class,
-        AgentConfigEntity::class,
-        SkillEntity::class,
-        ToolEntity::class,
-        AgentSkillCrossRef::class,
-        AgentToolCrossRef::class,
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    // v6: relational redesign (agent ⇄ model/config/skills/tools, conversations decoupled). The
-    // schema is rewritten from scratch; existing installs are reset via destructive migration.
-    version = 6,
+    // v7: agents/skills/tools removed. The catalog is code-defined (only custom models persist) and
+    // skills/tools are code-defined too, so only models + conversations remain. The drop of those
+    // tables can't be auto-migrated, so an upgrade resets the database (custom models are re-added).
+    version = 7,
     exportSchema = true,
 )
-@TypeConverters(RoleConverter::class, BackendConverter::class)
+@TypeConverters(RoleConverter::class)
 @ConstructedBy(LamityDatabaseConstructor::class)
 abstract class LamityDatabase : RoomDatabase() {
     abstract fun modelsDao(): ModelsDao
-
-    abstract fun agentsDao(): AgentsDao
-
-    abstract fun skillsDao(): SkillsDao
-
-    abstract fun toolsDao(): ToolsDao
 
     abstract fun conversationsDao(): ConversationsDao
 }
@@ -64,8 +43,8 @@ expect object LamityDatabaseConstructor : RoomDatabaseConstructor<LamityDatabase
 /**
  * Finishes a platform-created builder with the shared configuration. Platform code provides the
  * builder (it knows the database path / Context); this keeps driver and threading choices in one
- * place. The schema redesign can't be auto-migrated, so an upgrade from any prior version drops and
- * recreates the database (seed data is re-created on next launch).
+ * place. The schema change can't be auto-migrated, so an upgrade from any prior version drops and
+ * recreates the database (custom models are re-added by the user).
  */
 fun buildLamityDatabase(builder: RoomDatabase.Builder<LamityDatabase>): LamityDatabase =
     builder

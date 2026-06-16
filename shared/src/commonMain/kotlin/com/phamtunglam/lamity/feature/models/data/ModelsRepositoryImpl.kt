@@ -18,8 +18,7 @@ import kotlinx.coroutines.flow.stateIn
 /**
  * The model catalog: built-in seed metadata plus any custom models the user added (which live in the
  * `models` table). Models hold no persisted inference config — catalog defaults come from the seed,
- * and per-agent / agent-less config lives elsewhere. The full catalog is also materialized into the
- * `models` table at first launch (see DatabaseSeeder) so agents can reference models relationally.
+ * and the in-use config is held in memory per chat. Only custom models are persisted to the table.
  */
 class ModelsRepositoryImpl(private val dao: ModelsDao, scope: CoroutineScope) : ModelsRepository {
     private val log = Logger.withTag("ModelsRepository")

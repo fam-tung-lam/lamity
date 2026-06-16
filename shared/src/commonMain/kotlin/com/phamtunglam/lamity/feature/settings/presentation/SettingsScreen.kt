@@ -33,6 +33,8 @@ import com.phamtunglam.lamity.shared.resources.about
 import com.phamtunglam.lamity.shared.resources.downloads_section
 import com.phamtunglam.lamity.shared.resources.language
 import com.phamtunglam.lamity.shared.resources.language_system
+import com.phamtunglam.lamity.shared.resources.manage_models_desc
+import com.phamtunglam.lamity.shared.resources.models_title
 import com.phamtunglam.lamity.shared.resources.settings_title
 import com.phamtunglam.lamity.shared.resources.theme
 import com.phamtunglam.lamity.shared.resources.theme_dark
@@ -46,6 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenModels: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
     localeViewModel: LocalizationViewModel = koinViewModel(),
 ) {
@@ -58,6 +61,8 @@ fun SettingsScreen(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            ModelsSection(onOpenModels = onOpenModels)
+
             // Theme (also switchable by the set_theme tool)
             ThemeSection(selected = settings.themeMode, onSelect = viewModel::setThemeMode)
 
@@ -71,6 +76,20 @@ fun SettingsScreen(
                 osVersion = ui.platformInfo.osVersion,
                 deviceModel = ui.platformInfo.deviceModel,
                 modelsDir = ui.modelsDir,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModelsSection(onOpenModels: () -> Unit) {
+    Card(onClick = onOpenModels, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(Res.string.models_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(Res.string.manage_models_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

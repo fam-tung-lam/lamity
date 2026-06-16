@@ -1,57 +1,19 @@
 <resources>
-    <string name="tab_chat">Trò chuyện</string>
-    <string name="tab_models">Mô hình</string>
-    <string name="tab_history">Lịch sử</string>
-    <string name="tab_studio">Studio</string>
-    <string name="tab_settings">Cài đặt</string>
-
-    <!-- Home -->
+    <!-- Home / navigation -->
     <string name="settings_title">Cài đặt</string>
-    <string name="chats_title">Trò chuyện</string>
     <string name="models_title">Mô hình</string>
-    <string name="card_agents">Tác nhân</string>
-    <string name="card_agents_desc">Nhân vật với mô hình, công cụ và kỹ năng riêng</string>
-    <string name="card_skills">Kỹ năng</string>
-    <string name="card_skills_desc">Hướng dẫn tái sử dụng, tải khi cần</string>
-    <string name="card_tools">Công cụ</string>
-    <string name="card_tools_desc">Khả năng tích hợp mà mô hình có thể gọi</string>
-    <string name="card_chats">Trò chuyện</string>
-    <string name="card_chats_desc">Các cuộc trò chuyện đã lưu</string>
-    <string name="card_models">Mô hình</string>
-    <string name="card_models_desc">Tải và cấu hình mô hình trên thiết bị</string>
     <string name="open_settings">Mở cài đặt</string>
-    <string name="agents_count">tác nhân</string>
-    <string name="chats_count">cuộc trò chuyện</string>
-    <string name="models_count">mô hình</string>
+    <string name="manage_models_desc">Tải, xóa và chọn mô hình</string>
 
-    <!-- Agent wizard -->
-    <string name="step_basics">Cơ bản</string>
-    <string name="step_model">Mô hình</string>
-    <string name="step_config">Cấu hình</string>
-    <string name="step_skills">Kỹ năng</string>
-    <string name="step_tools">Công cụ</string>
-    <string name="wizard_next">Tiếp</string>
-    <string name="wizard_back">Quay lại</string>
-    <string name="agent_model">Mô hình</string>
-    <string name="model_pick_required">Chọn một mô hình</string>
-    <string name="model_no_tools">Mô hình này không hỗ trợ công cụ hoặc kỹ năng.</string>
-
-    <!-- Chat customization -->
-    <string name="customize">Tùy chỉnh</string>
-    <string name="customize_chat">Tùy chỉnh trò chuyện</string>
-    <string name="custom_system_prompt">Lời nhắc hệ thống cho cuộc trò chuyện này</string>
-    <string name="done">Xong</string>
-
+    <!-- Chat -->
     <string name="chat_placeholder">Nhắn tin…</string>
     <string name="chat_empty_title">Bắt đầu trò chuyện</string>
-    <string name="chat_empty_body">Chọn một agent và một mô hình đã tải, rồi gửi lời chào. Các lệnh gọi công cụ hiển thị ngay trong hội thoại.</string>
+    <string name="chat_empty_body">Gửi một tin nhắn để bắt đầu. Mô hình chạy hoàn toàn trên thiết bị; các lệnh gọi công cụ hiển thị ngay trong hội thoại.</string>
     <string name="no_model_title">Chưa có mô hình</string>
     <string name="no_model_body">Hãy tải một mô hình trước — mọi thứ chạy ngay trên máy.</string>
     <string name="go_to_models">Đến mục Mô hình</string>
     <string name="new_chat">Cuộc trò chuyện mới</string>
-    <string name="agent_label">Agent</string>
-    <string name="no_agent">Không dùng agent</string>
-    <string name="model_label">Mô hình</string>
+    <string name="select_model">Chọn mô hình</string>
     <string name="stop">Dừng</string>
     <string name="send">Gửi</string>
     <string name="loading_model">Đang nạp mô hình… có thể mất một lúc</string>
@@ -59,15 +21,27 @@
     <string name="tool_call_label">Gọi công cụ</string>
     <string name="dismiss">Đóng</string>
     <string name="retry">Thử lại</string>
-    <string name="notice_switched_to_cpu">Mô hình này không dùng được GPU của bạn nên hiện đang chạy trên CPU (chậm hơn). Bạn có thể thay đổi trong cài đặt của mô hình.</string>
-    <string name="error_gpu_load_failed">Không thể nạp mô hình này trên GPU của bạn. Mở cài đặt của mô hình và chuyển Backend sang CPU.</string>
+    <string name="notice_switched_to_cpu">Mô hình này không dùng được GPU của bạn nên hiện đang chạy trên CPU (chậm hơn). Bạn có thể thay đổi backend trong cài đặt trò chuyện.</string>
+    <string name="error_gpu_load_failed">Không thể nạp mô hình này trên GPU của bạn. Mở cài đặt trò chuyện và chuyển Backend sang CPU.</string>
     <string name="error_model_unsupported_on_device">Mô hình này không thể chạy trên thiết bị của bạn. Hãy thử một mô hình nhỏ hơn.</string>
 
+    <!-- Chat settings sheet -->
+    <string name="customize">Cài đặt trò chuyện</string>
+    <string name="customize_chat">Cài đặt trò chuyện</string>
+    <string name="custom_system_prompt">Lời nhắc hệ thống cho cuộc trò chuyện này</string>
+    <string name="attached_tools">Công cụ</string>
+    <string name="attached_skills">Kỹ năng</string>
+    <string name="model_no_tools">Mô hình này không hỗ trợ công cụ hoặc kỹ năng.</string>
+
+    <!-- Model config -->
+    <string name="backend">Backend</string>
+    <string name="max_tokens">Số token tối đa</string>
+    <string name="temperature">Nhiệt độ</string>
+
+    <!-- Models / downloader -->
     <string name="download">Tải về</string>
     <string name="cancel">Hủy</string>
     <string name="delete">Xóa</string>
-    <string name="configure">Cấu hình</string>
-    <string name="downloaded">Đã tải</string>
     <string name="pause">Tạm dừng</string>
     <string name="resume">Tiếp tục</string>
     <string name="paused">Đã tạm dừng</string>
@@ -80,44 +54,19 @@
     <string name="add">Thêm</string>
     <string name="delete_model_file_q">Xóa tệp mô hình đã tải khỏi thiết bị?</string>
     <string name="remove_from_catalog">Xóa khỏi danh mục</string>
-    <string name="chat_action">Trò chuyện</string>
-    <string name="needs_token">Hãy đặt token HuggingFace trong Cài đặt trước</string>
+    <string name="use_model">Dùng</string>
+    <string name="selected_label">Đang dùng</string>
+    <string name="needs_token">Cần token HuggingFace (chưa được cấu hình trong bản dựng này)</string>
 
-    <string name="model_config_title">Cấu hình mô hình</string>
-    <string name="backend">Backend</string>
-    <string name="max_tokens">Số token tối đa</string>
-    <string name="save">Lưu</string>
-    <string name="reset_defaults">Khôi phục mặc định</string>
-    <string name="config_note">Backend và số token tối đa áp dụng khi nạp lại mô hình; tham số lấy mẫu áp dụng cho cuộc trò chuyện mới.</string>
-
+    <!-- Conversations -->
     <string name="history_empty_title">Chưa có cuộc trò chuyện</string>
     <string name="history_empty_body">Hội thoại được lưu trên máy và có thể tiếp tục bất cứ lúc nào.</string>
     <string name="rename">Đổi tên</string>
     <string name="rename_conversation">Đổi tên cuộc trò chuyện</string>
     <string name="delete_conversation_q">Xóa cuộc trò chuyện này và toàn bộ tin nhắn?</string>
+    <string name="save">Lưu</string>
 
-    <string name="new_agent">Tạo agent</string>
-    <string name="new_skill">Tạo kỹ năng</string>
-    <string name="agent_name">Tên</string>
-    <string name="agent_description">Mô tả</string>
-    <string name="system_prompt">System prompt</string>
-    <string name="attached_tools">Công cụ</string>
-    <string name="attached_skills">Kỹ năng</string>
-    <string name="skill_name">Tên</string>
-    <string name="skill_description">Mô tả</string>
-    <string name="skill_instructions">Hướng dẫn (được nạp qua công cụ load_skill)</string>
-    <string name="enabled">Bật</string>
-    <string name="disabled_suffix">(tắt)</string>
-    <string name="delete_agent_q">Xóa agent này?</string>
-    <string name="delete_skill_q">Xóa kỹ năng này? Nó sẽ bị gỡ khỏi mọi agent.</string>
-    <string name="edit">Sửa</string>
-    <string name="tools_caption">Công tắc toàn cục. Công cụ bị tắt sẽ không bao giờ được cung cấp cho mô hình, kể cả khi đã gắn vào agent.</string>
-    <string name="skills_caption">Kỹ năng là các hướng dẫn có tên, được mô hình nạp khi cần qua công cụ load_skill.</string>
-    <string name="agents_caption">Agent gói system prompt cùng công cụ và kỹ năng.</string>
-    <string name="name_required">Bắt buộc nhập tên</string>
-    <string name="tools_count">công cụ</string>
-    <string name="skills_count">kỹ năng</string>
-
+    <!-- Settings -->
     <string name="theme">Giao diện</string>
     <string name="theme_light">Sáng</string>
     <string name="theme_dark">Tối</string>
@@ -129,6 +78,7 @@
     <string name="wifi_only_hint">Tệp mô hình rất lớn; tùy chọn này chỉ cho phép tải qua mạng không tính lưu lượng.</string>
     <string name="about">Giới thiệu</string>
 
+    <!-- Common -->
     <string name="back">Quay lại</string>
     <string name="confirm_delete_title">Bạn chắc chứ?</string>
 </resources>

@@ -11,14 +11,8 @@ interface ModelsDao {
     @Query("SELECT * FROM models")
     fun observeAll(): Flow<List<ModelEntity>>
 
-    @Query("SELECT * FROM models")
-    suspend fun getAll(): List<ModelEntity>
-
     @Upsert
     suspend fun upsert(entity: ModelEntity)
-
-    @Upsert
-    suspend fun upsertAll(entities: List<ModelEntity>)
 
     @Query("DELETE FROM models WHERE id = :id")
     suspend fun delete(id: String)

@@ -52,7 +52,6 @@ class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scop
 
 private val ThemeModeKey = stringPreferencesKey("theme_mode")
 private val LastModelIdKey = stringPreferencesKey("last_model_id")
-private val LastAgentIdKey = stringPreferencesKey("last_agent_id")
 private val WifiOnlyDownloadsKey = booleanPreferencesKey("wifi_only_downloads")
 
 private fun Preferences.toAppSettings() =
@@ -62,13 +61,11 @@ private fun Preferences.toAppSettings() =
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
         lastModelId = this[LastModelIdKey],
-        lastAgentId = this[LastAgentIdKey],
         wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
     )
 
 private fun MutablePreferences.writeAppSettings(settings: AppSettings) {
     this[ThemeModeKey] = settings.themeMode.name
     settings.lastModelId.let { if (it == null) remove(LastModelIdKey) else this[LastModelIdKey] = it }
-    settings.lastAgentId.let { if (it == null) remove(LastAgentIdKey) else this[LastAgentIdKey] = it }
     this[WifiOnlyDownloadsKey] = settings.wifiOnlyDownloads
 }

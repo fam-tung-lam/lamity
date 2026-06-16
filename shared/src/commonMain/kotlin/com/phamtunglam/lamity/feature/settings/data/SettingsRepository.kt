@@ -17,6 +17,5 @@ interface SettingsRepository {
 
     suspend fun setWifiOnlyDownloads(enabled: Boolean) = update { it.copy(wifiOnlyDownloads = enabled) }
 
-    suspend fun setLastSelection(modelId: String?, agentId: String?) =
-        update { it.copy(lastModelId = modelId, lastAgentId = agentId) }
+    suspend fun setLastModelId(modelId: String?) = update { it.copy(lastModelId = modelId) }
 }

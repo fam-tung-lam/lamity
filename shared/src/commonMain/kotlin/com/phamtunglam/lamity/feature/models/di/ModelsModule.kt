@@ -35,5 +35,5 @@ val modelsModule: Module =
         factory { RemoveCustomModelUseCase(get(), get(), get()) }
 
         // Presentation
-        viewModel { ModelsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        viewModel { ModelsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     }

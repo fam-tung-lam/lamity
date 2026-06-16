@@ -34,7 +34,6 @@ import com.phamtunglam.lamity.feature.models.domain.ModelStatus
 import com.phamtunglam.lamity.feature.models.domain.ModelWithStatus
 import com.phamtunglam.lamity.feature.models.presentation.ModelsViewModel
 import com.phamtunglam.lamity.shared.resources.Res
-import com.phamtunglam.lamity.shared.resources.chat_action
 import com.phamtunglam.lamity.shared.resources.confirm_delete_title
 import com.phamtunglam.lamity.shared.resources.delete
 import com.phamtunglam.lamity.shared.resources.delete_model_file_q
@@ -42,11 +41,18 @@ import com.phamtunglam.lamity.shared.resources.download
 import com.phamtunglam.lamity.shared.resources.needs_token
 import com.phamtunglam.lamity.shared.resources.remove_from_catalog
 import com.phamtunglam.lamity.shared.resources.requires_auth_label
+import com.phamtunglam.lamity.shared.resources.selected_label
+import com.phamtunglam.lamity.shared.resources.use_model
 import org.jetbrains.compose.resources.stringResource
 
 /** One catalog entry: metadata, transfer state and the actions it allows. */
 @Composable
-internal fun ModelCard(row: ModelWithStatus, viewModel: ModelsViewModel, onOpenChat: () -> Unit) {
+internal fun ModelCard(
+    row: ModelWithStatus,
+    isSelected: Boolean,
+    viewModel: ModelsViewModel,
+    onModelSelected: () -> Unit,
+) {
     val model = row.model
     var confirmDeleteFile by remember { mutableStateOf(false) }
 
@@ -62,8 +68,9 @@ internal fun ModelCard(row: ModelWithStatus, viewModel: ModelsViewModel, onOpenC
             }
             ModelCardActions(
                 row = row,
+                isSelected = isSelected,
                 viewModel = viewModel,
-                onOpenChat = onOpenChat,
+                onModelSelected = onModelSelected,
                 onDeleteFileRequest = { confirmDeleteFile = true },
             )
         }
@@ -113,18 +120,22 @@ private fun ModelCardHeader(row: ModelWithStatus, onRemoveCustom: () -> Unit) {
 @Composable
 private fun ModelCardActions(
     row: ModelWithStatus,
+    isSelected: Boolean,
     viewModel: ModelsViewModel,
-    onOpenChat: () -> Unit,
+    onModelSelected: () -> Unit,
     onDeleteFileRequest: () -> Unit,
 ) {
     val model = row.model
     when (row.status) {
         ModelStatus.Downloaded -> {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = {
-                    viewModel.selectForChat(model)
-                    onOpenChat()
-                }) { Text(stringResource(Res.string.chat_action)) }
+                Button(
+                    onClick = {
+                        viewModel.selectForChat(model)
+                        onModelSelected()
+                    },
+                    enabled = !isSelected,
+                ) { Text(stringResource(if (isSelected) Res.string.selected_label else Res.string.use_model)) }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onDeleteFileRequest) {
                     Icon(

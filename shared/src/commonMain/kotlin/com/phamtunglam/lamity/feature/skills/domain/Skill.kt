@@ -3,8 +3,8 @@ package com.phamtunglam.lamity.feature.skills.domain
 import kotlinx.serialization.Serializable
 
 /**
- * A skill: named instructions the model can pull in on demand via load_skill. A skill is only used
- * by a chat when the active agent attaches it — there is no global enabled flag.
+ * A skill: named instructions the model can pull in on demand via the load_skill tool. Skills are
+ * built-in ([BuiltinSkills]) and toggled per chat in the chat settings sheet; default all enabled.
  */
 @Serializable
 data class Skill(
@@ -12,6 +12,4 @@ data class Skill(
     val name: String,
     val description: String = "",
     val instructions: String = "",
-    val createdAt: Long = 0,
-    val updatedAt: Long = 0,
 )

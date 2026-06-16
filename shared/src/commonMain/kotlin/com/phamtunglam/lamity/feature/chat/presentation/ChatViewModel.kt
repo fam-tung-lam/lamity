@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.core.domain.platform.epochMillis
 import com.phamtunglam.lamity.core.domain.platform.newId
-import com.phamtunglam.lamity.feature.agents.data.AgentsRepository
-import com.phamtunglam.lamity.feature.agents.domain.Agent
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
 import com.phamtunglam.lamity.feature.chat.domain.ChatError
 import com.phamtunglam.lamity.feature.chat.domain.ChatMessage
@@ -27,6 +25,9 @@ import com.phamtunglam.lamity.feature.models.domain.LlmModel
 import com.phamtunglam.lamity.feature.models.domain.ModelConfig
 import com.phamtunglam.lamity.feature.models.domain.ObserveModelStatusesUseCase
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
+import com.phamtunglam.lamity.feature.skills.domain.BuiltinSkills
+import com.phamtunglam.lamity.feature.skills.domain.Skill
+import com.phamtunglam.lamity.feature.tools.domain.AppTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -35,8 +36,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,9 +49,12 @@ import kotlinx.coroutines.withContext
 
 data class ChatUiState(
     val chat: ChatSessionState = ChatSessionState(),
-    val agents: List<Agent> = emptyList(),
-    val models: List<LlmModel> = emptyList(),
+    val selectedModel: LlmModel? = null,
     val selectedModelReady: Boolean = false,
+    /** Built-in tools available to toggle in the chat settings sheet. */
+    val tools: List<AppTool> = emptyList(),
+    /** Built-in skills available to toggle in the chat settings sheet. */
+    val skills: List<Skill> = emptyList(),
 )
 
 /**
@@ -56,24 +62,34 @@ data class ChatUiState(
  * persistence, all on [viewModelScope]. Created when the chat opens (optionally for [conversationId])
  * and torn down when it closes — the warm native engine outlives it in [ModelRuntime].
  *
- * Model/agent selection is restored from settings; tools and skills come from the selected agent.
+ * The model is chosen on the Models screen (observed here from settings); tools, skills, inference
+ * config and the system prompt are toggled per chat in the settings sheet and kept in memory only.
  */
 @Suppress("TooManyFunctions") // Cohesive chat orchestrator; splitting would scatter related logic.
 class ChatViewModel(
     private val conversationId: String?,
     private val runtime: ModelRuntime,
     private val conversations: ConversationsRepository,
-    private val agents: AgentsRepository,
     private val models: ModelsRepository,
     private val settings: SettingsRepository,
     private val modelFiles: ModelFiles,
     private val loadEngine: LoadEngineUseCase,
     private val sessionFactory: ChatSessionFactory,
+    private val tools: List<AppTool>,
     observeStatuses: ObserveModelStatusesUseCase,
 ) : ViewModel() {
     private val log = Logger.withTag("ChatViewModel")
 
-    private val state = MutableStateFlow(ChatSessionState())
+    /** Built-in skills shown as toggles in the settings sheet; a fixed code-defined set. */
+    private val skills: List<Skill> = BuiltinSkills.all
+
+    private val state =
+        MutableStateFlow(
+            ChatSessionState(
+                enabledToolIds = tools.map { it.id }.toSet(),
+                enabledSkillIds = skills.map { it.id }.toSet(),
+            ),
+        )
 
     /** Tool invocations recorded during generation; persisted and shown as TOOL messages. */
     private val toolMessages = MutableSharedFlow<ChatMessage>(extraBufferCapacity = 64)
@@ -90,19 +106,16 @@ class ChatViewModel(
     val uiState: StateFlow<ChatUiState> =
         combine(
             state,
-            agents.agents,
             models.models,
             observeStatuses(flowOf(Unit)),
-        ) { chatState, agentList, modelList, _ ->
-            // The effective model is the agent's when one with a model is selected, else the chat pick.
-            val agent = agentList.firstOrNull { it.id == chatState.agentId }
-            val effectiveModelId = agent?.modelId ?: chatState.modelId
-            val selected = modelList.firstOrNull { it.id == effectiveModelId }
+        ) { chatState, modelList, _ ->
+            val selected = modelList.firstOrNull { it.id == chatState.modelId }
             ChatUiState(
                 chat = chatState,
-                agents = agentList,
-                models = modelList,
+                selectedModel = selected,
                 selectedModelReady = selected != null && modelFiles.isDownloaded(selected),
+                tools = tools,
+                skills = skills,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState(chat = state.value))
 
@@ -110,23 +123,13 @@ class ChatViewModel(
         viewModelScope.launch {
             settings.awaitLoaded()
             models.awaitLoaded()
-            agents.awaitLoaded()
-            val s = settings.value
-            state.update {
-                it.copy(
-                    agentId = s.lastAgentId.takeIf { id -> agents.byId(id) != null },
-                    modelId = (
-                        s.lastModelId.takeIf { id -> models.byId(id) != null }
-                            ?: models.models.value
-                                .firstOrNull()
-                                ?.id
-                    ),
-                )
-            }
-            state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
             conversationId?.let { loadConversation(it) }
-            // Warm the engine for the restored selection once everything has loaded.
-            prepareSession()
+            // The model is chosen on the Models screen; drive selection from settings, applying the
+            // initial value and any later change (and warming the engine each time).
+            settings.settings
+                .map { it.lastModelId }
+                .distinctUntilChanged()
+                .collect { applyModelSelection(it) }
         }
         viewModelScope.launch {
             runtime.engineState.collect { es -> state.update { it.copy(engine = es) } }
@@ -136,17 +139,6 @@ class ChatViewModel(
                 conversations.appendMessage(message)
                 state.update { it.copy(messages = it.messages + message) }
             }
-        }
-        // Re-warm when agents change; refresh a selected agent's config in case it was just edited.
-        viewModelScope.launch {
-            agents.agents
-                .drop(1)
-                .collect { _ ->
-                    if (agents.byId(state.value.agentId) != null) {
-                        state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
-                    }
-                    prepareSession()
-                }
         }
         // Re-warm when the catalog changes (e.g. a custom model was added/removed).
         viewModelScope.launch {
@@ -175,21 +167,17 @@ class ChatViewModel(
     /** Warms the engine + native conversation for the current selection. Called when the chat opens. */
     fun prepare() = prepareSession()
 
-    fun selectModel(modelId: String) {
-        if (modelId == state.value.modelId) return
+    /** Applies the model chosen on the Models screen, resetting the in-memory config to its default. */
+    private fun applyModelSelection(lastModelId: String?) {
+        val id =
+            lastModelId?.takeIf { models.byId(it) != null } ?: models.models.value
+                .firstOrNull()
+                ?.id
+        if (id == state.value.modelId) return
         stopGeneration()
-        state.update { it.copy(modelId = modelId, error = null) }
-        state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
-        persistSelection()
-        prepareSession()
-    }
-
-    fun selectAgent(agentId: String?) {
-        if (agentId == state.value.agentId) return
-        stopGeneration()
-        state.update { it.copy(agentId = agentId, error = null) }
-        state.update { it.copy(runtimeConfig = resolveDefaultConfig()) }
-        persistSelection()
+        state.update {
+            it.copy(modelId = id, runtimeConfig = models.byId(id)?.config ?: ModelConfig(), error = null)
+        }
         prepareSession()
     }
 
@@ -198,26 +186,27 @@ class ChatViewModel(
         prepareSession()
     }
 
-    /** Adjusts the in-memory inference config for an agent-less chat (not persisted). */
+    /** Adjusts the in-memory inference config for this chat (not persisted). */
     fun setRuntimeConfig(config: ModelConfig) {
         if (config == state.value.runtimeConfig) return
         state.update { it.copy(runtimeConfig = config) }
         prepareSession()
     }
 
-    private fun persistSelection() {
-        val s = state.value
-        viewModelScope.launch { settings.setLastSelection(s.modelId, s.agentId) }
+    fun toggleTool(toolId: String, enabled: Boolean) {
+        state.update {
+            val ids = if (enabled) it.enabledToolIds + toolId else it.enabledToolIds - toolId
+            it.copy(enabledToolIds = ids)
+        }
+        prepareSession()
     }
 
-    /** The effective config for the current selection: the agent's, or the chat model's catalog default. */
-    private fun resolveDefaultConfig(): ModelConfig {
-        val agent = agents.byId(state.value.agentId)
-        return if (agent != null) {
-            agent.modelConfig ?: models.byId(agent.modelId)?.config ?: ModelConfig()
-        } else {
-            models.byId(state.value.modelId)?.config ?: ModelConfig()
+    fun toggleSkill(skillId: String, enabled: Boolean) {
+        state.update {
+            val ids = if (enabled) it.enabledSkillIds + skillId else it.enabledSkillIds - skillId
+            it.copy(enabledSkillIds = ids)
         }
+        prepareSession()
     }
 
     // ----------------------------------------------------------- preparation
@@ -251,16 +240,14 @@ class ChatViewModel(
 
     private suspend fun doPrepare() {
         if (state.value.isGenerating) return
-        val agent = agents.byId(state.value.agentId)
-        val model = resolveModel(agent) ?: return
+        val model = resolveModel() ?: return
         if (!modelFiles.isDownloaded(model)) return
         val config = loadEngineOrSetError(model, state.value.runtimeConfig) ?: return
-        ensureSession(model, config, agent, state.value.conversationId)
+        ensureSession(model, config, state.value.conversationId)
     }
 
-    /** The model to run: the agent's own model, or the chat-selected model when agent-less. */
-    private fun resolveModel(agent: Agent?): LlmModel? =
-        if (agent != null) models.byId(agent.modelId) else models.byId(state.value.modelId)
+    /** The model to run: the chat-selected model. */
+    private fun resolveModel(): LlmModel? = models.byId(state.value.modelId)
 
     // ----------------------------------------------------------- lifecycle
 
@@ -283,7 +270,7 @@ class ChatViewModel(
     private suspend fun loadConversation(conversationId: String) {
         val conversation = conversations.byId(conversationId) ?: return
         val messages = conversations.loadMessages(conversationId)
-        // The model/agent selection and config stay as restored from settings; only the thread loads.
+        // The model selection and config stay as restored; only the thread loads.
         state.update {
             it.copy(
                 conversationId = conversation.id,
@@ -306,8 +293,7 @@ class ChatViewModel(
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || state.value.isGenerating) return
-        val agent = agents.byId(state.value.agentId)
-        val model = resolveModel(agent)
+        val model = resolveModel()
         if (model == null) {
             state.update { it.copy(error = ChatError.Raw("Select a model first")) }
             return
@@ -329,7 +315,7 @@ class ChatViewModel(
                     )
                 }
                 try {
-                    runGeneration(agent, model, trimmed)
+                    runGeneration(model, trimmed)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
@@ -348,7 +334,7 @@ class ChatViewModel(
         generateJob = null
     }
 
-    private suspend fun runGeneration(agent: Agent?, model: LlmModel, text: String) {
+    private suspend fun runGeneration(model: LlmModel, text: String) {
         val config = loadEngineOrSetError(model, state.value.runtimeConfig) ?: return
 
         // Conversation row (history) exists before the first token.
@@ -360,7 +346,7 @@ class ChatViewModel(
             }
         conversations.ensureTitle(conversationId, text)
 
-        ensureSession(model, config, agent, conversationId).getOrElse {
+        ensureSession(model, config, conversationId).getOrElse {
             state.update { s -> s.copy(error = ChatError.Raw(it.message ?: "Could not start conversation")) }
             return
         }
@@ -516,21 +502,18 @@ class ChatViewModel(
 
     // ----------------------------------------------------------- session
 
-    private suspend fun ensureSession(
-        model: LlmModel,
-        config: ModelConfig,
-        agent: Agent?,
-        conversationId: String?,
-    ): Result<Unit> =
+    private suspend fun ensureSession(model: LlmModel, config: ModelConfig, conversationId: String?): Result<Unit> =
         sessionMutex.withLock {
+            val s = state.value
             val built =
                 sessionFactory.build(
                     model = model,
                     config = config,
-                    agent = agent,
+                    enabledToolIds = s.enabledToolIds,
+                    enabledSkillIds = s.enabledSkillIds,
                     conversationId = conversationId,
-                    customSystemPrompt = state.value.customSystemPrompt,
-                    history = state.value.messages,
+                    customSystemPrompt = s.customSystemPrompt,
+                    history = s.messages,
                     onToolInvoked = ::recordToolInvocation,
                 )
             if (sessionHandle != null && sessionSignature == built.signature) return@withLock Result.success(Unit)

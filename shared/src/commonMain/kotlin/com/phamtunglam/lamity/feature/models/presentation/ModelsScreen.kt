@@ -31,7 +31,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ModelsScreen(onOpenChat: () -> Unit, onBack: () -> Unit, viewModel: ModelsViewModel = koinViewModel()) {
+fun ModelsScreen(onModelSelected: () -> Unit, onBack: () -> Unit, viewModel: ModelsViewModel = koinViewModel()) {
     val ui by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -45,8 +45,9 @@ fun ModelsScreen(onOpenChat: () -> Unit, onBack: () -> Unit, viewModel: ModelsVi
                 items(ui.rows, key = { it.model.id }) { row ->
                     ModelCard(
                         row = row,
+                        isSelected = row.model.id == ui.selectedModelId,
                         viewModel = viewModel,
-                        onOpenChat = onOpenChat,
+                        onModelSelected = onModelSelected,
                     )
                 }
             }

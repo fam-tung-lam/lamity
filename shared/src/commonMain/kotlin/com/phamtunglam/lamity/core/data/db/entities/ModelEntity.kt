@@ -5,9 +5,9 @@ import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 
 /**
- * Catalog or custom model row — pure metadata. Inference config is no longer stored per model: it is
- * configured per agent ([AgentConfigEntity]) or held in memory for an agent-less chat. Catalog
- * defaults come from the seed (`ModelCatalog`), not this table.
+ * A custom model row — pure metadata. Only user-added custom models are persisted here; the built-in
+ * catalog and its default inference config come from code (`ModelCatalog`), not this table. Inference
+ * config is held in memory per chat, never stored per model.
  */
 @Entity(tableName = "models")
 data class ModelEntity(
@@ -20,7 +20,7 @@ data class ModelEntity(
     @ColumnInfo(name = "requires_auth") val requiresAuth: Boolean,
     @ColumnInfo(name = "is_custom") val isCustom: Boolean,
     @ColumnInfo(name = "supports_thinking") val supportsThinking: Boolean,
-    /** Whether the model is exposed tools / skills (gates the agent-wizard steps). */
+    /** Whether the model can use tools / skills; when false the chat attaches neither. */
     @ColumnInfo(name = "supports_tools", defaultValue = "1") val supportsTools: Boolean,
     @ColumnInfo(name = "learn_more_url") val learnMoreUrl: String,
 )

@@ -16,7 +16,7 @@ val chatModule: Module =
 
         // Domain
         factory { LoadEngineUseCase(get(), get(), get()) }
-        factory { ChatSessionFactory(get(), get()) }
+        factory { ChatSessionFactory(get()) }
 
         // Presentation
         viewModel { params ->
@@ -24,12 +24,12 @@ val chatModule: Module =
                 conversationId = params.getOrNull<String>(),
                 runtime = get(),
                 conversations = get(),
-                agents = get(),
                 models = get(),
                 settings = get(),
                 modelFiles = get(),
                 loadEngine = get(),
                 sessionFactory = get(),
+                tools = get(),
                 observeStatuses = get(),
             )
         }

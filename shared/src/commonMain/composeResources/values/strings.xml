@@ -1,57 +1,20 @@
 <resources>
-    <!-- Home -->
+    <!-- Home / navigation -->
     <string name="home_title">Lamity AI</string>
     <string name="settings_title">Settings</string>
-    <string name="chats_title">Chats</string>
     <string name="models_title">Models</string>
-    <string name="card_agents">Agents</string>
-    <string name="card_agents_desc">Personas with their own model, tools and skills</string>
-    <string name="card_skills">Skills</string>
-    <string name="card_skills_desc">Reusable instructions loaded on demand</string>
-    <string name="card_tools">Tools</string>
-    <string name="card_tools_desc">Built-in capabilities the model can call</string>
-    <string name="card_chats">Chats</string>
-    <string name="card_chats_desc">Your saved conversations</string>
-    <string name="card_models">Models</string>
-    <string name="card_models_desc">Download and configure on-device models</string>
     <string name="open_settings">Open settings</string>
-
-    <!-- Agent wizard -->
-    <string name="step_basics">Basics</string>
-    <string name="step_model">Model</string>
-    <string name="step_config">Config</string>
-    <string name="step_skills">Skills</string>
-    <string name="step_tools">Tools</string>
-    <string name="wizard_next">Next</string>
-    <string name="wizard_back">Back</string>
-    <string name="agent_model">Model</string>
-    <string name="model_pick_required">Select a model</string>
-    <string name="model_no_tools">This model does not support tools or skills.</string>
-
-    <!-- Chat customization -->
-    <string name="customize">Customize</string>
-    <string name="customize_chat">Customize chat</string>
-    <string name="custom_system_prompt">System prompt for this chat</string>
-    <string name="done">Done</string>
-
-    <!-- Navigation labels -->
-    <string name="tab_chat">Chat</string>
-    <string name="tab_models">Models</string>
-    <string name="tab_history">History</string>
-    <string name="tab_studio">Studio</string>
-    <string name="tab_settings">Settings</string>
+    <string name="manage_models_desc">Download, delete and choose models</string>
 
     <!-- Chat -->
     <string name="chat_placeholder">Message…</string>
     <string name="chat_empty_title">Start chatting</string>
-    <string name="chat_empty_body">Pick an agent and a downloaded model, then say hello. Tool calls show up inline.</string>
+    <string name="chat_empty_body">Send a message to start. The model runs entirely on-device; any tool calls show up inline.</string>
     <string name="no_model_title">No model ready</string>
     <string name="no_model_body">Download a model first — everything runs on-device.</string>
     <string name="go_to_models">Go to Models</string>
     <string name="new_chat">New chat</string>
-    <string name="agent_label">Agent</string>
-    <string name="no_agent">No agent</string>
-    <string name="model_label">Model</string>
+    <string name="select_model">Select model</string>
     <string name="stop">Stop</string>
     <string name="send">Send</string>
     <string name="loading_model">Loading model… this can take a while</string>
@@ -59,16 +22,29 @@
     <string name="tool_call_label">Tool call</string>
     <string name="dismiss">Dismiss</string>
     <string name="retry">Retry</string>
-    <string name="notice_switched_to_cpu">This model couldn\'t use your GPU, so it\'s now running on CPU (slower). You can change this in the model\'s settings.</string>
-    <string name="error_gpu_load_failed">Couldn\'t load this model on your GPU. Open its settings and switch Backend to CPU.</string>
+    <string name="notice_switched_to_cpu">This model couldn\'t use your GPU, so it\'s now running on CPU (slower). You can change the backend in the chat settings.</string>
+    <string name="error_gpu_load_failed">Couldn\'t load this model on your GPU. Open the chat settings and switch Backend to CPU.</string>
     <string name="error_model_unsupported_on_device">This model can\'t run on your device. Try a smaller model.</string>
+
+    <!-- Chat settings sheet -->
+    <string name="customize">Chat settings</string>
+    <string name="customize_chat">Chat settings</string>
+    <string name="custom_system_prompt">System prompt for this chat</string>
+    <string name="attached_tools">Tools</string>
+    <string name="attached_skills">Skills</string>
+    <string name="model_no_tools">This model does not support tools or skills.</string>
+
+    <!-- Model config -->
+    <string name="backend">Backend</string>
+    <string name="max_tokens">Max tokens</string>
+    <string name="top_k">Top-K</string>
+    <string name="top_p">Top-P</string>
+    <string name="temperature">Temperature</string>
 
     <!-- Models / downloader -->
     <string name="download">Download</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
-    <string name="configure">Configure</string>
-    <string name="downloaded">Downloaded</string>
     <string name="pause">Pause</string>
     <string name="resume">Resume</string>
     <string name="paused">Paused</string>
@@ -81,55 +57,17 @@
     <string name="add">Add</string>
     <string name="delete_model_file_q">Delete the downloaded file from this device?</string>
     <string name="remove_from_catalog">Remove from catalog</string>
-    <string name="chat_action">Chat</string>
-    <string name="needs_token">Set your HuggingFace token in Settings first</string>
+    <string name="use_model">Use</string>
+    <string name="selected_label">Selected</string>
+    <string name="needs_token">Needs a HuggingFace token (not configured in this build)</string>
 
-    <!-- Model config -->
-    <string name="model_config_title">Model configuration</string>
-    <string name="backend">Backend</string>
-    <string name="max_tokens">Max tokens</string>
-    <string name="top_k">Top-K</string>
-    <string name="top_p">Top-P</string>
-    <string name="temperature">Temperature</string>
-    <string name="save">Save</string>
-    <string name="reset_defaults">Reset to defaults</string>
-    <string name="config_note">Backend and max tokens apply when the model is (re)loaded; sampling applies to new chats.</string>
-
-    <!-- History -->
+    <!-- Conversations -->
     <string name="history_empty_title">No conversations yet</string>
     <string name="history_empty_body">Conversations are stored on-device and can be resumed any time.</string>
     <string name="rename">Rename</string>
     <string name="rename_conversation">Rename conversation</string>
     <string name="delete_conversation_q">Delete this conversation and its messages?</string>
-
-    <!-- Studio -->
-    <string name="agents_tab">Agents</string>
-    <string name="skills_tab">Skills</string>
-    <string name="tools_tab">Tools</string>
-    <string name="new_agent">New agent</string>
-    <string name="new_skill">New skill</string>
-    <string name="agent_name">Name</string>
-    <string name="agent_description">Description</string>
-    <string name="system_prompt">System prompt</string>
-    <string name="attached_tools">Tools</string>
-    <string name="attached_skills">Skills</string>
-    <string name="skill_name">Name</string>
-    <string name="skill_description">Description</string>
-    <string name="skill_instructions">Instructions (loaded via the load_skill tool)</string>
-    <string name="enabled">Enabled</string>
-    <string name="disabled_suffix">(off)</string>
-    <string name="delete_agent_q">Delete this agent?</string>
-    <string name="delete_skill_q">Delete this skill? It will be detached from all agents.</string>
-    <string name="edit">Edit</string>
-    <string name="tools_caption">Global switches. A disabled tool is never exposed to the model, even when attached to an agent.</string>
-    <string name="skills_caption">Skills are named instructions the model loads on demand with the load_skill tool.</string>
-    <string name="agents_caption">An agent bundles a system prompt with tools and skills.</string>
-    <string name="name_required">Name is required</string>
-    <string name="tools_count">tools</string>
-    <string name="skills_count">skills</string>
-    <string name="agents_count">agents</string>
-    <string name="chats_count">chats</string>
-    <string name="models_count">models</string>
+    <string name="save">Save</string>
 
     <!-- Settings -->
     <string name="theme">Theme</string>

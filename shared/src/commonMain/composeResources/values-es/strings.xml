@@ -1,57 +1,19 @@
 <resources>
-    <string name="tab_chat">Chat</string>
-    <string name="tab_models">Modelos</string>
-    <string name="tab_history">Historial</string>
-    <string name="tab_studio">Estudio</string>
-    <string name="tab_settings">Ajustes</string>
-
-    <!-- Home -->
+    <!-- Home / navigation -->
     <string name="settings_title">Ajustes</string>
-    <string name="chats_title">Chats</string>
     <string name="models_title">Modelos</string>
-    <string name="card_agents">Agentes</string>
-    <string name="card_agents_desc">Personajes con su propio modelo, herramientas y habilidades</string>
-    <string name="card_skills">Habilidades</string>
-    <string name="card_skills_desc">Instrucciones reutilizables cargadas bajo demanda</string>
-    <string name="card_tools">Herramientas</string>
-    <string name="card_tools_desc">Capacidades integradas que el modelo puede invocar</string>
-    <string name="card_chats">Chats</string>
-    <string name="card_chats_desc">Tus conversaciones guardadas</string>
-    <string name="card_models">Modelos</string>
-    <string name="card_models_desc">Descarga y configura modelos en el dispositivo</string>
     <string name="open_settings">Abrir ajustes</string>
-    <string name="agents_count">agentes</string>
-    <string name="chats_count">chats</string>
-    <string name="models_count">modelos</string>
+    <string name="manage_models_desc">Descarga, elimina y elige modelos</string>
 
-    <!-- Agent wizard -->
-    <string name="step_basics">Básico</string>
-    <string name="step_model">Modelo</string>
-    <string name="step_config">Configuración</string>
-    <string name="step_skills">Habilidades</string>
-    <string name="step_tools">Herramientas</string>
-    <string name="wizard_next">Siguiente</string>
-    <string name="wizard_back">Atrás</string>
-    <string name="agent_model">Modelo</string>
-    <string name="model_pick_required">Selecciona un modelo</string>
-    <string name="model_no_tools">Este modelo no admite herramientas ni habilidades.</string>
-
-    <!-- Chat customization -->
-    <string name="customize">Personalizar</string>
-    <string name="customize_chat">Personalizar chat</string>
-    <string name="custom_system_prompt">Mensaje de sistema para este chat</string>
-    <string name="done">Listo</string>
-
+    <!-- Chat -->
     <string name="chat_placeholder">Mensaje…</string>
     <string name="chat_empty_title">Empieza a chatear</string>
-    <string name="chat_empty_body">Elige un agente y un modelo descargado, y saluda. Las llamadas a herramientas aparecen en línea.</string>
+    <string name="chat_empty_body">Envía un mensaje para empezar. El modelo se ejecuta en el dispositivo; las llamadas a herramientas aparecen en línea.</string>
     <string name="no_model_title">Sin modelo listo</string>
     <string name="no_model_body">Descarga primero un modelo: todo se ejecuta en el dispositivo.</string>
     <string name="go_to_models">Ir a Modelos</string>
     <string name="new_chat">Nuevo chat</string>
-    <string name="agent_label">Agente</string>
-    <string name="no_agent">Sin agente</string>
-    <string name="model_label">Modelo</string>
+    <string name="select_model">Seleccionar modelo</string>
     <string name="stop">Detener</string>
     <string name="send">Enviar</string>
     <string name="loading_model">Cargando modelo… puede tardar</string>
@@ -59,15 +21,27 @@
     <string name="tool_call_label">Herramienta</string>
     <string name="dismiss">Cerrar</string>
     <string name="retry">Reintentar</string>
-    <string name="notice_switched_to_cpu">Este modelo no pudo usar tu GPU, así que ahora se ejecuta en la CPU (más lento). Puedes cambiarlo en los ajustes del modelo.</string>
-    <string name="error_gpu_load_failed">No se pudo cargar este modelo en tu GPU. Abre sus ajustes y cambia el backend a CPU.</string>
+    <string name="notice_switched_to_cpu">Este modelo no pudo usar tu GPU, así que ahora se ejecuta en la CPU (más lento). Puedes cambiar el backend en los ajustes del chat.</string>
+    <string name="error_gpu_load_failed">No se pudo cargar este modelo en tu GPU. Abre los ajustes del chat y cambia el backend a CPU.</string>
     <string name="error_model_unsupported_on_device">Este modelo no puede ejecutarse en tu dispositivo. Prueba con un modelo más pequeño.</string>
 
+    <!-- Chat settings sheet -->
+    <string name="customize">Ajustes del chat</string>
+    <string name="customize_chat">Ajustes del chat</string>
+    <string name="custom_system_prompt">Mensaje de sistema para este chat</string>
+    <string name="attached_tools">Herramientas</string>
+    <string name="attached_skills">Habilidades</string>
+    <string name="model_no_tools">Este modelo no admite herramientas ni habilidades.</string>
+
+    <!-- Model config -->
+    <string name="backend">Backend</string>
+    <string name="max_tokens">Tokens máx.</string>
+    <string name="temperature">Temperatura</string>
+
+    <!-- Models / downloader -->
     <string name="download">Descargar</string>
     <string name="cancel">Cancelar</string>
     <string name="delete">Eliminar</string>
-    <string name="configure">Configurar</string>
-    <string name="downloaded">Descargado</string>
     <string name="pause">Pausar</string>
     <string name="resume">Reanudar</string>
     <string name="paused">En pausa</string>
@@ -80,47 +54,19 @@
     <string name="add">Añadir</string>
     <string name="delete_model_file_q">¿Eliminar el archivo descargado del dispositivo?</string>
     <string name="remove_from_catalog">Quitar del catálogo</string>
-    <string name="chat_action">Chatear</string>
-    <string name="needs_token">Configura tu token de HuggingFace en Ajustes</string>
+    <string name="use_model">Usar</string>
+    <string name="selected_label">Seleccionado</string>
+    <string name="needs_token">Necesita un token de HuggingFace (no configurado en esta compilación)</string>
 
-    <string name="model_config_title">Configuración del modelo</string>
-    <string name="backend">Backend</string>
-    <string name="max_tokens">Tokens máx.</string>
-    <string name="save">Guardar</string>
-    <string name="reset_defaults">Restablecer</string>
-    <string name="config_note">Backend y tokens máx. se aplican al (re)cargar el modelo; el muestreo, a los chats nuevos.</string>
-
+    <!-- Conversations -->
     <string name="history_empty_title">Aún no hay conversaciones</string>
     <string name="history_empty_body">Las conversaciones se guardan en el dispositivo y pueden retomarse.</string>
     <string name="rename">Renombrar</string>
     <string name="rename_conversation">Renombrar conversación</string>
     <string name="delete_conversation_q">¿Eliminar esta conversación y sus mensajes?</string>
+    <string name="save">Guardar</string>
 
-    <string name="agents_tab">Agentes</string>
-    <string name="skills_tab">Habilidades</string>
-    <string name="tools_tab">Herramientas</string>
-    <string name="new_agent">Nuevo agente</string>
-    <string name="new_skill">Nueva habilidad</string>
-    <string name="agent_name">Nombre</string>
-    <string name="agent_description">Descripción</string>
-    <string name="system_prompt">System prompt</string>
-    <string name="attached_tools">Herramientas</string>
-    <string name="attached_skills">Habilidades</string>
-    <string name="skill_name">Nombre</string>
-    <string name="skill_description">Descripción</string>
-    <string name="skill_instructions">Instrucciones (se cargan con load_skill)</string>
-    <string name="enabled">Activada</string>
-    <string name="disabled_suffix">(off)</string>
-    <string name="delete_agent_q">¿Eliminar este agente?</string>
-    <string name="delete_skill_q">¿Eliminar esta habilidad? Se quitará de todos los agentes.</string>
-    <string name="edit">Editar</string>
-    <string name="tools_caption">Interruptores globales. Una herramienta desactivada nunca se expone al modelo.</string>
-    <string name="skills_caption">Las habilidades son instrucciones con nombre que el modelo carga con load_skill.</string>
-    <string name="agents_caption">Un agente combina un system prompt con herramientas y habilidades.</string>
-    <string name="name_required">El nombre es obligatorio</string>
-    <string name="tools_count">herramientas</string>
-    <string name="skills_count">habilidades</string>
-
+    <!-- Settings -->
     <string name="theme">Tema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
@@ -132,6 +78,7 @@
     <string name="wifi_only_hint">Los modelos son archivos grandes; esto limita las descargas a redes sin límite de datos.</string>
     <string name="about">Acerca de</string>
 
+    <!-- Common -->
     <string name="back">Atrás</string>
     <string name="confirm_delete_title">¿Seguro?</string>
 </resources>

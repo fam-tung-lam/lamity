@@ -13,18 +13,25 @@ import com.phamtunglam.lamity.feature.models.domain.RemoveCustomModelUseCase
 import com.phamtunglam.lamity.feature.models.domain.ResumeModelDownloadUseCase
 import com.phamtunglam.lamity.feature.models.domain.SelectModelForChatUseCase
 import com.phamtunglam.lamity.feature.models.domain.StartModelDownloadUseCase
+import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class ModelsUiState(val rows: List<ModelWithStatus> = emptyList())
+data class ModelsUiState(
+    val rows: List<ModelWithStatus> = emptyList(),
+    /** The model currently selected for chatting (shows a "Selected" badge). */
+    val selectedModelId: String? = null,
+)
 
 class ModelsViewModel(
     observeModelsWithStatus: ObserveModelsWithStatusUseCase,
+    settings: SettingsRepository,
     private val removeCustomModelUseCase: RemoveCustomModelUseCase,
     private val models: ModelsRepository,
     private val startDownloadUseCase: StartModelDownloadUseCase,
@@ -38,9 +45,12 @@ class ModelsViewModel(
     private val filesChanged = MutableStateFlow(0)
 
     val uiState: StateFlow<ModelsUiState> =
-        observeModelsWithStatus(filesChanged.map { })
-            .map { ModelsUiState(rows = it) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ModelsUiState())
+        combine(
+            observeModelsWithStatus(filesChanged.map { }),
+            settings.settings,
+        ) { rows, appSettings ->
+            ModelsUiState(rows = rows, selectedModelId = appSettings.lastModelId)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ModelsUiState())
 
     fun download(model: LlmModel) {
         viewModelScope.launch { startDownloadUseCase(model) }
@@ -76,7 +86,7 @@ class ModelsViewModel(
         }
     }
 
-    /** Selects [model] for chatting; the caller navigates to the chat screen. */
+    /** Selects [model] as the chat model; the caller navigates back to where it opened the screen. */
     fun selectForChat(model: LlmModel) {
         viewModelScope.launch { selectModelForChatUseCase(model) }
     }

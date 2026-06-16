@@ -11,8 +11,8 @@ import kotlinx.serialization.json.putJsonObject
 /**
  * Base for the app's built-in tools. It implements the LiteRT-LM [Tool] contract directly, so an
  * instance can be passed straight into a [com.phamtunglam.lamity.llm.model.ConversationConfig], and it
- * additionally carries the [id]/[displayName]/[description] the Studio UI needs to list and toggle
- * tools.
+ * additionally carries the [id]/[displayName]/[description] the chat settings sheet needs to list and
+ * toggle tools.
  *
  * Subclasses implement [perform]; this base assembles the OpenAI-style function schema, converts any
  * thrown error into a result the model can read, and forwards each completed call to [onInvoked] so

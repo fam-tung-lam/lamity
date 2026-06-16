@@ -13,10 +13,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,27 +38,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.ConfirmDialog
 import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
-import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.cancel
-import com.phamtunglam.lamity.shared.resources.chats_title
 import com.phamtunglam.lamity.shared.resources.confirm_delete_title
 import com.phamtunglam.lamity.shared.resources.delete
 import com.phamtunglam.lamity.shared.resources.delete_conversation_q
 import com.phamtunglam.lamity.shared.resources.history_empty_body
 import com.phamtunglam.lamity.shared.resources.history_empty_title
+import com.phamtunglam.lamity.shared.resources.home_title
 import com.phamtunglam.lamity.shared.resources.new_chat
+import com.phamtunglam.lamity.shared.resources.open_settings
 import com.phamtunglam.lamity.shared.resources.rename
 import com.phamtunglam.lamity.shared.resources.rename_conversation
 import com.phamtunglam.lamity.shared.resources.save
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/** App home: the conversation list, a new-chat FAB and a settings gear in the app bar. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatsScreen(onOpenChat: (String?) -> Unit, onBack: () -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
+fun ChatsScreen(
+    onOpenChat: (String?) -> Unit,
+    onOpenSettings: () -> Unit,
+    viewModel: HistoryViewModel = koinViewModel(),
+) {
     val ui by viewModel.uiState.collectAsState()
 
-    SubScreenScaffold(title = stringResource(Res.string.chats_title), onBack = onBack) {
+    Column(Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text(stringResource(Res.string.home_title)) },
+            actions = {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.open_settings))
+                }
+            },
+        )
         Box(Modifier.fillMaxSize()) {
             if (ui.rows.isEmpty()) {
                 Column(
