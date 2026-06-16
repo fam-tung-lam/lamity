@@ -19,6 +19,26 @@ Licensed under the [MIT License](LICENSE).
 
 ---
 
+## See it in action
+
+On-device streaming chat with live tool calls, and multi-gigabyte model downloads
+that keep running in the background — both driven entirely by shared Kotlin.
+
+<div align="center">
+  <table>
+    <tr>
+      <th>On-device chat &amp; tool calls</th>
+      <th>Background model downloads</th>
+    </tr>
+    <tr>
+      <td><img alt="Streaming chat with inline tool-call cards" src="docs/assets/chat_demo.gif" width="320"/></td>
+      <td><img alt="Background model download with pause/resume, speed and ETA" src="docs/assets/download_demo.gif" width="320"/></td>
+    </tr>
+  </table>
+</div>
+
+---
+
 ## What "the proper way" looks like here
 
 These are the decisions worth copying — each is demonstrated end-to-end in the codebase:
