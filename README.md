@@ -1,54 +1,97 @@
-# Lamity AI
+# Lamity
 
-A Kotlin Multiplatform (Android + iOS) on-device AI chat app built on
-[Google LiteRT-LM](https://ai.google.dev/edge/litert-lm), modeled after the
-[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery). All UI and
-business logic is shared with Compose Multiplatform; inference runs fully
-on-device through the LiteRT-LM Kotlin API (Android) and Swift API (iOS).
+**An open-source reference implementation for integrating an on-device LLM into a
+Kotlin Multiplatform app — the proper way.**
 
-## Features
+Lamity is a complete, production-shaped Android + iOS chat app whose inference runs
+**fully on-device** through [Google LiteRT-LM](https://developers.google.com/edge/litert-lm/),
+with all UI and business logic shared via Compose Multiplatform. It is published as a
+learning resource: a worked example you can read, copy, and adapt — not a product.
 
-1. **Model catalog** — curated `.litertlm` models from the HuggingFace
-   [litert-community](https://huggingface.co/litert-community) (Qwen2.5 1.5B,
-   Gemma 3 1B, Gemma 4 E2B/E4B/12B, DeepSeek-R1 Distill 1.5B with visible
-   thinking, FunctionGemma 270M), plus custom models by URL.
-2. **Background downloads** — WorkManager (Android) / background URLSession
-   (iOS) transfers that survive app death, with pause/resume (HTTP Range /
-   resume data), live speed + ETA, optional SHA-256 verification, a progress
-   notification on Android, an optional Wi-Fi-only restriction, and
-   HuggingFace token support for gated models (the token is only ever sent to
+Licensed under the [MIT License](LICENSE).
+
+|               |                                                                          |
+|---------------|--------------------------------------------------------------------------|
+| **Platforms** | Android (Kotlin/JVM) · iOS (Kotlin/Native)                               |
+| **UI**        | Compose Multiplatform (100% shared)                                      |
+| **Inference** | LiteRT-LM `0.13.1`, fully on-device — no server, no network at chat time |
+| **Language**  | Kotlin `2.4.0`                                                           |
+
+---
+
+## What "the proper way" looks like here
+
+These are the decisions worth copying — each is demonstrated end-to-end in the codebase:
+
+- **One idiomatic Kotlin API over the native runtime.** [`lamityLlm`](lamityLlm/) wraps
+  LiteRT-LM behind coroutines and `Flow` — no native callbacks, no platform types leak to
+  callers. The *same* `commonMain` code drives Android (the `litertlm` AAR) and iOS
+  (Kotlin/Native cinterop straight to the CLiteRTLM C API). **This module is the heart of
+  the project — [start with its README](lamityLlm/README.md).**
+- **The chat logic lives in common Kotlin.** The multi-turn tool-calling loop, message
+  merging, and JSON wire format are platform-agnostic. The native runtimes only surface
+  one streamed turn at a time; they never execute tools. So a `set_theme` tool call
+  changes the UI identically on both OSes.
+- **Streaming with real cancellation.** Generation is a cold `Flow`; cancelling the
+  collecting coroutine tears down the native turn through structured concurrency.
+- **Downloads that survive app death.** Multi-gigabyte model files transfer via
+  WorkManager (Android) and a background `URLSession` (iOS) — with pause/resume, live
+  speed/ETA, optional SHA-256 verification, and a Wi-Fi-only switch. See
+  [`lamityDownloader`](lamityDownloader/README.md).
+- **Strict module boundaries and a `data / domain / presentation` split** per feature,
+  wired with Koin, persisted with Room KMP, logged through one Kermit facade, and reported
+  through a single crash-reporter facade.
+
+---
+
+## What it does
+
+A focused chat app — four screens (Chats → Chat → Models → Settings), stack navigation:
+
+1. **On-device chat** — streaming responses, stop-generation, per-message throughput
+   (≈ tok/s), a thinking panel for reasoning models, and inline tool-call cards. Resumed
+   conversations are replayed natively via LiteRT-LM `initialMessages`.
+2. **Model catalog** — curated `.litertlm` models from the HuggingFace
+   [litert-community](https://huggingface.co/litert-community), plus custom models by URL:
+    - *Qwen2.5 1.5B Instruct* — solid all-rounder, good tool calling, no token needed
+    - *Gemma 3 1B IT* — small & fast, gated (HuggingFace token required)
+    - *Gemma 4 E2B / E4B / 12B* — increasing quality, increasing device demands
+    - *DeepSeek R1 Distill 1.5B* — streams its reasoning before answering
+    - *FunctionGemma 270M* — tiny function-calling demo (CPU), quick 290 MB test
+3. **Background downloads** — survive app death; pause/resume (HTTP Range / resume data),
+   live speed + ETA, optional SHA-256 verification, Android progress notification, Wi-Fi-only
+   restriction, and HuggingFace token support for gated models (the token is only sent to
    trusted hosts, never to redirect targets).
-3. **Chat** — streaming responses, stop generation, per-message stats
-   (≈ tok/s), thinking panel for reasoning models, inline tool-call cards.
-4. **Built-in tools** (global on/off switches): `get_current_time`,
-   `calculate`, `set_theme`, `set_language` (en/vi/es — changes the app UI
-   live), `random_number`, `device_info`.
-5. **Skills** — create/edit/delete/enable/disable named instruction sets.
-   Skills use Claude-style progressive disclosure: the system prompt only
-   advertises name + description and the model pulls full instructions through
-   the implicit `load_skill` tool.
-6. **Agents** — name, description, system prompt, plus many-to-many
-   attachments of tools and skills (sample agents/skills are seeded).
-7. **Model configuration** — per-model backend (CPU/GPU), max tokens, top-K,
-   top-P, temperature.
-8. **Conversation history** — Room-persisted on-device, resume/rename/delete.
-   Resumed chats are replayed natively via `initialMessages` on both platforms.
-9. **Crash reporting** — Sentry KMP behind a `CrashReporter` facade; Kermit
-   logs become breadcrumbs. Blank DSN = fully disabled.
+4. **Built-in tools** (per-chat on/off toggles): `get_current_time`, `calculate`,
+   `set_theme`, `set_language` (en/vi/es — changes the app UI live), `random_number`,
+   `device_info`.
+5. **Built-in skills** with Claude-style progressive disclosure — the system prompt only
+   advertises name + description; the model pulls full instructions through the implicit
+   `load_skill` tool. Ships *Haiku Mode* and *Step-by-step Math*, toggled per chat.
+6. **Per-chat customization** — inference parameters (backend, max tokens, top-K, top-P,
+   temperature), an optional system prompt, and tool/skill toggles, held in-memory for that
+   chat.
+7. **Conversation history** — Room-persisted on-device; resume, rename, delete.
+8. **Runtime i18n & theming** — English / Tiếng Việt / Español and light/dark/system,
+   switchable live (including by the model via `set_language` / `set_theme`).
+9. **Crash reporting** — Sentry KMP behind a `CrashReporter` facade; Kermit logs become
+   breadcrumbs. A blank DSN fully disables it.
 
-## Module map
+---
+
+## Architecture
+
+### Modules
 
 ```
 androidApp/            Android entry point (Application, MainActivity, manifest)
-iosApp/                Xcode project (SwiftUI entry, Swift bridges, vendored LiteRT-LM package)
-  iosApp/Llm/            LiteRT-LM Swift bridge + tool structs
+iosApp/                Xcode project (SwiftUI entry + background-download Swift bridge)
   iosApp/Downloader/     Background-URLSession downloader bridge + AppDelegate wiring
-shared/                App logic + Compose UI (builds the iOS "Shared" framework)
-lamityLlm/             LiteRT-LM abstraction (NativeLlmBridge contract, ModelRuntime)
-lamityDownloader/      Background file downloads (WorkManager / URLSession bridge)
-lamityDb/              Room KMP database (entities/, daos/)
-lamityFileSystem/      Per-platform file system (LamityFileSystem facade, LamityPath)
-lamityCrashReporter/   Sentry KMP facade (CrashReporter, breadcrumb log writer)
+  iosApp/LiteRTLM/       Vendored SPM package — pins the prebuilt CLiteRTLM.xcframework (v0.13.1)
+shared/                All app logic + Compose UI (also builds the iOS "Shared" framework)
+lamityLlm/             Idiomatic KMP wrapper over LiteRT-LM — the integration reference (own README)
+lamityDownloader/      Background file downloads: WorkManager / URLSession (own README)
+lamityCrashReporter/   Sentry KMP facade (CrashReporter + breadcrumb log writer)
 lamityLogger/          Kermit re-export so every module logs the same way
 ```
 
@@ -56,48 +99,65 @@ lamityLogger/          Kermit re-export so every module logs the same way
 
 ```
 com/phamtunglam/lamity/
-  App.kt               Compose root: theme + strings + bottom-tab navigation
-  LamityConfig.kt      App-level config (Sentry DSN, crash-reporter setup)
-  navigation/          Navigation 3 keys + saved-state registration
-  di/                  Koin modules (appModule + expect/actual platformModule)
+  App.kt                 Compose root: theme + locale + Navigation 3 stack
   core/
-    designsystem/      theme/ (Color, Theme, Shape, Type, CustomColors) + components/ + Formatters
-    i18n/              Strings model + per-language bundles (en/vi/es), runtime-switchable
-    platform/          AppDirs, PlatformInfo, BuildInfo, ids/time (expect/actual)
-    tools/             Built-in tool specs, registry and dispatcher
+    data/                Room KMP DB (db/: entities, daos, relations) + PreferenceDataStore + logging
+    di/                  Koin modules (appModule + db + expect/actual platform)
+    domain/platform/     AppDirs, PlatformInfo, time/ids (expect/actual)
+    presentation/        designSystem/ (theme + reusable components) + navigation/ (Nav3 keys)
+    LamityBuildConfig.kt App-level build config (e.g. crash-reporter DSN, default HF token)
   feature/
-    chat/              data/ (conversations repo) domain/ (session manager) presentation/ (+components/)
-    models/            data/ (download manager, status mapper) domain/ (catalog) presentation/ (+components/)
-    history/           presentation/ (conversation list)
-    studio/            data/ domain/ presentation/ (agents, skills, tool switches)
-    settings/          data/ domain/ presentation/
+    chat/                data / domain (session factory + state) / presentation (+components/)
+    history/             domain / presentation — the chats list, which is the app home
+    models/              data / domain (catalog + download use cases) / presentation (+components/)
+    settings/            data / domain / presentation
+    localization/        data / domain / presentation — runtime en/vi/es switching
+    skills/              domain — code-defined BuiltinSkills, per-chat toggles
+    tools/               domain (built-in tools + Calculator) + di
 ```
 
-Each feature follows the same `data / domain / presentation` split; reusable
-UI lives in `core/designsystem`, screen-specific composables in the feature's
+Each feature keeps the same `data / domain / presentation` split; cross-feature UI lives in
+`core/presentation/designSystem`, screen-specific composables in each feature's
 `presentation/components/`.
 
 ### Platform boundaries
 
-Two Kotlin interfaces are implemented in Swift (exported in the `Shared`
-framework header); everything else is common code:
+Almost everything is common code. The LLM runtime is bound **in Kotlin on both platforms**,
+so the only remaining Kotlin↔Swift bridge is the iOS background downloader:
 
 ```
-ChatSessionManager ─> ModelRuntime ─> NativeLlmBridge (callbacks)
-                                        ├─ androidMain: AndroidLlmBridge → litertlm-android
-                                        └─ iosApp/Llm:  SwiftLlmBridge   → LiteRT-LM Swift (SPM)
+ChatSession ─> lamityLlm Engine / Conversation        (commonMain — chat + tool loop)
+                 ├─ androidMain: binds com.google.ai.edge.litertlm (AAR)
+                 └─ iosMain:     Kotlin/Native cinterop → CLiteRTLM C API
+                                  (iosApp/LiteRTLM vends the prebuilt xcframework)
 
-ModelDownloadManager ─> Downloader
+ModelDownloadManager ─> Downloader                    (lamityDownloader, commonMain)
                           ├─ androidMain: AndroidDownloader → WorkManager worker
-                          └─ iosMain: IosDownloader ─> LamityDownloaderBridge
-                                        └─ iosApp/Downloader: background URLSession
+                          └─ iosMain:     IosDownloader → LamityDownloaderBridge
+                                           └─ iosApp/Downloader: background URLSession
 
-Model tool calls ─> ToolExecutor → shared ToolDispatcher → ToolRegistry (common executors)
+Tool calls ─────────────> executed by shared Kotlin (lamityLlm's in-conversation tool loop
+                          runs the app's built-in tools), so theme/language switches and
+                          tool-event chat cards behave identically on both OSes.
 ```
 
-Tool calls made by the model on either platform are executed by **shared
-Kotlin code** (`ToolDispatcher`), so theme/language switches and tool-event
-chat cards behave identically on both OSes.
+---
+
+## A note on `lamityLlm` (and why it isn't a separate library)
+
+`lamityLlm` is the part most people will want to lift into their own project, and it is
+written to make that easy: it is self-contained, depends only on coroutines + serialization
+(and the logger facade), and ships its own [library-grade README](lamityLlm/README.md) with
+a full API reference.
+
+It is **deliberately not published as a standalone artifact or repo.** Maintaining a
+separate library is an ongoing commitment — releases, versioning, keeping the vendored
+CLiteRTLM headers in sync — that this project will not take on. Keeping it in-tree also
+serves the reference goal better: you can read the integration end-to-end (download →
+persist → chat → native runtime) in one place, and copy the module wholesale when you want
+it. Treat it as reference source to adapt.
+
+---
 
 ## Build & run
 
@@ -107,64 +167,86 @@ chat cards behave identically on both OSes.
 ./gradlew :androidApp:assembleDebug      # or installDebug with a device attached
 ```
 
-Requires JDK 17+ (Android Studio's JBR works; with sdkman:
-`JAVA_HOME=~/.sdkman/candidates/java/21.0.6-tem ./gradlew ...`). Open the repo
-root in Android Studio to run from the IDE. The manifest already declares the
-OpenCL native libraries needed by the GPU backend and the foreground-service
-type used by download notifications.
+Requires JDK 17+ (Android Studio's bundled JBR works). With sdkman, point `JAVA_HOME` at a
+JDK explicitly:
+
+```bash
+JAVA_HOME=~/.sdkman/candidates/java/21.0.6-tem ./gradlew :androidApp:assembleDebug
+```
+
+The manifest already declares the OpenCL native libraries the GPU backend needs and the
+foreground-service type used by the download notification.
 
 ### iOS
 
 1. `open iosApp/iosApp.xcodeproj`
-2. Set your team in `iosApp/Configuration/Config.xcconfig` (`TEAM_ID=...`)
-3. Xcode builds the Kotlin framework via the "Compile Kotlin Framework"
-   phase and resolves LiteRT-LM from the **vendored local package** in
-   `iosApp/LiteRTLM` (Swift wrapper sources at v0.13.1 + the official
-   prebuilt `CLiteRTLM.xcframework` binary, fetched on first build).
-   It is vendored because the upstream manifest uses `unsafeFlags`, which
-   SPM rejects for remote dependencies — local packages are exempt.
-4. Run on a **physical device** for GPU (Metal) inference. On the simulator
-   prefer small models and set the model's backend to **CPU** in
-   Models → Configure.
+2. Set your team in `iosApp/Configuration/Config.xcconfig` (`TEAM_ID=...`).
+3. Xcode compiles the Kotlin `Shared` framework (a build phase) and resolves the **vendored
+   local package** in `iosApp/LiteRTLM`, which pins and fetches the prebuilt
+   `CLiteRTLM.xcframework` (v0.13.1) on first build. LiteRT-LM itself is consumed as a pure
+   Kotlin/Native cinterop port in `lamityLlm` — there is no Swift wrapper; the package's
+   only job is to vend the dynamic framework binary.
+4. Run on a **physical device** for GPU (Metal) inference. On the simulator, prefer small
+   models and set the model's backend to **CPU** (Chat → customize sheet, or Models).
 
-### Tests
+### Tests & static analysis
+
+A `Makefile` wraps the common Gradle invocations:
 
 ```bash
-./gradlew testAndroidHostTest            # Kotest BehaviorSpecs on the JVM
+make test-all        # Android + iOS unit tests across every module
+make test-android    # JVM/Android host tests only
+make test-ios        # iOS simulator tests only
+make test-llm        # one module, both platforms (also: test-shared, test-downloader, …)
+make lint            # ktlint + Detekt
 ```
 
-Specs live under `<module>/src/commonTest/.../unitTests/` (mirroring the main
-source path) with fixtures in `fixtures/`; Android-only code is tested from
-`androidHostTest`.
+---
 
-## First chat
+## Try it (first chat)
 
-1. **Models** tab → download *Qwen2.5 1.5B Instruct* (no token needed; good
-   tool calling) or *FunctionGemma 270M* for a quick 290 MB test. Downloads
-   continue in the background; pause/resume them freely.
-2. For *Gemma 3 1B*: accept the license on HuggingFace, create an access token
-   (read scope) at `huggingface.co/settings/tokens`, paste it in
-   **Settings → HuggingFace token**, then download.
-3. **Chat** tab → pick agent *Lami* and your model, then try:
-   - "What time is it in Paris?" (get_current_time)
-   - "What is 12.5% of 2,348?" (calculate)
-   - "Switch the app to dark mode" / "Đổi ngôn ngữ sang tiếng Việt"
-     (set_theme / set_language — UI updates immediately)
-   - "Answer as a haiku: why is the sky blue?" (load_skill → Haiku Mode)
-4. **Studio** tab → manage agents, skills and global tool switches.
+1. Launch the app → **Chats** (the home screen) → start a **new chat**.
+2. Open **Models** and download *Qwen2.5 1.5B Instruct* (no token; good tool calling). Downloads continue in the background —
+   pause/resume them freely.
+3. For *Gemma 3 1B*: accept the license on HuggingFace, create a read-scope access token at
+   `huggingface.co/settings/tokens`, paste it in **Settings → HuggingFace token**, then
+   download.
+4. Back in the chat, with the model selected, try:
+    - "What time is it in Paris?" → `get_current_time`
+    - "What is 12.5% of 2,348?" → `calculate`
+    - "Switch the app to dark mode" / "Đổi ngôn ngữ sang tiếng Việt" → `set_theme` /
+      `set_language` (the UI updates immediately)
+    - Enable **Haiku Mode** in the chat's customize sheet, then "Why is the sky blue?" →
+      `load_skill`
+5. Open a chat's **customize sheet** to tweak inference parameters, set a system prompt, and
+   toggle tools/skills for that conversation.
+
+---
 
 ## Notes & known limits
 
-- Tool calling quality depends on the model; Qwen2.5 1.5B is the most
-  reliable of the seeded set. FunctionGemma 270M is a function-calling demo,
-  not a general chatter.
-- The "thinking" channel (`message.channels["thought"]`) is surfaced on both
-  platforms.
-- LiteRT-LM is pinned to **0.13.1 on both platforms** (`litertlm-android` on
-  Maven; the vendored Swift wrapper on iOS). If you bump either, the two
-  bridge files are the only integration points to touch.
-- Engine load can take ~10 s for larger models on first run; subsequent loads
-  are faster thanks to the compilation cache directory.
-- On iOS, downloads with a HuggingFace token resolve the redirect chain up
-  front (background sessions follow redirects without consulting the app), so
-  the token is never forwarded to the CDN.
+- **Tool-calling quality depends on the model.** Qwen2.5 1.5B is the most reliable of the
+  seeded set; DeepSeek R1 streams reasoning but does not do tool calls.
+- **LiteRT-LM is pinned to `0.13.1` on both platforms** (`litertlm-android` on Maven; the
+  vendored CLiteRTLM xcframework + cinterop `.def` on iOS). If you bump it, the Android AAR
+  coordinate and the iOS cinterop headers are the integration points to touch — see
+  [`lamityLlm/README.md`](lamityLlm/README.md).
+- **Engine load can take ~5 s** for larger models on first run; later loads are faster
+  thanks to the compilation cache directory.
+- The "thinking" channel (`message.channels["thought"]`) is surfaced on both platforms.
+- On iOS, a download with a HuggingFace token resolves the redirect chain up front (a
+  background session follows redirects without consulting the app), so the token is never
+  forwarded to the CDN.
+
+---
+
+## Acknowledgements
+
+- [Google LiteRT-LM](https://developers.google.com/edge/litert-lm/android) — the on-device
+  runtime (Apache-2.0). The iOS `CLiteRTLM.xcframework` is its official prebuilt binary.
+- [litert-community](https://huggingface.co/litert-community) — the `.litertlm` model files.
+
+## License
+
+[MIT](LICENSE) © 2026 Pham Tung Lam. The bundled LiteRT-LM runtime and the catalog models
+are distributed under their own licenses (Apache-2.0 and per-model terms, respectively).
