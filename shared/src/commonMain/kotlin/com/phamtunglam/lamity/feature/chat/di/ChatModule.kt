@@ -13,6 +13,7 @@ import com.phamtunglam.lamity.feature.chat.domain.tools.GetCurrentTimeTool
 import com.phamtunglam.lamity.feature.chat.domain.tools.RandomNumberTool
 import com.phamtunglam.lamity.feature.chat.domain.tools.SetLanguageTool
 import com.phamtunglam.lamity.feature.chat.domain.tools.SetThemeTool
+import com.phamtunglam.lamity.feature.chat.domain.tools.ShowConfettiTool
 import com.phamtunglam.lamity.feature.chat.presentation.ChatViewModel
 import com.phamtunglam.lamity.feature.chat.presentation.ChatsViewModel
 import org.koin.core.module.Module
@@ -32,6 +33,7 @@ val chatModule: Module =
                 CalculateTool(),
                 SetThemeTool(get()),
                 SetLanguageTool(get()),
+                ShowConfettiTool(get()),
                 RandomNumberTool(),
                 DeviceInfoTool(get()),
             )

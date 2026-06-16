@@ -1,6 +1,7 @@
 package com.phamtunglam.lamity
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,6 +18,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.phamtunglam.lamity.core.presentation.confetti.ConfettiController
+import com.phamtunglam.lamity.core.presentation.confetti.ConfettiOverlay
 import com.phamtunglam.lamity.core.presentation.designSystem.theme.AppTheme
 import com.phamtunglam.lamity.core.presentation.navigation.ChatKey
 import com.phamtunglam.lamity.core.presentation.navigation.ChatsKey
@@ -30,6 +33,7 @@ import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnviron
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
 import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
 import com.phamtunglam.lamity.feature.theme.presentation.ThemeViewModel
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -38,24 +42,29 @@ fun App() {
     val localeState by localeViewModel.state.collectAsState()
     val themeViewModel = koinViewModel<ThemeViewModel>()
     val themeState by themeViewModel.state.collectAsState()
+    val confetti = koinInject<ConfettiController>()
 
     val focusManager = LocalFocusManager.current
 
     AppLocaleEnvironment(locale = localeState.current) {
         AppTheme(themeState.current) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        // Tapping outside any focused input (empty/non-interactive areas) dismisses the
-                        // keyboard. Clickable children consume the tap first, so this only fires on blank space.
-                        .pointerInput(Unit) {
-                            detectTapGestures(onTap = { focusManager.clearFocus() })
-                        },
-                color = MaterialTheme.colorScheme.background,
-            ) {
-                val backStack = rememberNavBackStack(navSavedStateConfiguration, ChatsKey)
-                AppNavDisplay(backStack)
+            Box(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            // Tapping outside any focused input (empty/non-interactive areas) dismisses the
+                            // keyboard. Clickable children consume the tap first, so this only fires on blank space.
+                            .pointerInput(Unit) {
+                                detectTapGestures(onTap = { focusManager.clearFocus() })
+                            },
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    val backStack = rememberNavBackStack(navSavedStateConfiguration, ChatsKey)
+                    AppNavDisplay(backStack)
+                }
+                // Drawn above the content so confetti, when a tool fires it, covers the whole app.
+                ConfettiOverlay(confetti.events)
             }
         }
     }

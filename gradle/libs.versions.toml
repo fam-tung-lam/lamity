@@ -9,6 +9,7 @@ androidx-lifecycle = "2.11.0-beta01"
 androidx-navigation3 = "1.1.1"
 androidx-work = "2.11.2"
 composeMultiplatform = "1.11.1"
+confettikit = "0.8.0"
 datastore = "1.2.1"
 detekt = "2.0.0-alpha.3"
 jb-navigation3 = "1.1.1"
@@ -51,6 +52,8 @@ compose-components-resources = { module = "org.jetbrains.compose.components:comp
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 compose-materialIconsCore = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+# Confetti animation (Compose Multiplatform; used from shared commonMain)
+confettikit = { module = "io.github.vinceglb:confettikit", version.ref = "confettikit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }

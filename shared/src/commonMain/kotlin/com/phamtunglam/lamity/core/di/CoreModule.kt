@@ -7,6 +7,7 @@ import com.phamtunglam.lamity.core.LamityBuildConfig
 import com.phamtunglam.lamity.core.data.createPreferenceDataStore
 import com.phamtunglam.lamity.core.data.logging.CrashReportingLogWriter
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
+import com.phamtunglam.lamity.core.presentation.confetti.ConfettiController
 import com.phamtunglam.lamity.crashreporter.LamityCrashReporter
 import com.phamtunglam.lamity.crashreporter.models.LamityCrashReporterConfig
 import com.phamtunglam.lamity.logger.LamityLogger
@@ -28,6 +29,9 @@ val coreModule: Module =
 
         // App-wide preferences DataStore (backs settings and localization)
         single<DataStore<Preferences>> { createPreferenceDataStore(get<AppDirs>().dataDir) }
+
+        // App-wide confetti hub: the show_confetti tool fires it, the app-root overlay plays it.
+        single { ConfettiController() }
 
         // Logging
         single(createdAtStart = true) {

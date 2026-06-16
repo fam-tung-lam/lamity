@@ -2,6 +2,8 @@ package com.phamtunglam.lamity.feature.chat.domain.tools
 
 import com.phamtunglam.lamity.core.domain.platform.PlatformInfo
 import com.phamtunglam.lamity.core.domain.platform.currentTimeInfo
+import com.phamtunglam.lamity.core.presentation.confetti.ConfettiController
+import com.phamtunglam.lamity.core.presentation.confetti.ConfettiStyle
 import com.phamtunglam.lamity.feature.chat.domain.skills.Skill
 import com.phamtunglam.lamity.feature.localization.data.AppLocaleStore
 import com.phamtunglam.lamity.feature.localization.domain.AppLocale
@@ -134,6 +136,42 @@ class SetLanguageTool(private val localeStore: AppLocaleStore) :
         return buildJsonObject {
             put("ok", true)
             put("language", locale?.bcp47 ?: "system")
+        }
+    }
+}
+
+/** Shows a celebratory confetti animation over the app. */
+class ShowConfettiTool(private val confetti: ConfettiController) :
+    AppTool(
+        id = "show_confetti",
+        displayName = "Show confetti",
+        description =
+            "Display a celebratory confetti animation over the app to mark a success or a " +
+                "happy moment. Optionally choose a style: 'festive' (default), 'rain' or 'explosion'.",
+        parameters =
+            objectSchema {
+                put(
+                    "style",
+                    propSchema(
+                        "string",
+                        "Optional confetti style. Default 'festive'.",
+                        enum = listOf("festive", "rain", "explosion"),
+                    ),
+                )
+            },
+    ) {
+    override suspend fun perform(arguments: JsonObject): JsonElement {
+        val requested = arguments.stringOrNull("style")
+        val style =
+            if (requested.isNullOrBlank()) {
+                ConfettiStyle.FESTIVE
+            } else {
+                ConfettiStyle.fromName(requested) ?: return errorJson("style must be festive, rain or explosion")
+            }
+        confetti.celebrate(style)
+        return buildJsonObject {
+            put("ok", true)
+            put("style", style.name.lowercase())
         }
     }
 }
