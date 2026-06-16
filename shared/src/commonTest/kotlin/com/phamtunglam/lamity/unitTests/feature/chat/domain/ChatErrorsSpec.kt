@@ -6,7 +6,7 @@ import com.phamtunglam.lamity.feature.chat.domain.classifyLoadError
 import com.phamtunglam.lamity.feature.chat.domain.isRecoverableGpuFailure
 import com.phamtunglam.lamity.feature.chat.domain.loadError
 import com.phamtunglam.lamity.feature.chat.domain.shouldFallBackToCpu
-import com.phamtunglam.lamity.feature.models.domain.LlmBackend
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmBackend
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 

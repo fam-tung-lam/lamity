@@ -1,11 +1,11 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
-import com.phamtunglam.lamity.feature.skills.domain.BuiltinSkills
-import com.phamtunglam.lamity.feature.skills.domain.Skill
-import com.phamtunglam.lamity.feature.tools.domain.AppTool
-import com.phamtunglam.lamity.feature.tools.domain.LoadSkillTool
+import com.phamtunglam.lamity.feature.chat.domain.skills.BuiltinSkills
+import com.phamtunglam.lamity.feature.chat.domain.skills.Skill
+import com.phamtunglam.lamity.feature.chat.domain.tools.AppTool
+import com.phamtunglam.lamity.feature.chat.domain.tools.LoadSkillTool
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmModel
+import com.phamtunglam.lamity.feature.llmModels.domain.ModelConfig
 import com.phamtunglam.lamity.llm.model.ConversationConfig
 import com.phamtunglam.lamity.llm.model.Message
 import com.phamtunglam.lamity.llm.model.SamplerConfig

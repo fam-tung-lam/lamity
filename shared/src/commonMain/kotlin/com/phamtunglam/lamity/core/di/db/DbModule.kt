@@ -8,6 +8,5 @@ import org.koin.dsl.module
 val dbModule: Module =
     module {
         single<LamityDatabase> { buildLamityDatabase(get()) }
-        single { get<LamityDatabase>().modelsDao() }
         single { get<LamityDatabase>().conversationsDao() }
     }

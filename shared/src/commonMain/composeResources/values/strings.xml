@@ -28,7 +28,8 @@
 
     <!-- Chat settings sheet -->
     <string name="customize">Chat settings</string>
-    <string name="customize_chat">Chat settings</string>
+    <string name="section_system_prompt">System prompt</string>
+    <string name="section_model_config">Model configs</string>
     <string name="custom_system_prompt">System prompt for this chat</string>
     <string name="attached_tools">Tools</string>
     <string name="attached_skills">Skills</string>
@@ -50,13 +51,8 @@
     <string name="paused">Paused</string>
     <string name="verifying">Verifying…</string>
     <string name="download_queued">Waiting to download…</string>
-    <string name="add_custom_model">Add custom model</string>
-    <string name="custom_model_name">Display name</string>
-    <string name="custom_model_url">Direct .litertlm URL</string>
     <string name="requires_auth_label">Needs HuggingFace token</string>
-    <string name="add">Add</string>
     <string name="delete_model_file_q">Delete the downloaded file from this device?</string>
-    <string name="remove_from_catalog">Remove from catalog</string>
     <string name="use_model">Use</string>
     <string name="selected_label">Selected</string>
     <string name="needs_token">Needs a HuggingFace token (not configured in this build)</string>

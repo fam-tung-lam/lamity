@@ -1,6 +1,6 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
+import com.phamtunglam.lamity.feature.llmModels.domain.ModelConfig
 
 /**
  * The live state of the chat screen. Owned by the chat ViewModel for the lifetime of the screen.

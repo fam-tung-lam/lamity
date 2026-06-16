@@ -52,12 +52,11 @@ A focused chat app — four screens (Chats → Chat → Models → Settings), st
    (≈ tok/s), a thinking panel for reasoning models, and inline tool-call cards. Resumed
    conversations are replayed natively via LiteRT-LM `initialMessages`.
 2. **Model catalog** — curated `.litertlm` models from the HuggingFace
-   [litert-community](https://huggingface.co/litert-community), plus custom models by URL:
+   [litert-community](https://huggingface.co/litert-community):
     - *Qwen2.5 1.5B Instruct* — solid all-rounder, good tool calling, no token needed
     - *Gemma 3 1B IT* — small & fast, gated (HuggingFace token required)
     - *Gemma 4 E2B / E4B / 12B* — increasing quality, increasing device demands
     - *DeepSeek R1 Distill 1.5B* — streams its reasoning before answering
-    - *FunctionGemma 270M* — tiny function-calling demo (CPU), quick 290 MB test
 3. **Background downloads** — survive app death; pause/resume (HTTP Range / resume data),
    live speed + ETA, optional SHA-256 verification, Android progress notification, Wi-Fi-only
    restriction, and HuggingFace token support for gated models (the token is only sent to
@@ -161,6 +160,20 @@ it. Treat it as reference source to adapt.
 
 ## Build & run
 
+### Configuration (local secrets)
+
+Both secrets below are **optional** — leave them blank and the app still runs. A HuggingFace token
+only unlocks gated models; a Sentry DSN only turns on crash reporting. Neither file is checked into
+version control; the values are read at build time and surfaced to shared code via `LamityBuildConfig`.
+
+- **Android** — copy [`local.properties.example`](local.properties.example) to `local.properties` and set:
+    - `HF_TOKEN` — a read-scope [HuggingFace access token](https://huggingface.co/settings/tokens),
+      needed only for gated models (e.g. *Gemma 3 1B IT*). Blank disables authenticated downloads.
+    - `SENTRY_DSN` — your Sentry DSN. Blank disables crash reporting.
+- **iOS** — copy [`iosApp/Configuration/BuildConfig.xcconfig.example`](iosApp/Configuration/BuildConfig.xcconfig.example)
+  to `BuildConfig.xcconfig` and set the same `HF_TOKEN` / `SENTRY_DSN` (note the `$()` trick in the
+  file that keeps the DSN's `//` from being read as a comment).
+
 ### Android
 
 ```bash
@@ -209,8 +222,8 @@ make lint            # ktlint + Detekt
 2. Open **Models** and download *Qwen2.5 1.5B Instruct* (no token; good tool calling). Downloads continue in the background —
    pause/resume them freely.
 3. For *Gemma 3 1B*: accept the license on HuggingFace, create a read-scope access token at
-   `huggingface.co/settings/tokens`, paste it in **Settings → HuggingFace token**, then
-   download.
+   `huggingface.co/settings/tokens`, set it as `HF_TOKEN` (see
+   [Configuration](#configuration-local-secrets)), then rebuild and download.
 4. Back in the chat, with the model selected, try:
     - "What time is it in Paris?" → `get_current_time`
     - "What is 12.5% of 2,348?" → `calculate`

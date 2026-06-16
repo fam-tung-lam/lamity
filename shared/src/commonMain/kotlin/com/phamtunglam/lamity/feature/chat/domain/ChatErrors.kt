@@ -1,6 +1,6 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
-import com.phamtunglam.lamity.feature.models.domain.LlmBackend
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmBackend
 
 /** A user-facing chat failure: either a known, localizable [kind][ChatErrorKind] or a raw native message. */
 sealed interface ChatError {

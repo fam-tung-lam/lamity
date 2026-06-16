@@ -3,6 +3,7 @@ package com.phamtunglam.lamity.feature.chat.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -15,27 +16,30 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
-import com.phamtunglam.lamity.feature.models.presentation.components.ModelConfigEditor
-import com.phamtunglam.lamity.feature.skills.domain.Skill
-import com.phamtunglam.lamity.feature.tools.domain.AppTool
+import com.phamtunglam.lamity.feature.chat.domain.skills.Skill
+import com.phamtunglam.lamity.feature.chat.domain.tools.AppTool
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmModel
+import com.phamtunglam.lamity.feature.llmModels.domain.ModelConfig
+import com.phamtunglam.lamity.feature.llmModels.presentation.components.ModelConfigEditor
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.attached_skills
 import com.phamtunglam.lamity.shared.resources.attached_tools
 import com.phamtunglam.lamity.shared.resources.custom_system_prompt
-import com.phamtunglam.lamity.shared.resources.customize_chat
 import com.phamtunglam.lamity.shared.resources.model_no_tools
+import com.phamtunglam.lamity.shared.resources.section_model_config
+import com.phamtunglam.lamity.shared.resources.section_system_prompt
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Per-chat settings: inference parameters, an optional system prompt and on/off toggles for the
- * built-in tools and skills. Everything here is in-memory for the chat (not persisted); the model
- * itself is chosen on the Models screen. Tools and skills are hidden for models without tool support.
+ * Per-chat settings: an optional system prompt, the inference parameters and on/off toggles for the
+ * built-in tools and skills, split into divider-separated sections. Everything here is in-memory for
+ * the chat (not persisted); the model itself is chosen on the Models screen. The tools/skills section
+ * is replaced with a notice for models without tool support.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,16 +57,21 @@ internal fun ChatSettingsSheet(
     onToggleSkill: (String, Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    // statusBarsPadding keeps the sheet's top below the device status bar even when fully expanded,
-    // so its rounded top corners stay visible. The default content insets already lift content above
-    // the navigation bar.
-    ModalBottomSheet(onDismissRequest = onDismiss, modifier = Modifier.statusBarsPadding()) {
+    // Fully expanded, full-height sheet: skipPartiallyExpanded opens it expanded, fillMaxSize makes it
+    // span the screen, and statusBarsPadding keeps the top (with its rounded corners) below the status
+    // bar. The default content insets already lift content above the navigation bar.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.statusBarsPadding().fillMaxSize(),
+    ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(stringResource(Res.string.customize_chat), style = MaterialTheme.typography.titleMedium)
-
+            // System prompt
+            Text(stringResource(Res.string.section_system_prompt), style = MaterialTheme.typography.titleSmall)
             OutlinedTextField(
                 value = customSystemPrompt.orEmpty(),
                 onValueChange = onSetSystemPrompt,
@@ -71,10 +80,15 @@ internal fun ChatSettingsSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            HorizontalDivider()
+
+            // Model configs
+            Text(stringResource(Res.string.section_model_config), style = MaterialTheme.typography.titleSmall)
             ModelConfigEditor(config = runtimeConfig, onChange = onSetConfig)
 
             HorizontalDivider()
 
+            // Tools & skills
             if (model?.supportsTools == false) {
                 Text(
                     stringResource(Res.string.model_no_tools),

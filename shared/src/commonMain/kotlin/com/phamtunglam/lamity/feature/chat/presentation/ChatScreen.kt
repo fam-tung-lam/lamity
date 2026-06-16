@@ -12,10 +12,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -23,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.phamtunglam.lamity.core.presentation.designSystem.components.EmptyState
+import com.phamtunglam.lamity.core.presentation.designSystem.icons.Tune
 import com.phamtunglam.lamity.feature.chat.domain.EngineState
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatErrorBanner
 import com.phamtunglam.lamity.feature.chat.presentation.components.ChatInputBar
@@ -49,7 +48,6 @@ import com.phamtunglam.lamity.shared.resources.chat_empty_body
 import com.phamtunglam.lamity.shared.resources.chat_empty_title
 import com.phamtunglam.lamity.shared.resources.customize
 import com.phamtunglam.lamity.shared.resources.go_to_models
-import com.phamtunglam.lamity.shared.resources.new_chat
 import com.phamtunglam.lamity.shared.resources.no_model_body
 import com.phamtunglam.lamity.shared.resources.no_model_title
 import com.phamtunglam.lamity.shared.resources.select_model
@@ -77,7 +75,6 @@ fun ChatScreen(
             modelName = ui.selectedModel?.name,
             onBack = onBack,
             onOpenModels = onOpenModels,
-            onNewChat = viewModel::newChat,
             onCustomize = { showSheet = true },
         )
         HorizontalDivider()
@@ -130,10 +127,9 @@ private fun ChatTopBar(
     modelName: String?,
     onBack: () -> Unit,
     onOpenModels: () -> Unit,
-    onNewChat: () -> Unit,
     onCustomize: () -> Unit,
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = { ModelChip(modelName = modelName, onClick = onOpenModels) },
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -141,11 +137,8 @@ private fun ChatTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onNewChat) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(Res.string.new_chat))
-            }
             IconButton(onClick = onCustomize) {
-                Icon(Icons.Default.Build, contentDescription = stringResource(Res.string.customize))
+                Icon(Icons.Default.Tune, contentDescription = stringResource(Res.string.customize))
             }
         },
     )

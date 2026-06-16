@@ -17,16 +17,16 @@ import com.phamtunglam.lamity.feature.chat.domain.MessageRole
 import com.phamtunglam.lamity.feature.chat.domain.ModelRuntime
 import com.phamtunglam.lamity.feature.chat.domain.loadError
 import com.phamtunglam.lamity.feature.chat.domain.shouldFallBackToCpu
-import com.phamtunglam.lamity.feature.models.data.ModelFiles
-import com.phamtunglam.lamity.feature.models.data.ModelsRepository
-import com.phamtunglam.lamity.feature.models.domain.LlmBackend
-import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
-import com.phamtunglam.lamity.feature.models.domain.ObserveModelStatusesUseCase
+import com.phamtunglam.lamity.feature.chat.domain.skills.BuiltinSkills
+import com.phamtunglam.lamity.feature.chat.domain.skills.Skill
+import com.phamtunglam.lamity.feature.chat.domain.tools.AppTool
+import com.phamtunglam.lamity.feature.llmModels.data.ModelFiles
+import com.phamtunglam.lamity.feature.llmModels.data.ModelsRepository
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmBackend
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmModel
+import com.phamtunglam.lamity.feature.llmModels.domain.ModelConfig
+import com.phamtunglam.lamity.feature.llmModels.domain.ObserveModelStatusesUseCase
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.feature.skills.domain.BuiltinSkills
-import com.phamtunglam.lamity.feature.skills.domain.Skill
-import com.phamtunglam.lamity.feature.tools.domain.AppTool
 import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -67,7 +67,7 @@ private const val TAG = "ChatViewModel"
  * The model is chosen on the Models screen (observed here from settings); tools, skills, inference
  * config and the system prompt are toggled per chat in the settings sheet and kept in memory only.
  */
-@Suppress("TooManyFunctions") // Cohesive chat orchestrator; splitting would scatter related logic.
+@Suppress("TooManyFunctions") // Cohesive chat orchestrator.
 class ChatViewModel(
     private val conversationId: String?,
     private val runtime: ModelRuntime,

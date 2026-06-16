@@ -1,10 +1,10 @@
 package com.phamtunglam.lamity.feature.chat.domain
 
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
-import com.phamtunglam.lamity.feature.models.data.ModelFiles
-import com.phamtunglam.lamity.feature.models.domain.LlmBackend
-import com.phamtunglam.lamity.feature.models.domain.LlmModel
-import com.phamtunglam.lamity.feature.models.domain.ModelConfig
+import com.phamtunglam.lamity.feature.llmModels.data.ModelFiles
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmBackend
+import com.phamtunglam.lamity.feature.llmModels.domain.LlmModel
+import com.phamtunglam.lamity.feature.llmModels.domain.ModelConfig
 import com.phamtunglam.lamity.llm.model.Backend
 import com.phamtunglam.lamity.llm.model.EngineConfig
 import com.phamtunglam.lamity.logger.LamityLogger

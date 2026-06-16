@@ -27,7 +27,8 @@
 
     <!-- Chat settings sheet -->
     <string name="customize">Ajustes del chat</string>
-    <string name="customize_chat">Ajustes del chat</string>
+    <string name="section_system_prompt">Mensaje de sistema</string>
+    <string name="section_model_config">Configuración del modelo</string>
     <string name="custom_system_prompt">Mensaje de sistema para este chat</string>
     <string name="attached_tools">Herramientas</string>
     <string name="attached_skills">Habilidades</string>
@@ -47,13 +48,8 @@
     <string name="paused">En pausa</string>
     <string name="verifying">Verificando…</string>
     <string name="download_queued">Esperando para descargar…</string>
-    <string name="add_custom_model">Añadir modelo personalizado</string>
-    <string name="custom_model_name">Nombre</string>
-    <string name="custom_model_url">URL directa .litertlm</string>
     <string name="requires_auth_label">Requiere token de HuggingFace</string>
-    <string name="add">Añadir</string>
     <string name="delete_model_file_q">¿Eliminar el archivo descargado del dispositivo?</string>
-    <string name="remove_from_catalog">Quitar del catálogo</string>
     <string name="use_model">Usar</string>
     <string name="selected_label">Seleccionado</string>
     <string name="needs_token">Necesita un token de HuggingFace (no configurado en esta compilación)</string>

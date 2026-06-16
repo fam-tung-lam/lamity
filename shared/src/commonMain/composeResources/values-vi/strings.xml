@@ -27,7 +27,8 @@
 
     <!-- Chat settings sheet -->
     <string name="customize">Cài đặt trò chuyện</string>
-    <string name="customize_chat">Cài đặt trò chuyện</string>
+    <string name="section_system_prompt">Lời nhắc hệ thống</string>
+    <string name="section_model_config">Cấu hình mô hình</string>
     <string name="custom_system_prompt">Lời nhắc hệ thống cho cuộc trò chuyện này</string>
     <string name="attached_tools">Công cụ</string>
     <string name="attached_skills">Kỹ năng</string>
@@ -47,13 +48,8 @@
     <string name="paused">Đã tạm dừng</string>
     <string name="verifying">Đang kiểm tra…</string>
     <string name="download_queued">Đang chờ tải…</string>
-    <string name="add_custom_model">Thêm mô hình tùy chỉnh</string>
-    <string name="custom_model_name">Tên hiển thị</string>
-    <string name="custom_model_url">URL .litertlm trực tiếp</string>
     <string name="requires_auth_label">Cần token HuggingFace</string>
-    <string name="add">Thêm</string>
     <string name="delete_model_file_q">Xóa tệp mô hình đã tải khỏi thiết bị?</string>
-    <string name="remove_from_catalog">Xóa khỏi danh mục</string>
     <string name="use_model">Dùng</string>
     <string name="selected_label">Đang dùng</string>
     <string name="needs_token">Cần token HuggingFace (chưa được cấu hình trong bản dựng này)</string>

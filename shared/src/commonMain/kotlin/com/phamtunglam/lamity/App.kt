@@ -24,10 +24,10 @@ import com.phamtunglam.lamity.core.presentation.navigation.ModelsKey
 import com.phamtunglam.lamity.core.presentation.navigation.SettingsKey
 import com.phamtunglam.lamity.core.presentation.navigation.navSavedStateConfiguration
 import com.phamtunglam.lamity.feature.chat.presentation.ChatScreen
-import com.phamtunglam.lamity.feature.history.presentation.ChatsScreen
+import com.phamtunglam.lamity.feature.chat.presentation.ChatsScreen
+import com.phamtunglam.lamity.feature.llmModels.presentation.ModelsScreen
 import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnvironment
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
-import com.phamtunglam.lamity.feature.models.presentation.ModelsScreen
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
 import org.koin.compose.koinInject
