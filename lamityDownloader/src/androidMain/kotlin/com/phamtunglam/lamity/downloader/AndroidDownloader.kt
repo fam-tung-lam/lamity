@@ -21,9 +21,12 @@ import com.phamtunglam.lamity.downloader.workmanager.partialFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import okio.FileSystem
 
 /**
@@ -39,6 +42,14 @@ class AndroidDownloader internal constructor(
     private val fileSystem: FileSystem,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Downloader {
+    /**
+     * Bumped whenever store/partial-file state changes in a way WorkManager does
+     * not surface as a new `WorkInfo` emission (notably cancelling an already
+     * paused download, whose work is already CANCELLED). [observe] folds this in
+     * so it re-reads the store and re-emits.
+     */
+    private val revision = MutableStateFlow(0)
+
     companion object {
         /** Wires the production WorkManager-backed downloader from a [Context]. */
         fun create(context: Context): AndroidDownloader {
@@ -74,20 +85,24 @@ class AndroidDownloader internal constructor(
         workManager.cancelUniqueWork(id).await()
         request?.partialFile()?.let { fileSystem.delete(it, mustExist = false) }
         store.delete(id)
+        // Cancelling an already paused download leaves the work CANCELLED (no state
+        // change), so WorkManager emits nothing; nudge observers to re-read the store.
+        revision.update { it + 1 }
     }
 
     override fun observe(id: String): Flow<DownloadProgress?> =
-        workManager
-            .getWorkInfosForUniqueWorkFlow(id)
-            .map { workInfos ->
-                val request = store.load(id)
-                WorkInfoMapping.toProgress(
-                    id = id,
-                    workInfo = workInfos.firstOrNull(),
-                    partialBytes = request?.partialFile()?.let { fileSystem.metadataOrNull(it)?.size } ?: 0L,
-                    totalBytes = request?.expectedSizeBytes ?: 0L,
-                )
-            }.distinctUntilChanged()
+        combine(
+            workManager.getWorkInfosForUniqueWorkFlow(id),
+            revision,
+        ) { workInfos, _ ->
+            val request = store.load(id)
+            WorkInfoMapping.toProgress(
+                id = id,
+                workInfo = workInfos.firstOrNull(),
+                partialBytes = request?.partialFile()?.let { fileSystem.metadataOrNull(it)?.size } ?: 0L,
+                totalBytes = request?.expectedSizeBytes ?: 0L,
+            )
+        }.distinctUntilChanged()
             .flowOn(dispatcher)
 
     private fun workRequest(request: DownloadRequest): OneTimeWorkRequest =
