@@ -20,10 +20,7 @@ const val LAMITY_DB_FILE_NAME = "lamity.db"
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    // v8: custom models removed. The whole catalog is now code-defined (`ModelCatalog`), so the
-    // `models` table is gone and only conversations + messages are persisted. Dropping the table
-    // can't be auto-migrated, so an upgrade resets the database.
-    version = 8,
+    version = 1,
     exportSchema = true,
 )
 @TypeConverters(RoleConverter::class)
@@ -39,7 +36,7 @@ expect object LamityDatabaseConstructor : RoomDatabaseConstructor<LamityDatabase
 /**
  * Finishes a platform-created builder with the shared configuration. Platform code provides the
  * builder (it knows the database path / Context); this keeps driver and threading choices in one
- * place. The schema change can't be auto-migrated, so an upgrade from any prior version drops and
+ * place. While the app is in development the schema isn't migrated — any version change drops and
  * recreates the database.
  */
 fun buildLamityDatabase(
