@@ -30,6 +30,6 @@ actual fun platformModule(): Module =
                 deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
             )
         }
-        single<Downloader> { AndroidDownloader(androidContext()) }
+        single<Downloader> { AndroidDownloader.create(androidContext()) }
         single<RoomDatabase.Builder<LamityDatabase>> { lamityDatabaseBuilder(androidContext()) }
     }

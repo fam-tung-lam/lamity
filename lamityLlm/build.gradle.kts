@@ -47,7 +47,6 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(projects.lamityLogger)
         }
         androidMain.dependencies {
             implementation(libs.litertlm.android)

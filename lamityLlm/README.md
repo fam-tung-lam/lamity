@@ -79,8 +79,9 @@ kotlin {
 }
 ```
 
-The module pulls in `kotlinx-coroutines-core`, `kotlinx-serialization-json`, and `:lamityLogger`
-transitively; the Android source set additionally binds `litertlm-android`.
+The module pulls in `kotlinx-coroutines-core` and `kotlinx-serialization-json` transitively; the
+Android source set additionally binds `litertlm-android`. It has no dependency on any other Lamity
+module (no logging coupling) — it is a standalone library.
 
 ### Platform setup
 

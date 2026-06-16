@@ -5,6 +5,7 @@ import com.phamtunglam.lamity.llm.native.SessionHandle
 import com.phamtunglam.lamity.llm.native.SessionNativeRuntime
 import com.phamtunglam.lamity.llm.native.SessionStreamCallback
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -16,26 +17,34 @@ import kotlinx.coroutines.withContext
  * A lower-level LiteRT-LM session exposing explicit prefill/decode and content generation,
  * created via [Engine.createSession].
  */
-class Session internal constructor(private val runtime: SessionNativeRuntime, private val handle: SessionHandle) {
-    private var alive = true
-    val isAlive: Boolean get() = alive
+class Session internal constructor(
+    private val runtime: SessionNativeRuntime,
+    handle: SessionHandle,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+) {
+    private var handle: SessionHandle? = handle
+
+    val isAlive: Boolean get() = handle != null
+
+    private fun requireHandle(): SessionHandle = handle ?: throw LiteRtLmException("Session has been disposed")
 
     /** Runs the prefill step for [inputData]. */
     suspend fun runPrefill(inputData: List<InputData>) {
         if (inputData.isEmpty()) throw LiteRtLmException("runPrefill requires at least one input")
-        withContext(Dispatchers.Default) { runtime.runSessionPrefill(handle, inputData) }
+        withContext(dispatcher) { runtime.runSessionPrefill(requireHandle(), inputData) }
     }
 
     /** Runs the decode step and returns the generated text. */
-    suspend fun runDecode(): String = withContext(Dispatchers.Default) { runtime.runSessionDecode(handle) }
+    suspend fun runDecode(): String = withContext(dispatcher) { runtime.runSessionDecode(requireHandle()) }
 
     /** Generates content from [inputData] and returns the full text. */
     suspend fun generateContent(inputData: List<InputData>): String =
-        withContext(Dispatchers.Default) { runtime.generateSessionContent(handle, inputData) }
+        withContext(dispatcher) { runtime.generateSessionContent(requireHandle(), inputData) }
 
     /** Generates content from [inputData] and streams the response as text chunks. */
     fun generateContentStream(inputData: List<InputData>): Flow<String> =
         channelFlow {
+            val handle = requireHandle()
             val producer = this
             val done = CompletableDeferred<Unit>()
             runtime.generateSessionContentStream(
@@ -60,13 +69,14 @@ class Session internal constructor(private val runtime: SessionNativeRuntime, pr
 
     /** Cancels any ongoing session processing. */
     fun cancelProcess() {
-        runtime.cancelSession(handle)
+        val current = handle ?: return
+        runtime.cancelSession(current)
     }
 
     /** Releases the native session. */
     fun dispose() {
-        if (!alive) return
-        alive = false
-        runtime.deleteSession(handle)
+        val current = handle ?: return
+        handle = null
+        runtime.deleteSession(current)
     }
 }

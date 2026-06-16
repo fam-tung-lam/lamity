@@ -5,6 +5,7 @@ import com.phamtunglam.lamity.llm.model.EngineConfig
 import com.phamtunglam.lamity.llm.model.LogSeverity
 import com.phamtunglam.lamity.llm.native.nativeBenchmark
 import com.phamtunglam.lamity.llm.native.nativeSetMinLogLevel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -23,10 +24,11 @@ suspend fun benchmark(
     config: EngineConfig,
     prefillTokens: Int = DEFAULT_BENCHMARK_TOKENS,
     decodeTokens: Int = DEFAULT_BENCHMARK_TOKENS,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): BenchmarkInfo {
     require(prefillTokens > 0) { "prefillTokens must be positive" }
     require(decodeTokens > 0) { "decodeTokens must be positive" }
-    return withContext(Dispatchers.Default) {
+    return withContext(dispatcher) {
         nativeBenchmark(config, prefillTokens, decodeTokens)
     }
 }

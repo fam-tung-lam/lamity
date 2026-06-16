@@ -10,6 +10,7 @@ import com.phamtunglam.lamity.llm.native.ConversationNativeRuntime
 import com.phamtunglam.lamity.llm.native.TurnCallback
 import com.phamtunglam.lamity.llm.tool.ToolManager
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,7 @@ class Conversation internal constructor(
     handle: ConversationHandle,
     private val toolManager: ToolManager,
     private val automaticToolCalling: Boolean = true,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private var handle: ConversationHandle? = handle
 
@@ -120,15 +122,15 @@ class Conversation internal constructor(
     }
 
     /** Number of tokens currently in the conversation KV cache. */
-    suspend fun getTokenCount(): Int = withContext(Dispatchers.Default) { runtime.getTokenCount(requireHandle()) }
+    suspend fun getTokenCount(): Int = withContext(dispatcher) { runtime.getTokenCount(requireHandle()) }
 
     /** Benchmark information for this conversation (requires a benchmark-enabled engine). */
     suspend fun getBenchmarkInfo(): BenchmarkInfo =
-        withContext(Dispatchers.Default) { runtime.getBenchmarkInfo(requireHandle()) }
+        withContext(dispatcher) { runtime.getBenchmarkInfo(requireHandle()) }
 
     /** Renders [message] into the model's prompt string (for debugging/inspection). */
     suspend fun renderMessageIntoString(message: Message): String =
-        withContext(Dispatchers.Default) { runtime.renderMessage(requireHandle(), message) }
+        withContext(dispatcher) { runtime.renderMessage(requireHandle(), message) }
 
     /** Releases the native conversation. */
     fun dispose() {

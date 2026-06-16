@@ -5,7 +5,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import co.touchlab.kermit.Logger
 import com.phamtunglam.lamity.downloader.checksums.Sha256
 import com.phamtunglam.lamity.downloader.http.HttpDownload
 import com.phamtunglam.lamity.downloader.models.DownloadException
@@ -13,6 +12,7 @@ import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.downloader.models.DownloadState
 import com.phamtunglam.lamity.downloader.notifications.DownloadNotification
 import com.phamtunglam.lamity.downloader.persistence.RequestStore
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okio.FileSystem
@@ -25,10 +25,21 @@ import java.io.IOException
  * verification, then an atomic move to the destination path. Progress goes to
  * WorkManager progress data and a foreground notification.
  */
-internal class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    private val log = Logger.withTag("DownloadWorker")
-    private val store = RequestStore(applicationContext)
-    private val fileSystem = FileSystem.SYSTEM
+internal class DownloadWorker internal constructor(
+    context: Context,
+    params: WorkerParameters,
+    private val store: RequestStore,
+    private val fileSystem: FileSystem,
+    private val ioDispatcher: CoroutineDispatcher,
+) : CoroutineWorker(context, params) {
+    /** Production entry point. WorkManager reflectively calls this `(Context, WorkerParameters)` ctor. */
+    constructor(context: Context, params: WorkerParameters) : this(
+        context,
+        params,
+        RequestStore(context.applicationContext),
+        FileSystem.SYSTEM,
+        Dispatchers.IO,
+    )
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
         val request = inputData.getString(DownloadWorkData.Keys.ID)?.let(store::load)
@@ -36,7 +47,7 @@ internal class DownloadWorker(context: Context, params: WorkerParameters) : Coro
     }
 
     override suspend fun doWork(): Result =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val id =
                 inputData.getString(DownloadWorkData.Keys.ID)
                     ?: return@withContext Result.failure(errorData("Missing download id."))
@@ -72,26 +83,19 @@ internal class DownloadWorker(context: Context, params: WorkerParameters) : Coro
                 moveToDestination(partialFile, request.destinationPath)
                 store.delete(request.id)
                 val finalBytes = request.destinationPath.toPath().sizeBytes()
-                log.i { "download ${request.id} complete ($finalBytes bytes)" }
                 Result.success(
                     workDataOf(DownloadWorkData.Keys.DOWNLOADED_BYTES to finalBytes),
                 )
             } catch (e: DownloadException) {
-                failure(request, e)
+                failure(e)
             } catch (e: IOException) {
-                failure(request, e)
+                failure(e)
             }
         }
 
     private suspend fun verify(request: DownloadRequest, partialFile: Path) {
         val actualSize = partialFile.sizeBytes()
-        if (request.expectedSizeBytes > 0 && actualSize != request.expectedSizeBytes) {
-            // Catalog sizes are advisory; mismatches are logged, not fatal.
-            log.w {
-                "size mismatch for ${request.id}: expected ${request.expectedSizeBytes}, " +
-                    "got $actualSize"
-            }
-        }
+        // Catalog sizes are advisory: a mismatch with request.expectedSizeBytes is not fatal.
         val expectedSha256 = request.sha256 ?: return
         publishProgress(
             state = DownloadState.VERIFYING,
@@ -136,10 +140,7 @@ internal class DownloadWorker(context: Context, params: WorkerParameters) : Coro
         )
     }
 
-    private fun failure(request: DownloadRequest, e: Exception): Result {
-        log.w(e) { "download ${request.id} failed" }
-        return Result.failure(errorData(e.message ?: "Download failed."))
-    }
+    private fun failure(e: Exception): Result = Result.failure(errorData(e.message ?: "Download failed."))
 
     private fun errorData(message: String) = workDataOf(DownloadWorkData.Keys.ERROR to message)
 

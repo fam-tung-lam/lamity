@@ -6,6 +6,7 @@ import com.phamtunglam.lamity.llm.Engine
 import com.phamtunglam.lamity.llm.model.ConversationConfig
 import com.phamtunglam.lamity.llm.model.EngineConfig
 import com.phamtunglam.lamity.llm.model.Message
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,9 +26,9 @@ import kotlin.random.Random
  * serializes load/unload, tracks engine state, and exposes generation as a [Flow] of [GenEvent].
  * Consumers that want the full LiteRT-LM surface can use [Engine] directly.
  */
-class ModelRuntime {
+class ModelRuntime(private val dispatcher: CoroutineDispatcher = Dispatchers.Default) {
     private val log = Logger.withTag("ModelRuntime")
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _engineState = MutableStateFlow<EngineState>(EngineState.Idle)
     val engineState: StateFlow<EngineState> = _engineState.asStateFlow()

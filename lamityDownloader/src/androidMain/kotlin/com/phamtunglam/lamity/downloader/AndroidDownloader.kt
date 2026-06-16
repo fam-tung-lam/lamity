@@ -18,6 +18,7 @@ import com.phamtunglam.lamity.downloader.workmanager.DownloadWorkData
 import com.phamtunglam.lamity.downloader.workmanager.DownloadWorker
 import com.phamtunglam.lamity.downloader.workmanager.WorkInfoMapping
 import com.phamtunglam.lamity.downloader.workmanager.partialFile
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -32,11 +33,23 @@ import okio.FileSystem
  * partial file for an HTTP-Range resume, and progress reaches observers
  * through WorkManager progress data.
  */
-class AndroidDownloader(context: Context) : Downloader {
-    private val appContext = context.applicationContext
-    private val workManager = WorkManager.getInstance(appContext)
-    private val store = RequestStore(appContext)
-    private val fileSystem = FileSystem.SYSTEM
+class AndroidDownloader internal constructor(
+    private val workManager: WorkManager,
+    private val store: RequestStore,
+    private val fileSystem: FileSystem,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : Downloader {
+    companion object {
+        /** Wires the production WorkManager-backed downloader from a [Context]. */
+        fun create(context: Context): AndroidDownloader {
+            val appContext = context.applicationContext
+            return AndroidDownloader(
+                workManager = WorkManager.getInstance(appContext),
+                store = RequestStore(appContext),
+                fileSystem = FileSystem.SYSTEM,
+            )
+        }
+    }
 
     override suspend fun start(request: DownloadRequest) {
         store.save(request)
@@ -75,7 +88,7 @@ class AndroidDownloader(context: Context) : Downloader {
                     totalBytes = request?.expectedSizeBytes ?: 0L,
                 )
             }.distinctUntilChanged()
-            .flowOn(Dispatchers.IO)
+            .flowOn(dispatcher)
 
     private fun workRequest(request: DownloadRequest): OneTimeWorkRequest =
         OneTimeWorkRequestBuilder<DownloadWorker>()

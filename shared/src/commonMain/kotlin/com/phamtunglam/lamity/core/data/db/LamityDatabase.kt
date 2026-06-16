@@ -12,6 +12,7 @@ import com.phamtunglam.lamity.core.data.db.daos.ModelsDao
 import com.phamtunglam.lamity.core.data.db.entities.ConversationEntity
 import com.phamtunglam.lamity.core.data.db.entities.MessageEntity
 import com.phamtunglam.lamity.core.data.db.entities.ModelEntity
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 const val LAMITY_DB_FILE_NAME = "lamity.db"
@@ -46,9 +47,12 @@ expect object LamityDatabaseConstructor : RoomDatabaseConstructor<LamityDatabase
  * place. The schema change can't be auto-migrated, so an upgrade from any prior version drops and
  * recreates the database (custom models are re-added by the user).
  */
-fun buildLamityDatabase(builder: RoomDatabase.Builder<LamityDatabase>): LamityDatabase =
+fun buildLamityDatabase(
+    builder: RoomDatabase.Builder<LamityDatabase>,
+    queryDispatcher: CoroutineDispatcher = Dispatchers.Default,
+): LamityDatabase =
     builder
         .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.Default)
+        .setQueryCoroutineContext(queryDispatcher)
         .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
