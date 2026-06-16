@@ -84,8 +84,9 @@ kotlin {
 }
 ```
 
-The module pulls in `kotlinx-coroutines-core`, `kotlinx-serialization-json`, and `:lamityLogger`
-transitively; the Android source set additionally binds `androidx.work:work-runtime` and Okio.
+The module pulls in `kotlinx-coroutines-core` and `kotlinx-serialization-json`; the Android source
+set additionally binds `androidx.work:work-runtime` and Okio. It has no dependency on any other
+Lamity module — it is a standalone library.
 
 ### Platform setup
 
@@ -146,12 +147,41 @@ SHA-256 verification, and the final file move; Kotlin only maps state back into 
 
 ## Concepts at a glance
 
+```mermaid
+flowchart LR
+    DownloadRequest["`
+        DownloadRequest
+        (url, destination, auth, checksum)
+    `"]
+
+    StartCall["Downloader.start()"]
+
+    Transfer["`
+        Background transfer
+        (survives app death)
+    `"]
+
+    Verify["`
+        Verify SHA-256
+        (when set)
+    `"]
+
+    Destination["Move to destination"]
+
+    ProgressFlow["`
+        observe(id)
+        progress Flow
+    `"]
+
+    DownloadRequest --> StartCall
+    StartCall --> Transfer
+    Transfer --> Verify
+    Verify --> Destination
+    Transfer -.->|"reports state + bytes"| ProgressFlow
 ```
-DownloadRequest ──▶ Downloader.start() ──▶ background transfer ──▶ verify (sha256) ──▶ move into place
-                          │                                                                  │
-                          ├── pause(id)  / resume(id) / cancel(id)                           │
-                          └── observe(id) ──▶ Flow<DownloadProgress?>  ◀───── state + bytes ─┘
-```
+
+`pause(id)` / `resume(id)` / `cancel(id)` act on a transfer in flight — see
+[Lifecycle](#lifecycle-pause-resume-cancel).
 
 - A **`DownloadRequest`** fully describes one download — source URL, destination path, optional
   auth, optional checksum. It is `@Serializable` and used as the unit of work.
@@ -302,22 +332,50 @@ they smooth out the bursty byte counts a network read loop produces.
 
 ```kotlin
 enum class DownloadState {
-    QUEUED,      // waiting for the scheduler (or a network matching the constraints)
-    RUNNING,     // actively transferring bytes
-    PAUSED,      // stopped with resumable bytes retained
-    VERIFYING,   // transfer finished; verifying the SHA-256 checksum
-    SUCCEEDED,   // finished successfully; file is at its destination path
-    FAILED,      // finished with an error (see DownloadProgress.error)
-    CANCELLED,   // stopped and disposed
+    QUEUED, RUNNING, PAUSED, VERIFYING, SUCCEEDED, FAILED, CANCELLED
 }
 ```
 
-`SUCCEEDED`, `FAILED`, and `CANCELLED` are terminal. A cancelled-or-finished work item that left
-partial bytes behind is reported as `PAUSED` so the UI can offer a resume.
+| State | Meaning | Terminal? |
+|-------|---------|:---:|
+| `QUEUED` | Waiting for the scheduler (or a network matching the constraints) | — |
+| `RUNNING` | Actively transferring bytes | — |
+| `PAUSED` | Stopped, resumable bytes retained | — |
+| `VERIFYING` | Transfer finished; verifying the SHA-256 checksum | — |
+| `SUCCEEDED` | Finished; the file is at its destination path | ✓ |
+| `FAILED` | Finished with an error (see `DownloadProgress.error`) | ✓ |
+| `CANCELLED` | Stopped and disposed | ✓ |
+
+A cancelled-or-finished work item that left partial bytes behind is reported as `PAUSED` so the UI
+can offer a resume. See the [lifecycle state machine](#lifecycle-pause-resume-cancel) for how states
+transition.
 
 ---
 
 ## Lifecycle: pause, resume, cancel
+
+A download moves through these states (`SUCCEEDED` / `FAILED` / `CANCELLED` are terminal):
+
+```mermaid
+flowchart TD
+    Queued(["QUEUED"])
+    Running(["RUNNING"])
+    Paused(["PAUSED"])
+    Verifying(["VERIFYING"])
+    Succeeded(["SUCCEEDED"])
+    Failed(["FAILED"])
+    Cancelled(["CANCELLED"])
+
+    Queued -->|scheduler picks it up| Running
+    Running -->|pause| Paused
+    Paused -->|"resume (HTTP Range)"| Running
+    Running -->|transfer done| Verifying
+    Verifying -->|checksum ok / not set| Succeeded
+    Verifying -->|checksum mismatch| Failed
+    Running -->|network or I/O error| Failed
+    Running -->|cancel| Cancelled
+    Paused -->|cancel| Cancelled
+```
 
 ```kotlin
 downloader.start(request)        // QUEUED → RUNNING → VERIFYING → SUCCEEDED
@@ -367,6 +425,24 @@ but does not fail the download.
 This matters for signed-URL flows (e.g. Hugging Face → S3): the initial request to the API host
 carries the token, but the redirect to the signed S3 URL must *not* — S3 rejects requests that
 still carry an `Authorization` header alongside the URL signature.
+
+```mermaid
+---
+title: How a Bearer Token Survives the Hugging Face → S3 Redirect Without Leaking
+---
+sequenceDiagram
+    participant Downloader as Downloader<br>(lamityDownloader)
+    participant HuggingFace as Hugging Face API<br>(trusted host)
+    participant SignedUrl as Signed S3 URL<br>(untrusted host)
+
+    Downloader ->> HuggingFace: REQUESTS file with Authorization: Bearer token
+    HuggingFace -->> Downloader: REDIRECTS to a signed S3 URL
+
+    Note over Downloader: Redirect target is NOT a trusted host —<br>strip the Authorization header.
+
+    Downloader ->> SignedUrl: REQUESTS file WITHOUT the token<br>(S3 authorizes via the URL signature)
+    SignedUrl -->> Downloader: STREAMS the file bytes
+```
 
 ```kotlin
 DownloadRequest(
@@ -419,23 +495,41 @@ A `401`/`403` failure is annotated with a hint that the resource may require a v
 
 ## Architecture
 
-```
-                       commonMain  (the public API you call)
-   ┌────────────────────────────────────────────────────────────────────┐
-   │ Downloader  (interface)                                            │
-   │ models/  (DownloadRequest, DownloadProgress, DownloadState, …)     │
-   │ states/  (DownloadStateFlags → DownloadState)                      │
-   │ utils/   (DownloadRate — rolling rate/ETA estimator)               │
-   └───────────────┬──────────────────────────────────┬─────────────────┘
-                   │ actual                           │ actual
-        androidMain (WorkManager)                   iosMain (Swift bridge)
-   ┌─────────────────────────────────┐        ┌──────────────────────────────────┐
-   │ AndroidDownloader               │        │ IosDownloader / iosDownloader()  │
-   │ DownloadWorker (foreground job) │        │ LamityDownloaderBridge (expect)  │
-   │ HttpDownload (resumable, Range) │        │   └─ Swift URLSession impl       │
-   │ RequestStore (JSON persistence) │        │ LamityDownloaderIos.bridge       │
-   │ DownloadNotification · Sha256   │        └──────────────────────────────────┘
-   └─────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CommonMain["commonMain — the public API you call"]
+        DownloaderInterface["Downloader (interface)"]
+
+        ModelsPackage["models/ — DownloadRequest, DownloadProgress, DownloadState"]
+
+        StatesPackage["states/ — DownloadStateFlags → DownloadState"]
+
+        UtilsPackage["utils/ — DownloadRate (rolling rate/ETA estimator)"]
+    end
+
+    subgraph AndroidMain["androidMain — WorkManager"]
+        AndroidDownloader["AndroidDownloader"]
+
+        DownloadWorker["DownloadWorker (foreground job)"]
+
+        HttpDownload["HttpDownload (resumable, Range)"]
+
+        RequestStore["RequestStore (JSON persistence)"]
+
+        AndroidExtras["DownloadNotification · Sha256"]
+    end
+
+    subgraph IosMain["iosMain — Swift bridge"]
+        IosDownloader["IosDownloader / iosDownloader()"]
+
+        LamityDownloaderBridge["`
+            LamityDownloaderBridge (expect)
+            → Swift URLSession impl
+        `"]
+    end
+
+    DownloaderInterface -->|actual| AndroidDownloader
+    DownloaderInterface -->|actual| IosDownloader
 ```
 
 Key points:

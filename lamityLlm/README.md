@@ -107,22 +107,41 @@ with the `litertlm` version in `gradle/libs.versions.toml`.
 
 ## Concepts at a glance
 
-```
-Engine ──┬── createConversation() ──▶ Conversation   high-level chat: roles, streaming, tool calling
-         └── createSession()      ──▶ Session         low-level: explicit prefill / decode
+```mermaid
+flowchart TD
+    Engine["`
+        Engine
+        (owns the loaded model — load once, reuse)
+    `"]
 
-Capabilities(modelPath)                               inspect a model file without loading an engine
-benchmark(config) / setMinimumLogLevel(...)           top-level utilities
+    Conversation["`
+        Conversation
+        (everyday chat: roles, streaming, auto tool calling)
+    `"]
+
+    Session["`
+        Session
+        (low-level: explicit prefill / decode)
+    `"]
+
+    Capabilities["`
+        Capabilities
+        (inspect a model file without loading an engine)
+    `"]
+
+    Engine -->|"createConversation()"| Conversation
+    Engine -->|"createSession()"| Session
 ```
 
-- An **`Engine`** owns the loaded model. It is expensive to create (seconds, hundreds of MB) — load
-  one and reuse it.
-- A **`Conversation`** is the everyday chat surface: send a `Message`, stream `Message` chunks back,
-  with automatic multi-turn tool calling built in.
-- A **`Session`** is the lower-level primitive for callers who want explicit prefill/decode control
-  and don't need the chat/role/tool machinery.
-- Every native-backed object (`Engine`, `Conversation`, `Session`, `Capabilities`) holds a native
-  handle and **must be `dispose()`d** when done.
+| Object | What it is | Lifecycle |
+|--------|------------|-----------|
+| **`Engine`** | Owns the loaded model. Expensive to create — seconds, hundreds of MB. | Load one, reuse it; `dispose()` it **last**. |
+| **`Conversation`** | The everyday chat surface: send a `Message`, stream `Message` chunks back, with multi-turn tool calling built in. | `dispose()` before the engine. |
+| **`Session`** | Lower-level prefill/decode control, without the chat/role/tool layer. | `dispose()` before the engine. |
+| **`Capabilities`** | Inspect a model file *without* loading a full engine (created from a path, not an engine). | `dispose()` when done. |
+
+Every native-backed object holds a native handle and **must be `dispose()`d** when done.
+`benchmark(config)` and `setMinimumLogLevel(...)` are [top-level utilities](#top-level-functions).
 
 ---
 
@@ -515,6 +534,37 @@ val reply = conversation.sendMessage(Message.user("What's the weather in Hanoi?"
   (via `message.toolCalls`) and the turn ends. You execute them and continue the conversation
   yourself.
 
+The automatic loop in detail — note that the model, not your code, drives each round:
+
+```mermaid
+---
+title: Automatic Multi-Turn Tool Calling (the loop lives in common Kotlin)
+---
+sequenceDiagram
+    actor Caller as Your Code
+    participant Conversation as Conversation<br>(commonMain)
+    participant ToolManager as ToolManager<br>(commonMain)
+    participant Native as Native Runtime<br>(LiteRT-LM)
+    participant Tool as Your Tool
+
+    Caller ->> Conversation: SENDS user message (sendMessageStream)
+    Conversation ->> Native: REQUESTS one streamed turn
+
+    loop up to 25 rounds, until a final answer
+        Native -->> Conversation: STREAMS a tool call
+        Conversation ->> ToolManager: REQUESTS the matching tool
+        ToolManager ->> Tool: EXECUTES with JSON arguments
+        Tool -->> ToolManager: RETURNS JSON result
+        ToolManager -->> Conversation: RETURNS result
+        Conversation ->> Native: FEEDS result back, continues the turn
+    end
+
+    Native -->> Conversation: STREAMS the final answer text
+    Conversation -->> Caller: EMITS Message chunks
+
+    Note over Caller, Tool: With automaticToolCalling = false,<br>the tool call is surfaced to you and the turn ends here.
+```
+
 ```kotlin
 // Manual mode: handle calls yourself.
 val config = ConversationConfig(tools = listOf(WeatherTool()), automaticToolCalling = false)
@@ -610,18 +660,34 @@ try {
 
 ## Architecture
 
-```
-                       commonMain  (the public API you call)
-   ┌────────────────────────────────────────────────────────────────────┐
-   │ Engine · Conversation · Session · Capabilities · benchmark()       │
-   │ model/  (Message, Content, Role, ToolCall, InputData, *Config …)   │
-   │ tool/   (Tool, ToolManager)                                        │
-   │ serialization/                                                     │
-   │ native/  internal expect: Engine/Conversation/Session/Capability   │
-   │          NativeRuntime  +  NativeLibraryOps  +  TurnCallback       │
-   └───────────────┬──────────────────────────────────┬─────────────────┘
-                   │ actual                           │ actual
-        androidMain (com.google.ai.edge.litertlm)   iosMain (cinterop → CLiteRTLM C API)
+```mermaid
+flowchart TD
+    subgraph CommonMain["commonMain — the public API you call"]
+        PublicApi["`
+            Engine · Conversation · Session
+            Capabilities · benchmark()
+        `"]
+
+        ModelPackage["model/ — Message, Content, Role, ToolCall, InputData, *Config"]
+
+        ToolPackage["tool/ — Tool, ToolManager"]
+
+        NativePackage["`
+            native/ — internal expect
+            NativeRuntime · NativeLibraryOps · TurnCallback
+        `"]
+    end
+
+    subgraph AndroidMain["androidMain"]
+        AndroidActual["com.google.ai.edge.litertlm (AAR)"]
+    end
+
+    subgraph IosMain["iosMain"]
+        IosActual["cinterop → CLiteRTLM C API"]
+    end
+
+    NativePackage -->|actual| AndroidActual
+    NativePackage -->|actual| IosActual
 ```
 
 Key points:
