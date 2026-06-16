@@ -5,6 +5,7 @@ import com.phamtunglam.lamity.feature.chat.di.chatModule
 import com.phamtunglam.lamity.feature.llmModels.di.modelsModule
 import com.phamtunglam.lamity.feature.localization.di.localizationModule
 import com.phamtunglam.lamity.feature.settings.di.settingsModule
+import com.phamtunglam.lamity.feature.theme.di.themeModule
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -19,6 +20,7 @@ val appModule: Module =
             localizationModule,
             modelsModule,
             settingsModule,
+            themeModule,
             dbModule,
             llmModule,
             platformModule(),

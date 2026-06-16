@@ -5,8 +5,8 @@ import com.phamtunglam.lamity.core.domain.platform.currentTimeInfo
 import com.phamtunglam.lamity.feature.chat.domain.skills.Skill
 import com.phamtunglam.lamity.feature.localization.data.AppLocaleStore
 import com.phamtunglam.lamity.feature.localization.domain.AppLocale
-import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import com.phamtunglam.lamity.feature.theme.domain.SetThemeUseCase
+import com.phamtunglam.lamity.feature.theme.domain.ThemeMode
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -72,7 +72,7 @@ class CalculateTool :
 }
 
 /** Changes the app color theme. */
-class SetThemeTool(private val settings: SettingsRepository) :
+class SetThemeTool(private val setTheme: SetThemeUseCase) :
     AppTool(
         id = "set_theme",
         displayName = "Change theme",
@@ -93,7 +93,7 @@ class SetThemeTool(private val settings: SettingsRepository) :
                 "system" -> ThemeMode.SYSTEM
                 else -> return errorJson("mode must be light, dark or system")
             }
-        settings.setThemeMode(mode)
+        setTheme(mode)
         return buildJsonObject {
             put("ok", true)
             put("theme", mode.name.lowercase())

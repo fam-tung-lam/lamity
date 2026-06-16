@@ -28,22 +28,21 @@ import com.phamtunglam.lamity.feature.chat.presentation.ChatsScreen
 import com.phamtunglam.lamity.feature.llmModels.presentation.ModelsScreen
 import com.phamtunglam.lamity.feature.localization.presentation.AppLocaleEnvironment
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
-import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.presentation.SettingsScreen
-import org.koin.compose.koinInject
+import com.phamtunglam.lamity.feature.theme.presentation.ThemeViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun App() {
-    val settingsRepository = koinInject<SettingsRepository>()
-    val settings by settingsRepository.settings.collectAsState()
     val localeViewModel = koinViewModel<LocalizationViewModel>()
     val localeState by localeViewModel.state.collectAsState()
+    val themeViewModel = koinViewModel<ThemeViewModel>()
+    val themeState by themeViewModel.state.collectAsState()
 
     val focusManager = LocalFocusManager.current
 
     AppLocaleEnvironment(locale = localeState.current) {
-        AppTheme(settings.themeMode) {
+        AppTheme(themeState.current) {
             Surface(
                 modifier =
                     Modifier

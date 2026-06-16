@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepositoryImpl
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import com.phamtunglam.lamity.fixtures.advanceUntilIdle
 import com.phamtunglam.lamity.fixtures.detachedTestScope
 import io.kotest.core.spec.style.BehaviorSpec
@@ -27,9 +26,8 @@ private class FakePreferencesDataStore(initial: Preferences) : DataStore<Prefere
     }
 }
 
-private fun storedPreferences(themeMode: String? = null, lastModelId: String? = null): Preferences =
+private fun storedPreferences(lastModelId: String? = null): Preferences =
     mutablePreferencesOf().apply {
-        themeMode?.let { this[stringPreferencesKey("theme_mode")] = it }
         lastModelId?.let { this[stringPreferencesKey("last_model_id")] = it }
     }
 
@@ -47,15 +45,8 @@ class SettingsRepositoryImplTest :
         Given("persisted settings") {
             When("the repository loads") {
                 Then("it exposes the stored settings") {
-                    val repository =
-                        createRepository(
-                            storedPreferences(
-                                themeMode = "DARK",
-                                lastModelId = "m1",
-                            ),
-                        )
+                    val repository = createRepository(storedPreferences(lastModelId = "m1"))
 
-                    repository.value.themeMode shouldBe ThemeMode.DARK
                     repository.value.lastModelId shouldBe "m1"
                 }
             }
@@ -66,19 +57,19 @@ class SettingsRepositoryImplTest :
                 Then("the change surfaces back through the settings flow") {
                     val repository = createRepository()
 
-                    repository.setThemeMode(ThemeMode.LIGHT)
+                    repository.setWifiOnlyDownloads(true)
                     advanceUntilIdle()
 
-                    repository.value.themeMode shouldBe ThemeMode.LIGHT
+                    repository.value.wifiOnlyDownloads shouldBe true
                 }
                 Then("successive updates never overwrite each other") {
                     val repository = createRepository()
 
-                    repository.setThemeMode(ThemeMode.DARK)
+                    repository.setLastModelId("m2")
                     repository.setWifiOnlyDownloads(true)
                     advanceUntilIdle()
 
-                    repository.value.themeMode shouldBe ThemeMode.DARK
+                    repository.value.lastModelId shouldBe "m2"
                     repository.value.wifiOnlyDownloads shouldBe true
                 }
             }

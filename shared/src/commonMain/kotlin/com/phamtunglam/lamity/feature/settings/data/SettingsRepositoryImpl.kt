@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import com.phamtunglam.lamity.logger.LamityLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -50,22 +49,16 @@ class SettingsRepositoryImpl(private val dataStore: DataStore<Preferences>, scop
     }
 }
 
-private val ThemeModeKey = stringPreferencesKey("theme_mode")
 private val LastModelIdKey = stringPreferencesKey("last_model_id")
 private val WifiOnlyDownloadsKey = booleanPreferencesKey("wifi_only_downloads")
 
 private fun Preferences.toAppSettings() =
     AppSettings(
-        themeMode =
-            this[ThemeModeKey]
-                ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
-                ?: ThemeMode.SYSTEM,
         lastModelId = this[LastModelIdKey],
         wifiOnlyDownloads = this[WifiOnlyDownloadsKey] ?: false,
     )
 
 private fun MutablePreferences.writeAppSettings(settings: AppSettings) {
-    this[ThemeModeKey] = settings.themeMode.name
     settings.lastModelId.let { if (it == null) remove(LastModelIdKey) else this[LastModelIdKey] = it }
     this[WifiOnlyDownloadsKey] = settings.wifiOnlyDownloads
 }

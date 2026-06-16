@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import com.phamtunglam.lamity.feature.theme.domain.ThemeMode
 
 private val LightColors =
     lightColorScheme(

@@ -28,7 +28,8 @@ import com.phamtunglam.lamity.core.presentation.designSystem.components.SimpleDr
 import com.phamtunglam.lamity.core.presentation.designSystem.components.SubScreenScaffold
 import com.phamtunglam.lamity.feature.localization.domain.AppLocale
 import com.phamtunglam.lamity.feature.localization.presentation.LocalizationViewModel
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
+import com.phamtunglam.lamity.feature.theme.domain.ThemeMode
+import com.phamtunglam.lamity.feature.theme.presentation.ThemeViewModel
 import com.phamtunglam.lamity.shared.resources.Res
 import com.phamtunglam.lamity.shared.resources.about
 import com.phamtunglam.lamity.shared.resources.downloads_section
@@ -52,10 +53,12 @@ fun SettingsScreen(
     onOpenModels: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
     localeViewModel: LocalizationViewModel = koinViewModel(),
+    themeViewModel: ThemeViewModel = koinViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
     val settings = ui.settings
     val localeState by localeViewModel.state.collectAsState()
+    val themeState by themeViewModel.state.collectAsState()
 
     SubScreenScaffold(title = stringResource(Res.string.settings_title), onBack = onBack) {
         Column(
@@ -70,7 +73,7 @@ fun SettingsScreen(
             ModelsSection(onOpenModels = onOpenModels)
 
             // Theme (also switchable by the set_theme tool)
-            ThemeSection(selected = settings.themeMode, onSelect = viewModel::setThemeMode)
+            ThemeSection(selected = themeState.current, onSelect = themeViewModel::onThemeSelected)
 
             // Language (also switchable by the set_language tool)
             LanguageSection(currentBcp47 = localeState.current?.bcp47, onSelect = localeViewModel::onLocaleSelected)

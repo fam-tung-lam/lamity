@@ -6,7 +6,6 @@ import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.core.domain.platform.PlatformInfo
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
-import com.phamtunglam.lamity.feature.settings.domain.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -32,10 +31,6 @@ class SettingsViewModel(
                 SharingStarted.WhileSubscribed(5_000),
                 SettingsUiState(settingsRepository.value, platformInfo, dirs.modelsDir),
             )
-
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch { settingsRepository.setThemeMode(mode) }
-    }
 
     fun setWifiOnlyDownloads(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setWifiOnlyDownloads(enabled) }
