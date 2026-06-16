@@ -1,6 +1,5 @@
-package com.phamtunglam.lamity.unitTests.feature.chat.domain.tools
+package com.phamtunglam.lamity.feature.chat.domain.tools
 
-import com.phamtunglam.lamity.feature.chat.domain.tools.Calculator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.doubles.plusOrMinus

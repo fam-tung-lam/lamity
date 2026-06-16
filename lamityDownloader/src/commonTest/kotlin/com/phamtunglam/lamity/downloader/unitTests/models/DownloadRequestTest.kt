@@ -1,7 +1,6 @@
-package com.phamtunglam.lamity.downloader.unitTests.models
+package com.phamtunglam.lamity.downloader.models
 
 import com.phamtunglam.lamity.downloader.fixtures.fakeDownloadRequest
-import com.phamtunglam.lamity.downloader.models.isAuthTrustedHost
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue

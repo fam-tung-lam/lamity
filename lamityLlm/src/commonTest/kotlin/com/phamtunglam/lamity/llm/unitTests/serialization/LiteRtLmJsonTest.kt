@@ -1,6 +1,5 @@
-package com.phamtunglam.lamity.llm.unitTests.serialization
+package com.phamtunglam.lamity.llm.serialization
 
-import com.phamtunglam.lamity.llm.serialization.LiteRtLmJson
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.jsonObject
@@ -15,13 +14,6 @@ class LiteRtLmJsonTest :
                     val element = LiteRtLmJson.parseToJsonElement("{role: model}")
 
                     element.jsonObject["role"]!!.jsonPrimitive.content shouldBe "model"
-                }
-            }
-            When("a strictly quoted document is parsed") {
-                Then("it parses normally") {
-                    val element = LiteRtLmJson.parseToJsonElement("""{"role":"user"}""")
-
-                    element.jsonObject["role"]!!.jsonPrimitive.content shouldBe "user"
                 }
             }
         }

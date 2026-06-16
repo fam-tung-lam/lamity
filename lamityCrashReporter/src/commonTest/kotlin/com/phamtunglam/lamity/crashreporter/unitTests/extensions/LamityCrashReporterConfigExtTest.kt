@@ -1,6 +1,5 @@
-package com.phamtunglam.lamity.crashreporter.unitTests.extensions
+package com.phamtunglam.lamity.crashreporter.extensions
 
-import com.phamtunglam.lamity.crashreporter.extensions.applyTo
 import com.phamtunglam.lamity.crashreporter.fixtures.fakeCrashReporterConfig
 import com.phamtunglam.lamity.crashreporter.fixtures.fakeSentryOptions
 import io.kotest.core.spec.style.BehaviorSpec

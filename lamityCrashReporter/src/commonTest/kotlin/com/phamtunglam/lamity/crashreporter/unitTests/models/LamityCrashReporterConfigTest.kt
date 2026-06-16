@@ -1,4 +1,4 @@
-package com.phamtunglam.lamity.crashreporter.unitTests.models
+package com.phamtunglam.lamity.crashreporter.models
 
 import com.phamtunglam.lamity.crashreporter.fixtures.fakeCrashReporterConfig
 import io.kotest.assertions.throwables.shouldThrow

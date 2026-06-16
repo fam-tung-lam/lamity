@@ -1,8 +1,6 @@
-package com.phamtunglam.lamity.llm.unitTests.serialization
+package com.phamtunglam.lamity.llm.serialization
 
 import com.phamtunglam.lamity.llm.model.ToolCall
-import com.phamtunglam.lamity.llm.serialization.toJson
-import com.phamtunglam.lamity.llm.serialization.toolCallsFromJson
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject

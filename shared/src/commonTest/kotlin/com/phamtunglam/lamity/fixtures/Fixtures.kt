@@ -12,12 +12,14 @@ internal fun fakeLlmModel(
     url: String = "https://huggingface.co/litert-community/m1/resolve/main/m1.litertlm",
     fileName: String = "m1.litertlm",
     sizeBytes: Long = 1_000,
+    requiresAuth: Boolean = false,
 ) = LlmModel(
     id = id,
     name = "Model $id",
     url = url,
     fileName = fileName,
     sizeBytes = sizeBytes,
+    requiresAuth = requiresAuth,
 )
 
 internal fun fakeConversation(id: String = "conv-1", title: String = "First chat", updatedAt: Long = 2) =

@@ -1,9 +1,7 @@
-package com.phamtunglam.lamity.logger.unitTests.mappers
+package com.phamtunglam.lamity.logger.mappers
 
 import co.touchlab.kermit.Severity
 import com.phamtunglam.lamity.logger.logWriters.LamityLogWriter
-import com.phamtunglam.lamity.logger.mappers.asKermitWriter
-import com.phamtunglam.lamity.logger.mappers.toLamity
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.mock
@@ -30,14 +28,11 @@ class LogWriterMapperTest :
                         Arb.string(),
                         Arb.boolean(),
                     ) { severity, tag, loggable ->
-                        // Arrange
                         val writer = mock<LamityLogWriter>()
                         every { writer.isLoggable(tag, severity.toLamity()) } returns loggable
 
-                        // Act
                         writer.asKermitWriter().isLoggable(tag, severity) shouldBe loggable
 
-                        // Assert
                         verify { writer.isLoggable(tag, severity.toLamity()) }
                     }
                 }
@@ -52,14 +47,11 @@ class LogWriterMapperTest :
                         Arb.string(),
                         Arb.of(null, failure),
                     ) { severity, tag, message, throwable ->
-                        // Arrange
                         val writer = mock<LamityLogWriter>()
                         every { writer.log(severity.toLamity(), message, tag, throwable) } returns Unit
 
-                        // Act
                         writer.asKermitWriter().log(severity, message, tag, throwable)
 
-                        // Assert
                         verify { writer.log(severity.toLamity(), message, tag, throwable) }
                     }
                 }

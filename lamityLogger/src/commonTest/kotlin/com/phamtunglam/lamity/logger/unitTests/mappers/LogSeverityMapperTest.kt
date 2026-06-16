@@ -1,8 +1,6 @@
-package com.phamtunglam.lamity.logger.unitTests.mappers
+package com.phamtunglam.lamity.logger.mappers
 
 import co.touchlab.kermit.Severity
-import com.phamtunglam.lamity.logger.mappers.toKermit
-import com.phamtunglam.lamity.logger.mappers.toLamity
 import com.phamtunglam.lamity.logger.models.LamityLogSeverity
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe

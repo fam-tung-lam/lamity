@@ -1,8 +1,6 @@
-package com.phamtunglam.lamity.downloader.unitTests.states
+package com.phamtunglam.lamity.downloader.states
 
 import com.phamtunglam.lamity.downloader.models.DownloadState
-import com.phamtunglam.lamity.downloader.states.DownloadStateFlags
-import com.phamtunglam.lamity.downloader.states.toDownloadState
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 
@@ -17,13 +15,17 @@ class DownloadStateFlagsTest :
                     DownloadStateFlags(failed = true, hasPartial = true)
                         .toDownloadState() shouldBe DownloadState.FAILED
                 }
-                Then("an active transfer reports running, a scheduled one queued") {
+                Then("an active transfer reports running") {
                     DownloadStateFlags(running = true).toDownloadState() shouldBe DownloadState.RUNNING
+                }
+                Then("a scheduled transfer reports queued") {
                     DownloadStateFlags(enqueued = true).toDownloadState() shouldBe DownloadState.QUEUED
                 }
-                Then("a cancelled transfer with partial bytes is resumable, without them disposed") {
+                Then("a cancelled transfer with partial bytes is resumable as paused") {
                     DownloadStateFlags(cancelled = true, hasPartial = true)
                         .toDownloadState() shouldBe DownloadState.PAUSED
+                }
+                Then("a cancelled transfer without partial bytes is disposed") {
                     DownloadStateFlags(cancelled = true)
                         .toDownloadState() shouldBe DownloadState.CANCELLED
                 }

@@ -1,12 +1,10 @@
-package com.phamtunglam.lamity.unitTests.feature.llmModels.domain
+package com.phamtunglam.lamity.feature.llmModels.domain
 
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
 import com.phamtunglam.lamity.downloader.models.DownloadException
 import com.phamtunglam.lamity.downloader.models.DownloadRequest
 import com.phamtunglam.lamity.feature.llmModels.data.ModelFiles
-import com.phamtunglam.lamity.feature.llmModels.domain.ResumeModelDownloadUseCase
-import com.phamtunglam.lamity.feature.llmModels.domain.StartModelDownloadUseCase
 import com.phamtunglam.lamity.feature.settings.data.SettingsRepository
 import com.phamtunglam.lamity.feature.settings.domain.AppSettings
 import com.phamtunglam.lamity.fixtures.fakeLlmModel

@@ -1,4 +1,4 @@
-package com.phamtunglam.lamity.unitTests.feature.llmModels.domain
+package com.phamtunglam.lamity.feature.llmModels.domain
 
 import com.phamtunglam.lamity.core.domain.platform.AppDirs
 import com.phamtunglam.lamity.downloader.Downloader
@@ -6,8 +6,6 @@ import com.phamtunglam.lamity.downloader.models.DownloadProgress
 import com.phamtunglam.lamity.downloader.models.DownloadState
 import com.phamtunglam.lamity.feature.llmModels.data.ModelFiles
 import com.phamtunglam.lamity.feature.llmModels.data.ModelsRepository
-import com.phamtunglam.lamity.feature.llmModels.domain.ModelStatus
-import com.phamtunglam.lamity.feature.llmModels.domain.ObserveModelStatusesUseCase
 import com.phamtunglam.lamity.fixtures.advanceUntilIdle
 import com.phamtunglam.lamity.fixtures.detachedTestScope
 import com.phamtunglam.lamity.fixtures.fakeLlmModel

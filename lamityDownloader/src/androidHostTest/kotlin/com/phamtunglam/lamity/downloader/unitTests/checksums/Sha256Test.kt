@@ -1,6 +1,5 @@
-package com.phamtunglam.lamity.downloader.unitTests.checksums
+package com.phamtunglam.lamity.downloader.checksums
 
-import com.phamtunglam.lamity.downloader.checksums.Sha256
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import okio.Path.Companion.toPath

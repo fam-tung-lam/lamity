@@ -1,8 +1,7 @@
-package com.phamtunglam.lamity.unitTests.feature.llmModels.data
+package com.phamtunglam.lamity.feature.llmModels.data
 
 import com.phamtunglam.lamity.downloader.models.DownloadProgress
 import com.phamtunglam.lamity.downloader.models.DownloadState
-import com.phamtunglam.lamity.feature.llmModels.data.ModelStatusMapper
 import com.phamtunglam.lamity.feature.llmModels.domain.ModelStatus
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe

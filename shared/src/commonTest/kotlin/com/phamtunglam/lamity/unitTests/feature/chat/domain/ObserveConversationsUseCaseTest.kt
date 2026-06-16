@@ -1,7 +1,6 @@
-package com.phamtunglam.lamity.unitTests.feature.chat.domain
+package com.phamtunglam.lamity.feature.chat.domain
 
 import com.phamtunglam.lamity.feature.chat.data.ConversationsRepository
-import com.phamtunglam.lamity.feature.chat.domain.ObserveConversationsUseCase
 import com.phamtunglam.lamity.fixtures.fakeConversation
 import dev.mokkery.answering.returns
 import dev.mokkery.every

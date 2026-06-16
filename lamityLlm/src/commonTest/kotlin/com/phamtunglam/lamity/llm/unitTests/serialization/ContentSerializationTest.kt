@@ -1,11 +1,7 @@
-package com.phamtunglam.lamity.llm.unitTests.serialization
+package com.phamtunglam.lamity.llm.serialization
 
 import com.phamtunglam.lamity.llm.model.Content
 import com.phamtunglam.lamity.llm.model.Contents
-import com.phamtunglam.lamity.llm.serialization.contentFromJson
-import com.phamtunglam.lamity.llm.serialization.toJson
-import com.phamtunglam.lamity.llm.serialization.toJsonArray
-import com.phamtunglam.lamity.llm.serialization.toJsonArrayString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue

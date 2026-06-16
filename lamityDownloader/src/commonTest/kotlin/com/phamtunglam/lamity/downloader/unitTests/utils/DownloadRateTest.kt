@@ -1,6 +1,5 @@
-package com.phamtunglam.lamity.downloader.unitTests.utils
+package com.phamtunglam.lamity.downloader.utils
 
-import com.phamtunglam.lamity.downloader.utils.DownloadRate
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 
