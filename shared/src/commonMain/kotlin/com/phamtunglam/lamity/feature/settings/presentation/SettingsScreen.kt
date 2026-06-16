@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -58,7 +59,12 @@ fun SettingsScreen(
 
     SubScreenScaffold(title = stringResource(Res.string.settings_title), onBack = onBack) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            // navigationBarsPadding keeps the last section above the navigation bar when scrolled to the end.
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             ModelsSection(onOpenModels = onOpenModels)

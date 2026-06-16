@@ -5,8 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -87,7 +91,14 @@ fun ChatsScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(12.dp, 12.dp, 12.dp, 96.dp),
+                    // Bottom padding clears the FAB and the navigation bar so the last card is reachable.
+                    contentPadding =
+                        PaddingValues(
+                            start = 12.dp,
+                            top = 12.dp,
+                            end = 12.dp,
+                            bottom = 96.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                        ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -105,7 +116,7 @@ fun ChatsScreen(
                 onClick = { onOpenChat(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.new_chat)) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp),
             )
         }
     }
